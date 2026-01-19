@@ -1,4 +1,4 @@
-# Multi-stage build for MASUP.ID React App
+# Multi-stage build for KARTCIS.ID React App
 
 # Stage 1: Build
 FROM node:20-alpine AS builder

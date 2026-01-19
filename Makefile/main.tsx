@@ -1,4 +1,4 @@
-# Makefile for MASUP.ID Docker Operations
+# Makefile for KARTCIS.ID Docker Operations
 
 .PHONY: help build up down logs clean restart dev prod deploy
 
@@ -8,12 +8,12 @@ YELLOW := $(shell tput -Txterm setaf 3)
 RESET  := $(shell tput -Txterm sgr0)
 
 # Variables
-PROJECT_NAME = masup-ticketing
+PROJECT_NAME = kartcis-ticketing
 DOCKER_COMPOSE = docker-compose
 DOCKER_COMPOSE_PROD = docker-compose -f docker-compose.prod.yml
 
 help: ## Tampilkan help menu
-	@echo '${GREEN}MASUP.ID Docker Commands:${RESET}'
+	@echo '${GREEN}KARTCIS.ID Docker Commands:${RESET}'
 	@echo ''
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  ${YELLOW}%-20s${RESET} %s\n", $$1, $$2}'
 	@echo ''
@@ -24,14 +24,14 @@ help: ## Tampilkan help menu
 
 dev: ## Start development server with hot-reload
 	@echo '${GREEN}Starting development server...${RESET}'
-	$(DOCKER_COMPOSE) --profile dev up masup-dev
+	$(DOCKER_COMPOSE) --profile dev up kartcis-dev
 
 dev-build: ## Build development image
 	@echo '${GREEN}Building development image...${RESET}'
-	$(DOCKER_COMPOSE) build masup-dev
+	$(DOCKER_COMPOSE) build kartcis-dev
 
 dev-logs: ## Show development logs
-	$(DOCKER_COMPOSE) logs -f masup-dev
+	$(DOCKER_COMPOSE) logs -f kartcis-dev
 
 # ============================================
 # Production Commands
@@ -66,23 +66,23 @@ logs: ## Show container logs
 	$(DOCKER_COMPOSE) logs -f
 
 logs-frontend: ## Show frontend logs only
-	$(DOCKER_COMPOSE) logs -f masup-frontend
+	$(DOCKER_COMPOSE) logs -f kartcis-frontend
 
 ps: ## Show running containers
 	$(DOCKER_COMPOSE) ps
 
 health: ## Check container health
-	@docker inspect masup-ticketing-web --format='{{.State.Health.Status}}' 2>/dev/null || echo "Container not running"
+	@docker inspect kartcis-ticketing-web --format='{{.State.Health.Status}}' 2>/dev/null || echo "Container not running"
 
 # ============================================
 # Shell Access
 # ============================================
 
 shell: ## Enter container shell
-	docker exec -it masup-ticketing-web sh
+	docker exec -it kartcis-ticketing-web sh
 
 shell-dev: ## Enter development container shell
-	docker exec -it masup-ticketing-dev sh
+	docker exec -it kartcis-ticketing-dev sh
 
 # ============================================
 # Full Production Stack
@@ -149,7 +149,7 @@ update: ## Pull latest code and redeploy
 rollback: ## Rollback to previous version
 	@echo '${YELLOW}Rolling back to previous version...${RESET}'
 	docker-compose down
-	docker-compose up -d masup-frontend:previous
+	docker-compose up -d kartcis-frontend:previous
 
 # ============================================
 # Testing & Validation
@@ -171,20 +171,20 @@ validate: build ## Validate Docker configuration
 
 info: ## Show container information
 	@echo '${GREEN}Container Information:${RESET}'
-	@echo 'Name: masup-ticketing-web'
-	@docker inspect masup-ticketing-web --format='Status: {{.State.Status}}' 2>/dev/null || echo 'Status: Not running'
-	@docker inspect masup-ticketing-web --format='Health: {{.State.Health.Status}}' 2>/dev/null || echo 'Health: N/A'
-	@docker inspect masup-ticketing-web --format='IP Address: {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null || echo 'IP Address: N/A'
+	@echo 'Name: kartcis-ticketing-web'
+	@docker inspect kartcis-ticketing-web --format='Status: {{.State.Status}}' 2>/dev/null || echo 'Status: Not running'
+	@docker inspect kartcis-ticketing-web --format='Health: {{.State.Health.Status}}' 2>/dev/null || echo 'Health: N/A'
+	@docker inspect kartcis-ticketing-web --format='IP Address: {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null || echo 'IP Address: N/A'
 	@echo ''
 	@echo 'Ports:'
-	@docker port masup-ticketing-web 2>/dev/null || echo 'No ports exposed'
+	@docker port kartcis-ticketing-web 2>/dev/null || echo 'No ports exposed'
 
 stats: ## Show container resource usage
-	docker stats --no-stream masup-ticketing-web
+	docker stats --no-stream kartcis-ticketing-web
 
 size: ## Show Docker image sizes
 	@echo '${GREEN}Docker Image Sizes:${RESET}'
-	@docker images | grep masup || echo 'No MASUP images found'
+	@docker images | grep kartcis || echo 'No KARTCIS images found'
 
 # ============================================
 # Backup & Restore (untuk nanti)
@@ -193,12 +193,12 @@ size: ## Show Docker image sizes
 # backup: ## Backup database and files
 # 	@echo '${GREEN}Creating backup...${RESET}'
 # 	@mkdir -p backups
-# 	@docker exec masup-database-prod pg_dump -U masup_user masup_ticketing > backups/db-$(shell date +%Y%m%d-%H%M%S).sql
+# 	@docker exec kartcis-database-prod pg_dump -U kartcis_user kartcis_ticketing > backups/db-$(shell date +%Y%m%d-%H%M%S).sql
 # 	@echo '${GREEN}Backup complete!${RESET}'
 
 # restore: ## Restore from backup
 # 	@echo '${YELLOW}Restoring from latest backup...${RESET}'
-# 	@docker exec -i masup-database-prod psql -U masup_user masup_ticketing < $(shell ls -t backups/*.sql | head -1)
+# 	@docker exec -i kartcis-database-prod psql -U kartcis_user kartcis_ticketing < $(shell ls -t backups/*.sql | head -1)
 # 	@echo '${GREEN}Restore complete!${RESET}'
 
 # ============================================

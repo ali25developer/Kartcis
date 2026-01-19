@@ -1,5 +1,19 @@
 # 🔄 Rebranding Summary: MASUP.ID → KARTCIS.ID
 
+## 🔧 CRITICAL FIX (Jan 19, 2026)
+
+**Issue Found & Resolved:**
+- ❌ `Dockerfile` was created as **folder** (with main.tsx inside)
+- ❌ `Makefile` was created as **folder** (with main.tsx inside)
+- ✅ **FIXED**: Both are now proper **files** with correct content
+- ✅ Added `.dockerignore` for build optimization
+
+**Impact:** Without this fix, `docker-compose` would fail with "Dockerfile not found"
+
+See `/DOCKER_FIX_SUMMARY.md` for full details.
+
+---
+
 ## ✅ Files Updated
 
 ### Docker Configuration
