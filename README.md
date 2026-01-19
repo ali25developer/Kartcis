@@ -1,4 +1,4 @@
-# 🎫 MASUP.ID - Event Ticketing System
+# 🎫 KARTCIS.ID - Event Ticketing System
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![React](https://img.shields.io/badge/React-18.3.1-61dafb.svg)
@@ -53,7 +53,7 @@
 ```bash
 # Clone repository
 git clone <repo-url>
-cd masup-ticketing
+cd kartcis-ticketing
 
 # Build & Run dengan Docker
 make build
@@ -73,6 +73,30 @@ npm run dev
 
 # Akses di: http://localhost:5173
 ```
+
+## 🌐 Production Deployment
+
+### Hostinger VPS Deployment
+
+Panduan lengkap deploy ke Hostinger VPS dengan Docker:
+
+```bash
+# 1. Clone repository
+git clone <repo-url> /var/www/kartcis-ticketing
+cd /var/www/kartcis-ticketing
+
+# 2. Deploy dengan script otomatis
+chmod +x deploy.sh
+./deploy.sh first
+
+# 3. Configure Nginx + SSL
+# (Lihat HOSTINGER_DEPLOY_GUIDE.md)
+```
+
+**📚 Dokumentasi Deployment:**
+- **[🚀 Hostinger Deploy Guide](./HOSTINGER_DEPLOY_GUIDE.md)** - Panduan lengkap deploy ke VPS
+- **[⚡ Deploy Cheat Sheet](./DEPLOY_CHEATSHEET.md)** - Quick reference commands
+- **[🐳 Docker Fix Summary](./DOCKER_FIX_SUMMARY.md)** - Docker troubleshooting
 
 ## 📚 Documentation
 
@@ -106,7 +130,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-masup-ticketing/
+kartcis-ticketing/
 ├── src/
 │   ├── app/
 │   │   ├── components/       # React components
@@ -168,7 +192,7 @@ docker-compose build                           # Build
 docker-compose up -d                          # Start
 docker-compose down                           # Stop
 docker-compose logs -f                        # Logs
-docker-compose --profile dev up masup-dev    # Dev mode
+docker-compose --profile dev up kartcis-dev  # Dev mode
 ```
 
 ## 🔧 Configuration
@@ -194,7 +218,7 @@ VITE_APP_VERSION=1.0.0
 Untuk testing authentication:
 
 ```
-Email: demo@masup.id
+Email: demo@kartcis.id
 Password: demo123
 ```
 
@@ -230,7 +254,7 @@ Dokumentasi lengkap ada di [AUTHENTICATION_GUIDE.md](./AUTHENTICATION_GUIDE.md)
 ```bash
 make dev
 # or
-docker-compose --profile dev up masup-dev
+docker-compose --profile dev up kartcis-dev
 ```
 
 Access: http://localhost:5173
@@ -306,7 +330,7 @@ This project is licensed under the MIT License.
 
 ## 👥 Authors
 
-- **Development Team** - MASUP.ID
+- **Development Team** - KARTCIS.ID
 
 ## 🙏 Acknowledgments
 
@@ -317,10 +341,10 @@ This project is licensed under the MIT License.
 
 ## 📞 Support
 
-For support, email support@masup.id or create an issue in the repository.
+For support, email info@kartcis.id or create an issue in the repository.
 
 ---
 
-**Made with ❤️ by MASUP.ID Team**
+**Made with ❤️ by KARTCIS.ID Team**
 
 **Version**: 1.0.0 | **Last Updated**: January 2026
