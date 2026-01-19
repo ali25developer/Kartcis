@@ -51,7 +51,7 @@ function AppContent() {
       price: 180000,
       eventImage: 'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800',
       orderDate: '2026-01-05T10:30:00Z',
-      ticketCode: 'MASUP-JKM2026-A1',
+      ticketCode: 'KARTCIS-JKM2026-A1',
       eventStatus: 'active',
     },
     // Upcoming Event 2
@@ -68,7 +68,7 @@ function AppContent() {
       price: 750000,
       eventImage: 'https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=800',
       orderDate: '2026-01-10T14:20:00Z',
-      ticketCode: 'MASUP-JZF2026-V3',
+      ticketCode: 'KARTCIS-JZF2026-V3',
       eventStatus: 'active',
     },
     // Past Event 1
@@ -85,7 +85,7 @@ function AppContent() {
       price: 350000,
       eventImage: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
       orderDate: '2025-12-01T08:15:00Z',
-      ticketCode: 'MASUP-DMW2025-R8',
+      ticketCode: 'KARTCIS-DMW2025-R8',
       eventStatus: 'active',
     },
     // Past Event 2
@@ -102,7 +102,7 @@ function AppContent() {
       price: 150000,
       eventImage: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800',
       orderDate: '2025-11-01T16:45:00Z',
-      ticketCode: 'MASUP-BFF2025-E2',
+      ticketCode: 'KARTCIS-BFF2025-E2',
       eventStatus: 'active',
     },
     // Cancelled Event
@@ -119,7 +119,7 @@ function AppContent() {
       price: 75000,
       eventImage: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800',
       orderDate: '2026-01-08T12:00:00Z',
-      ticketCode: 'MASUP-BCM2026-R5',
+      ticketCode: 'KARTCIS-BCM2026-R5',
       eventStatus: 'cancelled',
       cancelReason: 'Event dibatalkan karena renovasi venue yang tidak terduga. Dana akan dikembalikan 100% dalam 7 hari kerja ke metode pembayaran Anda.',
     },
@@ -571,7 +571,7 @@ function AppContent() {
           price: item.ticket_price,
           eventImage: item.event_image,
           orderDate: new Date().toISOString(),
-          ticketCode: `MASUP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          ticketCode: `KARTCIS-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
         };
       });
 
@@ -627,7 +627,7 @@ function AppContent() {
         price: item.price,
         eventImage: item.eventImage,
         orderDate: new Date().toISOString(),
-        ticketCode: `MASUP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+        ticketCode: `KARTCIS-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
         eventStatus: 'active',
       }));
       
@@ -1007,7 +1007,7 @@ function AppContent() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <h3 className="text-lg font-bold text-blue-600 mb-4">
-                MASUP.ID
+                KARTCIS.ID
               </h3>
               <p className="text-gray-600 text-sm">
                 Platform terpercaya untuk pembelian tiket event
@@ -1078,7 +1078,7 @@ function AppContent() {
                 Hubungi Kami
               </h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li>Email: info@masup.id</li>
+                <li>Email: info@kartcis.id</li>
                 <li>Phone: 021-1234-5678</li>
                 <li className="hover:text-blue-600 cursor-pointer">
                   Instagram
@@ -1087,7 +1087,7 @@ function AppContent() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t text-center text-sm text-gray-600">
-            © 2026 MASUP.ID. All rights reserved.
+            © 2026 KARTCIS.ID. All rights reserved.
           </div>
         </div>
       </footer>

@@ -1,0 +1,105 @@
+version: '3.8'
+
+# Production Docker Compose with full stack
+services:
+  # Frontend - KARTCIS.ID React App
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: kartcis-frontend-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # SSL certificates (jika ada)
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - kartcis-prod-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kartcis.rule=Host(`kartcis.id`)"
+      - "traefik.http.services.kartcis.loadbalancer.server.port=80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Backend API (placeholder - untuk nanti)
+  # backend:
+  #   image: kartcis-backend:latest
+  #   container_name: kartcis-backend-prod
+  #   restart: always
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - DB_HOST=database
+  #     - DB_PORT=5432
+  #     - DB_NAME=kartcis_ticketing
+  #     - REDIS_HOST=redis
+  #   depends_on:
+  #     - database
+  #     - redis
+  #   networks:
+  #     - kartcis-prod-network
+
+  # Database (placeholder - untuk nanti)
+  # database:
+  #   image: postgres:15-alpine
+  #   container_name: kartcis-database-prod
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_DB=kartcis_ticketing
+  #     - POSTGRES_USER=kartcis_user
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./database/kartcis_ticketing_schema.sql:/docker-entrypoint-initdb.d/init.sql
+  #   networks:
+  #     - kartcis-prod-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U kartcis_user"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # Redis Cache (placeholder - untuk nanti)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: kartcis-redis-prod
+  #   restart: always
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - kartcis-prod-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 5
+
+networks:
+  kartcis-prod-network:
+    driver: bridge
+    name: kartcis-prod-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

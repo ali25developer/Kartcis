@@ -47,7 +47,7 @@ export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClic
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <span className="text-xl font-semibold text-sky-600">MASUP.ID</span>
+            <span className="text-xl font-semibold text-sky-600">KARTCIS.ID</span>
           </div>
 
           {/* Desktop Search */}
