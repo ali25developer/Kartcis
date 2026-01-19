@@ -1,0 +1,9 @@
+@import 'tailwindcss' source(none);
+@source '../**/*.{js,ts,jsx,tsx}';
+
+@import 'tw-animate-css';
+
+/* Hide scrollbar for featured events carousel */
+.scroll-smooth::-webkit-scrollbar {
+  display: none;
+}
