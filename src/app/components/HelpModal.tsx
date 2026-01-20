@@ -50,7 +50,7 @@ export function HelpModal({ isOpen = true, onClose, type }: HelpModalProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">5. Checkout dan Pembayaran</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">5. Pemesanan dan Pembayaran</h3>
                 <p className="text-gray-600">
                   Klik "Lanjut ke Pembayaran" dan isi data diri Anda. Pilih metode pembayaran 
                   (Virtual Account BCA, Mandiri, BNI, BRI, atau Permata). Anda akan mendapatkan 

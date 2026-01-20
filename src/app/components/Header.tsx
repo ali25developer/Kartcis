@@ -1,18 +1,13 @@
-import { ShoppingCart, User, Search, Menu, X, Ticket, LogIn, Clock, AlertCircle, LogOut } from 'lucide-react';
+import { User, Menu, X, LogIn, Clock, AlertCircle, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from '@/app/utils/toast';
 
 interface HeaderProps {
-  cartCount: number;
-  onSearchChange: (value: string) => void;
-  onCartClick: () => void;
-  onMyTicketsClick: () => void;
   onLoginClick: () => void;
-  searchValue: string;
   pendingPayment?: {
     orderId: string;
     timeLeft: number; // in seconds
@@ -20,9 +15,10 @@ interface HeaderProps {
   } | null;
 }
 
-export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClick, onLoginClick, searchValue, pendingPayment }: HeaderProps) {
+export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -32,6 +28,16 @@ export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClic
         onClick: () => {},
       },
     });
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleMyTicketsClick = () => {
+    navigate('/my-tickets');
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogoClick = () => {
+    navigate('/');
     setIsMobileMenuOpen(false);
   };
 
@@ -46,28 +52,18 @@ export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClic
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={handleLogoClick}>
             <span className="text-xl font-semibold text-sky-600">KARTCIS.ID</span>
           </div>
 
-          {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-xl mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Cari event, lokasi..."
-                className="pl-10 bg-gray-50 border-gray-200"
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
-              />
-            </div>
-          </div>
+          {/* Spacer for center alignment */}
+          <div className="flex-1"></div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-2">
             {isAuthenticated ? (
               <>
-                <Button variant="ghost" onClick={onMyTicketsClick} className="text-gray-700">
+                <Button variant="ghost" onClick={handleMyTicketsClick} className="text-gray-700">
                   <User className="h-5 w-5 mr-2" />
                   {user?.name || 'Tiket Saya'}
                 </Button>
@@ -82,14 +78,6 @@ export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClic
                 Login
               </Button>
             )}
-            <Button variant="ghost" onClick={onCartClick} className="relative text-gray-700">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 border-0">
-                  {cartCount}
-                </Badge>
-              )}
-            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -102,19 +90,6 @@ export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClic
           </Button>
         </div>
 
-        {/* Mobile Search */}
-        <div className="md:hidden pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Cari event..."
-              className="pl-10 bg-gray-50 border-gray-200"
-              value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value)}
-            />
-          </div>
-        </div>
-
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-2">
@@ -125,7 +100,7 @@ export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClic
                 </div>
                 <Button 
                   variant="ghost" 
-                  onClick={() => { onMyTicketsClick(); setIsMobileMenuOpen(false); }}
+                  onClick={handleMyTicketsClick}
                   className="w-full justify-start text-gray-700"
                 >
                   <User className="h-5 w-5 mr-2" />
@@ -150,19 +125,6 @@ export function Header({ cartCount, onSearchChange, onCartClick, onMyTicketsClic
                 Login
               </Button>
             )}
-            <Button 
-              variant="ghost" 
-              onClick={() => { onCartClick(); setIsMobileMenuOpen(false); }}
-              className="w-full justify-start text-gray-700 relative"
-            >
-              <ShoppingCart className="h-5 w-5 mr-2" />
-              Keranjang
-              {cartCount > 0 && (
-                <Badge className="ml-2 h-5 px-2 bg-red-500 border-0">
-                  {cartCount}
-                </Badge>
-              )}
-            </Button>
           </div>
         )}
       </div>

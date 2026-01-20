@@ -60,7 +60,7 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Pembayaran Berhasil!</h2>
+                <h2 className="text-2xl font-bold text-white">Pembayaran Berhasil!</h2>
                 <p className="text-green-100 text-sm">Order ID: {orderDetails.orderId}</p>
               </div>
             </div>
@@ -110,10 +110,10 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
                     </div>
                   </div>
                 ))}
-                <div className="p-4 bg-gray-50">
+                <div className="border-t pt-4 mt-4">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                    <span className="text-xl font-bold text-gray-900">{formatPrice(orderDetails.totalAmount)}</span>
+                    <span className="text-2xl font-bold text-gray-900">{formatPrice(orderDetails.totalAmount)}</span>
                   </div>
                 </div>
               </Card>

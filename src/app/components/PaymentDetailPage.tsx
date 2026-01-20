@@ -1,61 +1,40 @@
-import { X, Copy, CheckCircle2, Clock, AlertCircle, Building2 } from 'lucide-react';
+import { Copy, CheckCircle2, Clock, Building2, Wallet, QrCode, CreditCard } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useState, useEffect } from 'react';
-import { toast } from '@/app/utils/toast';
+import { toast } from 'sonner';
+import { PendingOrder } from '@/app/types/pendingOrder';
 
-interface VirtualAccountDetailProps {
-  isOpen: boolean;
-  onClose: () => void;
-  bank: string;
-  amount: number;
-  orderId: string;
-  onComplete: () => void;
-  onChangePaymentMethod?: () => void;
+interface PaymentDetailPageProps {
+  pendingOrder: PendingOrder;
   onPaymentSuccess: () => void;
+  onCancel: () => void;
 }
 
-export function VirtualAccountDetail({ 
-  isOpen, 
-  onClose, 
-  bank, 
-  amount,
-  orderId,
-  onComplete,
-  onChangePaymentMethod,
-  onPaymentSuccess
-}: VirtualAccountDetailProps) {
-  const [timeLeft, setTimeLeft] = useState(24 * 60 * 60); // 24 hours in seconds
+export function PaymentDetailPage({ 
+  pendingOrder,
+  onPaymentSuccess,
+  onCancel
+}: PaymentDetailPageProps) {
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [vaNumber] = useState(() => {
-    // Generate VA number based on bank
-    const bankCodes: Record<string, string> = {
-      'BCA': '70012',
-      'Mandiri': '88008',
-      'BNI': '8808',
-      'BRI': '26215',
-      'Permata': '8528'
-    };
-    const code = bankCodes[bank] || '70012';
-    const random = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
-    return `${code}${random}`;
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const remaining = pendingOrder.expiryTime - Date.now();
+    return Math.max(0, Math.floor(remaining / 1000));
   });
 
   useEffect(() => {
-    if (!isOpen) return;
-
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const remaining = pendingOrder.expiryTime - Date.now();
+      const seconds = Math.max(0, Math.floor(remaining / 1000));
+      setTimeLeft(seconds);
+      
+      if (seconds <= 0) {
+        clearInterval(timer);
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen]);
+  }, [pendingOrder.expiryTime]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -74,17 +53,7 @@ export function VirtualAccountDetail({
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Nomor VA disalin ke clipboard', {
-      action: {
-        label: 'Tutup',
-        onClick: () => {},
-      },
-    });
-  };
-
-  const handleComplete = () => {
-    onComplete();
-    onClose();
+    toast.success('Disalin ke clipboard');
   };
 
   const checkPaymentStatus = async () => {
@@ -98,60 +67,42 @@ export function VirtualAccountDetail({
       const isPaid = Math.random() > 0.3;
       
       if (isPaid) {
-        toast.success('Pembayaran berhasil dikonfirmasi!', {
-          action: {
-            label: 'Tutup',
-            onClick: () => {},
-          },
-        });
+        toast.success('Pembayaran berhasil dikonfirmasi!');
         onPaymentSuccess();
-        onClose();
       } else {
         toast.error('Pembayaran belum diterima', {
           description: 'Silakan coba lagi dalam beberapa menit atau hubungi customer service.',
-          action: {
-            label: 'Tutup',
-            onClick: () => {},
-          },
         });
       }
     } catch (error) {
-      toast.error('Terjadi kesalahan saat memeriksa status pembayaran.', {
-        action: {
-          label: 'Tutup',
-          onClick: () => {},
-        },
-      });
+      toast.error('Terjadi kesalahan saat memeriksa status pembayaran.');
     } finally {
       setIsCheckingStatus(false);
     }
   };
 
-  if (!isOpen) return null;
+  // Backward compatibility for old data structure
+  const paymentType = pendingOrder.paymentType || 'va';
+  const paymentMethod = pendingOrder.paymentMethod || (pendingOrder as any).bank || 'BCA';
+  const vaNumber = pendingOrder.vaNumber || (pendingOrder as any).vaNumber;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/50 overflow-y-auto"
-      onClick={onClose}
-    >
-      <div className="min-h-screen py-8 px-4">
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="max-w-2xl mx-auto bg-white rounded-lg overflow-hidden"
-        >
-          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-600 to-blue-700">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto px-4">
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm">
+          <div className="p-6 border-b bg-gradient-to-r from-sky-600 to-sky-700">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-lg">
-                <Building2 className="h-6 w-6 text-white" />
+                {paymentType === 'va' && <Building2 className="h-6 w-6 text-white" />}
+                {paymentType === 'ewallet' && <Wallet className="h-6 w-6 text-white" />}
+                {paymentType === 'qris' && <QrCode className="h-6 w-6 text-white" />}
+                {paymentType === 'credit_card' && <CreditCard className="h-6 w-6 text-white" />}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Menunggu Pembayaran</h2>
-                <p className="text-blue-100 text-sm">Transfer Bank {bank}</p>
+                <h1 className="text-3xl font-bold text-white">Menunggu Pembayaran</h1>
+                <p className="text-sky-100 text-sm">{paymentMethod}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-              <X className="h-6 w-6" />
-            </Button>
           </div>
 
           <div className="p-6 space-y-6">
@@ -169,7 +120,7 @@ export function VirtualAccountDetail({
             {/* VA Number */}
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Nomor Virtual Account {bank}
+                Nomor Virtual Account {paymentMethod}
               </label>
               <div className="flex gap-2">
                 <div className="flex-1 p-4 bg-gray-50 border border-gray-300 rounded-lg">
@@ -196,13 +147,13 @@ export function VirtualAccountDetail({
               <div className="flex gap-2">
                 <div className="flex-1 p-4 bg-gray-50 border border-gray-300 rounded-lg">
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatPrice(amount)}
+                    {formatPrice(pendingOrder.amount)}
                   </p>
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => copyToClipboard(amount.toString())}
+                  onClick={() => copyToClipboard(pendingOrder.amount.toString())}
                   className="h-auto px-4"
                 >
                   <Copy className="h-5 w-5" />
@@ -213,22 +164,40 @@ export function VirtualAccountDetail({
               </p>
             </div>
 
+            {/* Order Details */}
+            {pendingOrder.orderDetails?.items && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">Detail Pesanan</h3>
+                <Card className="p-4 space-y-3">
+                  {pendingOrder.orderDetails.items.map((item, index) => (
+                    <div key={index} className="flex justify-between items-start py-2 border-b last:border-0">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{item.eventTitle}</p>
+                        <p className="text-sm text-gray-600">{item.ticketType} × {item.quantity}</p>
+                      </div>
+                      <p className="font-semibold text-gray-900">{formatPrice(item.price * item.quantity)}</p>
+                    </div>
+                  ))}
+                </Card>
+              </div>
+            )}
+
             {/* Instructions */}
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Cara Pembayaran</h3>
               <Card className="p-4 space-y-3">
                 <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
                     1
                   </div>
                   <div>
                     <p className="text-sm text-gray-700">
-                      Buka aplikasi mobile banking atau internet banking {bank} Anda
+                      Buka aplikasi mobile banking atau internet banking {paymentMethod} Anda
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
                     2
                   </div>
                   <div>
@@ -238,7 +207,7 @@ export function VirtualAccountDetail({
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
                     3
                   </div>
                   <div>
@@ -248,17 +217,17 @@ export function VirtualAccountDetail({
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
                     4
                   </div>
                   <div>
                     <p className="text-sm text-gray-700">
-                      Masukkan jumlah transfer: <span className="font-semibold">{formatPrice(amount)}</span>
+                      Masukkan jumlah transfer: <span className="font-semibold">{formatPrice(pendingOrder.amount)}</span>
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
                     5
                   </div>
                   <div>
@@ -288,29 +257,19 @@ export function VirtualAccountDetail({
             {/* Action Buttons */}
             <div className="space-y-3">
               <Button
-                onClick={handleComplete}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                Saya Sudah Transfer
-              </Button>
-              
-              {onChangePaymentMethod && (
-                <Button
-                  onClick={onChangePaymentMethod}
-                  variant="outline"
-                  className="w-full border-gray-300 hover:bg-gray-50"
-                >
-                  Ganti Metode Pembayaran
-                </Button>
-              )}
-              
-              <Button
                 onClick={checkPaymentStatus}
-                variant="outline"
-                className="w-full border-gray-300 hover:bg-gray-50"
+                className="w-full bg-sky-600 hover:bg-sky-700"
                 disabled={isCheckingStatus}
               >
                 {isCheckingStatus ? 'Memeriksa...' : 'Periksa Status Pembayaran'}
+              </Button>
+              
+              <Button
+                onClick={onCancel}
+                variant="outline"
+                className="w-full border-gray-300 hover:bg-gray-50"
+              >
+                Batalkan Pembayaran
               </Button>
             </div>
           </div>

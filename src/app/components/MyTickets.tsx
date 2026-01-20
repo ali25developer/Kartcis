@@ -31,6 +31,23 @@ interface MyTicketsProps {
 }
 
 export function MyTickets({ isOpen, onClose, tickets, onEventClick }: MyTicketsProps) {
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        return 'Tanggal tidak valid';
+      }
+      return date.toLocaleDateString('id-ID', { 
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Tanggal tidak valid';
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -39,18 +56,14 @@ export function MyTickets({ isOpen, onClose, tickets, onEventClick }: MyTicketsP
     }).format(price);
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('id-ID', { 
-      weekday: 'short', 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
-
   const isUpcoming = (dateStr: string) => {
-    return new Date(dateStr) > new Date();
+    try {
+      const eventDate = new Date(dateStr);
+      const today = new Date();
+      return !isNaN(eventDate.getTime()) && eventDate > today;
+    } catch (error) {
+      return false;
+    }
   };
 
   const upcomingTickets = tickets.filter(t => isUpcoming(t.eventDate) && t.eventStatus !== 'cancelled');

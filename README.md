@@ -98,6 +98,9 @@ chmod +x deploy.sh
 - **[⚡ Deploy Cheat Sheet](./DEPLOY_CHEATSHEET.md)** - Quick reference commands
 - **[🐳 Docker Fix Summary](./DOCKER_FIX_SUMMARY.md)** - Docker troubleshooting
 
+**🔧 Bug Fixes:**
+- **[📅 Fix Invalid Date & NaN](./FIX_INVALID_DATE_NAN.md)** - Date validation & array checks
+
 ## 📚 Documentation
 
 - **[🐳 Docker Guide](./DOCKER_GUIDE.md)** - Panduan lengkap Docker deployment
@@ -307,7 +310,7 @@ make test-app       # Test application
 ## 🔐 Security
 
 - ✅ HTTPS ready (Nginx SSL support)
-- ✅ Security headers (XSS, Frame, Content-Type)
+- ��� Security headers (XSS, Frame, Content-Type)
 - ✅ Password validation
 - ✅ Session timeout (30 minutes)
 - ✅ JWT token expiry

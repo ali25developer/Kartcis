@@ -9,22 +9,22 @@ interface Sponsor {
 
 interface SponsorSectionProps {
   title?: string;
-  sponsors: Sponsor[];
+  sponsors?: Sponsor[];
   variant?: "horizontal" | "square" | "wide";
 }
 
 export function SponsorSection({
   title = "Partner Kami",
-  sponsors,
+  sponsors = [],
   variant = "square",
 }: SponsorSectionProps) {
-  if (sponsors.length === 0) return null;
+  if (!sponsors || sponsors.length === 0) return null;
 
   return (
     <section className="py-8 bg-gray-50 border-y">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
           <span className="text-sm text-gray-500">
             {sponsors.length} Partner
           </span>
