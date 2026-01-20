@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { ArrowLeft, User, Mail, Phone, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
@@ -6,6 +6,9 @@ import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Card } from "@/app/components/ui/card";
 import { Separator } from "@/app/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Checkbox } from "@/app/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
 import type { Event } from "@/app/data/events";
@@ -28,6 +31,13 @@ interface CheckoutState {
   selectedTickets: Record<string, number>;
 }
 
+interface ParticipantData {
+  ticketId: string;
+  ticketName: string;
+  isSameAsBuyer: boolean;
+  data: Record<string, string>;
+}
+
 export function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -36,14 +46,70 @@ export function CheckoutPage() {
   const state = location.state as CheckoutState | null;
   
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: ''
-  });
+  const [participants, setParticipants] = useState<ParticipantData[]>([]);
+  const [primaryContactIndex, setPrimaryContactIndex] = useState(0);
   const [showPendingAlert, setShowPendingAlert] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('BCA');
+  
+  // Refs for auto-scroll on validation error
+  const participantRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Helper function to scroll with offset for sticky navbar
+  const scrollToParticipant = (index: number) => {
+    const element = participantRefs.current[index];
+    if (!element) return;
+
+    const offset = 160; // Increased offset for sticky navbar + header + padding
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.scrollY - offset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+  };
+
+  useEffect(() => {
+    // Update form when user logs in
+    if (user) {
+      setParticipants(prev => {
+        const updated = [...prev];
+        updated[primaryContactIndex] = {
+          ...updated[primaryContactIndex],
+          data: {
+            ...updated[primaryContactIndex].data,
+            fullName: user.name,
+            email: user.email
+          }
+        };
+        return updated;
+      });
+    }
+  }, [user]);
+
+  // Initialize participants based on selected tickets
+  useEffect(() => {
+    if (!state || !state.event || !state.selectedTickets) return;
+
+    const participantsList: ParticipantData[] = [];
+    Object.entries(state.selectedTickets).forEach(([ticketId, quantity]) => {
+      const ticket = state.event.ticketTypes.find(t => String(t.id) === ticketId);
+      if (!ticket) return;
+
+      // Create a participant entry for each ticket
+      for (let i = 0; i < quantity; i++) {
+        participantsList.push({
+          ticketId,
+          ticketName: ticket.name,
+          isSameAsBuyer: false,
+          data: {}
+        });
+      }
+    });
+
+    setParticipants(participantsList);
+  }, [state]);
 
   useEffect(() => {
     // Redirect if no state
@@ -60,17 +126,6 @@ export function CheckoutPage() {
       setShowPendingAlert(true);
     }
   }, [state, navigate]);
-
-  useEffect(() => {
-    // Update form when user logs in
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        name: user.name,
-        email: user.email
-      }));
-    }
-  }, [user]);
 
   if (!state || !state.event || !state.selectedTickets) {
     return null;
@@ -92,30 +147,118 @@ export function CheckoutPage() {
     }, 0);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+  const handleParticipantInputChange = (index: number, fieldId: string, value: string) => {
+    setParticipants(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        data: {
+          ...updated[index].data,
+          [fieldId]: value
+        }
+      };
+      return updated;
+    });
+  };
+
+  const handleParticipantSelectChange = (index: number, fieldId: string, value: string) => {
+    handleParticipantInputChange(index, fieldId, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.name.trim()) {
-      toast.error("Nama lengkap wajib diisi");
-      return;
+    // For single ticket, validate additional registration form fields
+    if (isSingleTicket && event.registrationForm && event.registrationForm.length > 0) {
+      for (const field of event.registrationForm) {
+        // Skip basic fields (already validated above)
+        if (['fullName', 'email', 'phone'].includes(field.fieldId)) continue;
+        
+        if (field.required && !participants[primaryContactIndex].data[field.fieldId]?.trim()) {
+          toast.error(`${field.label} wajib diisi`);
+          // Scroll to the participant card
+          scrollToParticipant(primaryContactIndex);
+          return;
+        }
+      }
     }
-    
-    if (!formData.email.trim() || !formData.email.includes('@')) {
-      toast.error("Email tidak valid");
-      return;
-    }
-    
-    if (!formData.phone.trim()) {
-      toast.error("Nomor telepon wajib diisi");
-      return;
+
+    // For multiple tickets, validate participant data
+    if (!isSingleTicket) {
+      // First, validate basic required fields
+      for (let i = 0; i < participants.length; i++) {
+        const participant = participants[i];
+        
+        // Check basic participant fields
+        if (!participant.data.fullName?.trim()) {
+          toast.error(`Peserta ${i + 1}: Nama lengkap wajib diisi`);
+          // Scroll to the participant card
+          scrollToParticipant(i);
+          return;
+        }
+        
+        if (!participant.data.email?.trim() || !participant.data.email.includes('@')) {
+          toast.error(`Peserta ${i + 1}: Email tidak valid`);
+          // Scroll to the participant card
+          scrollToParticipant(i);
+          return;
+        }
+        
+        if (!participant.data.phone?.trim()) {
+          toast.error(`Peserta ${i + 1}: Nomor telepon wajib diisi`);
+          // Scroll to the participant card
+          scrollToParticipant(i);
+          return;
+        }
+
+        // Validate additional registration fields for each participant
+        if (event.registrationForm && event.registrationForm.length > 0) {
+          for (const field of event.registrationForm) {
+            // Skip basic fields (already validated above)
+            if (['fullName', 'email', 'phone'].includes(field.fieldId)) continue;
+            
+            if (field.required && !participant.data[field.fieldId]?.trim()) {
+              toast.error(`Peserta ${i + 1}: ${field.label} wajib diisi`);
+              // Scroll to the participant card
+              scrollToParticipant(i);
+              return;
+            }
+          }
+        }
+      }
+
+      // Check for duplicate data (nama, email, phone)
+      for (let i = 0; i < participants.length; i++) {
+        const currentParticipant = participants[i];
+        
+        for (let j = i + 1; j < participants.length; j++) {
+          const otherParticipant = participants[j];
+          
+          // Check duplicate fullName
+          if (currentParticipant.data.fullName?.trim().toLowerCase() === 
+              otherParticipant.data.fullName?.trim().toLowerCase()) {
+            toast.error(`Peserta ${j + 1}: Nama tidak boleh sama dengan Peserta ${i + 1}`);
+            scrollToParticipant(j);
+            return;
+          }
+          
+          // Check duplicate email
+          if (currentParticipant.data.email?.trim().toLowerCase() === 
+              otherParticipant.data.email?.trim().toLowerCase()) {
+            toast.error(`Peserta ${j + 1}: Email tidak boleh sama dengan Peserta ${i + 1}`);
+            scrollToParticipant(j);
+            return;
+          }
+          
+          // Check duplicate phone
+          if (currentParticipant.data.phone?.trim() === 
+              otherParticipant.data.phone?.trim()) {
+            toast.error(`Peserta ${j + 1}: Nomor telepon tidak boleh sama dengan Peserta ${i + 1}`);
+            scrollToParticipant(j);
+            return;
+          }
+        }
+      }
     }
 
     setLoading(true);
@@ -181,9 +324,9 @@ export function CheckoutPage() {
         orderDetails: {
           items: orderItems,
           customerInfo: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
+            name: participants[primaryContactIndex].data.fullName,
+            email: participants[primaryContactIndex].data.email,
+            phone: participants[primaryContactIndex].data.phone,
           }
         },
         status: 'pending' as const
@@ -222,6 +365,7 @@ export function CheckoutPage() {
 
   const totalQuantity = getTotalQuantity();
   const totalPrice = getTotalPrice();
+  const isSingleTicket = totalQuantity === 1;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -242,112 +386,202 @@ export function CheckoutPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">Pemesanan Tiket</h1>
-          <p className="text-gray-600 mt-2 text-lg">Lengkapi data dan pilih metode pembayaran</p>
+          <p className="text-gray-600 mt-2">Lengkapi data dan pilih metode pembayaran</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2">
             <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900">Informasi Pembeli</h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-6">
                 <div>
-                  <Label htmlFor="name">
-                    Nama Lengkap <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative mt-2">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      placeholder="Masukkan nama lengkap"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                      disabled={loading}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="email">
-                    Email <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative mt-2">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="email@example.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                      disabled={loading}
-                      required
-                    />
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Tiket akan dikirim ke email ini
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">
-                    Nomor Telepon <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative mt-2">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="08123456789"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                      disabled={loading}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Payment Method Selection */}
-                <PaymentMethodSelection
-                  selectedMethod={paymentMethod}
-                  onSelectMethod={setPaymentMethod}
-                  disabled={loading}
-                />
-
-                <Separator />
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-sky-600 hover:bg-sky-700"
-                  size="lg"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Memproses...
-                    </>
-                  ) : (
-                    'Lanjut ke Pembayaran'
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Data Peserta</h2>
+                  {!isSingleTicket && (
+                    <p className="text-sm text-gray-600">
+                      Pilih salah satu peserta sebagai <strong>Contact Person Utama</strong> untuk menerima semua tiket
+                    </p>
                   )}
-                </Button>
-              </form>
+                </div>
+              
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {participants.length > 0 && (
+                    <div className="space-y-6">
+                      {participants.map((participant, index) => (
+                        <div 
+                          key={index} 
+                          ref={el => participantRefs.current[index] = el}
+                        >
+                          <Card 
+                            className={`p-4 border-2 ${primaryContactIndex === index ? 'border-sky-600 bg-sky-50' : 'bg-gray-50 border-gray-200'}`}
+                          >
+                            <div className="flex items-center gap-3 mb-4">
+                              {!isSingleTicket && (
+                                <Checkbox
+                                  id={`primary-${index}`}
+                                  checked={primaryContactIndex === index}
+                                  onCheckedChange={() => setPrimaryContactIndex(index)}
+                                />
+                              )}
+                              <label htmlFor={`primary-${index}`} className="font-semibold text-lg text-gray-900 cursor-pointer">
+                                Peserta {index + 1} - {participant.ticketName}
+                                {primaryContactIndex === index && !isSingleTicket && (
+                                  <span className="ml-2 text-sm font-normal text-sky-600">(Contact Person Utama)</span>
+                                )}
+                              </label>
+                            </div>
+
+                            <div className="space-y-4">
+                              {/* Full Name */}
+                              <div>
+                                <Label htmlFor={`participant-${index}-fullName`}>
+                                  Nama Lengkap <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`participant-${index}-fullName`}
+                                  type="text"
+                                  placeholder="Masukkan nama lengkap peserta"
+                                  value={participant.data.fullName || ''}
+                                  onChange={(e) => handleParticipantInputChange(index, 'fullName', e.target.value)}
+                                  className="mt-2"
+                                  disabled={loading}
+                                  required
+                                />
+                              </div>
+
+                              {/* Email */}
+                              <div>
+                                <Label htmlFor={`participant-${index}-email`}>
+                                  Email <span className="text-red-500">*</span>
+                                  {primaryContactIndex === index && !isSingleTicket && (
+                                    <span className="text-sm font-normal text-sky-600 ml-2">(Semua tiket dikirim ke email ini)</span>
+                                  )}
+                                </Label>
+                                <Input
+                                  id={`participant-${index}-email`}
+                                  type="email"
+                                  placeholder="email@example.com"
+                                  value={participant.data.email || ''}
+                                  onChange={(e) => handleParticipantInputChange(index, 'email', e.target.value)}
+                                  className="mt-2"
+                                  disabled={loading}
+                                  required
+                                />
+                              </div>
+
+                              {/* Phone */}
+                              <div>
+                                <Label htmlFor={`participant-${index}-phone`}>
+                                  Nomor Telepon <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`participant-${index}-phone`}
+                                  type="tel"
+                                  placeholder="08123456789"
+                                  value={participant.data.phone || ''}
+                                  onChange={(e) => handleParticipantInputChange(index, 'phone', e.target.value)}
+                                  className="mt-2"
+                                  disabled={loading}
+                                  required
+                                />
+                              </div>
+
+                              {/* Additional fields from registrationForm */}
+                              {event.registrationForm && event.registrationForm.map(field => {
+                                // Skip basic fields as they're already rendered above
+                                if (['fullName', 'email', 'phone'].includes(field.fieldId)) return null;
+                                
+                                return (
+                                  <div key={field.fieldId}>
+                                    <Label htmlFor={`participant-${index}-${field.fieldId}`}>
+                                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <div className="mt-2">
+                                      {field.type === 'select' ? (
+                                        <Select
+                                          value={participant.data[field.fieldId] || ''}
+                                          onValueChange={(value) => handleParticipantSelectChange(index, field.fieldId, value)}
+                                          disabled={loading}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder={field.placeholder || `Pilih ${field.label}`} />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {field.options?.map(option => (
+                                              <SelectItem key={option} value={option}>
+                                                {option}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      ) : field.type === 'textarea' ? (
+                                        <Textarea
+                                          id={`participant-${index}-${field.fieldId}`}
+                                          name={field.fieldId}
+                                          placeholder={field.placeholder || field.label}
+                                          value={participant.data[field.fieldId] || ''}
+                                          onChange={(e) => handleParticipantInputChange(index, field.fieldId, e.target.value)}
+                                          className="w-full min-h-[100px]"
+                                          disabled={loading}
+                                          required={field.required}
+                                        />
+                                      ) : (
+                                        <Input
+                                          id={`participant-${index}-${field.fieldId}`}
+                                          name={field.fieldId}
+                                          type={field.type}
+                                          placeholder={field.placeholder || field.label}
+                                          value={participant.data[field.fieldId] || ''}
+                                          onChange={(e) => handleParticipantInputChange(index, field.fieldId, e.target.value)}
+                                          className="w-full"
+                                          disabled={loading}
+                                          required={field.required}
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  {/* Payment Method Selection */}
+                  <PaymentMethodSelection
+                    selectedMethod={paymentMethod}
+                    onSelectMethod={setPaymentMethod}
+                    disabled={loading}
+                  />
+
+                  <Separator />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-sky-600 hover:bg-sky-700"
+                    size="lg"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      'Lanjut ke Pembayaran'
+                    )}
+                  </Button>
+                </form>
+              </div>
             </Card>
           </div>
 
           {/* Summary Section */}
           <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-24">
+            <Card className="p-6 sticky top-36">
               <h2 className="text-2xl font-bold mb-4">Ringkasan Pesanan</h2>
 
               {/* Event Info */}

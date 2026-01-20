@@ -3,6 +3,10 @@ import { toast as sonnerToast } from 'sonner';
 interface ToastOptions {
   description?: string;
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 /**
@@ -14,7 +18,7 @@ export const toast = {
     sonnerToast.success(message, {
       description: options?.description,
       duration: options?.duration,
-      action: {
+      action: options?.action || {
         label: 'Tutup',
         onClick: () => {},
       },
@@ -25,7 +29,7 @@ export const toast = {
     sonnerToast.error(message, {
       description: options?.description,
       duration: options?.duration,
-      action: {
+      action: options?.action || {
         label: 'Tutup',
         onClick: () => {},
       },
@@ -36,7 +40,7 @@ export const toast = {
     sonnerToast.info(message, {
       description: options?.description,
       duration: options?.duration,
-      action: {
+      action: options?.action || {
         label: 'Tutup',
         onClick: () => {},
       },

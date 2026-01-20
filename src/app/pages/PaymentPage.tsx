@@ -75,10 +75,12 @@ export function PaymentPage() {
   }
 
   return (
-    <PaymentDetailPage
-      pendingOrder={pendingOrder}
-      onPaymentSuccess={handlePaymentSuccess}
-      onCancel={handleCancel}
-    />
+    <div>
+      <PaymentDetailPage
+        pendingOrder={pendingOrder}
+        onPaymentSuccess={handlePaymentSuccess}
+        onCancel={handleCancel}
+      />
+    </div>
   );
 }

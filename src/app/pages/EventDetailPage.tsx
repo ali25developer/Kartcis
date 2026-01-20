@@ -269,7 +269,7 @@ export function EventDetailPage() {
               {/* Description */}
               <div>
                 <h2 className="text-3xl font-bold mb-4">Tentang Event</h2>
-                <p className="text-gray-700 whitespace-pre-line leading-relaxed text-lg">
+                <p className="text-gray-700 whitespace-pre-line leading-relaxed">
                   {event.description}
                 </p>
               </div>
@@ -279,7 +279,7 @@ export function EventDetailPage() {
             {event.terms && event.terms.length > 0 && (
               <div>
                 <h2 className="text-3xl font-bold mb-4">Syarat & Ketentuan</h2>
-                <ul className="list-disc list-inside space-y-2 text-gray-700 text-lg leading-relaxed">
+                <ul className="list-disc list-inside space-y-2 text-gray-700 leading-relaxed">
                   {event.terms.map((term, index) => (
                     <li key={index}>{term}</li>
                   ))}

@@ -5,6 +5,7 @@ import { Header } from "./components/Header";
 import { Login } from "./components/Login";
 import { Register } from "./components/Register";
 import { HelpModal } from "./components/HelpModal";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { EventsProvider } from "./contexts/EventsContext";
 import { HomePage } from "./pages/HomePage";
@@ -129,6 +130,7 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-center" richColors />
+      <ScrollToTop />
       
       {showHeader && (
         <Header
@@ -164,9 +166,9 @@ function AppLayout() {
       {/* Login Modal */}
       {showLogin && (
         <Login
+          isOpen={showLogin}
           onClose={() => setShowLogin(false)}
-          onSuccess={handleLoginSuccess}
-          onRegisterClick={() => {
+          onSwitchToRegister={() => {
             setShowLogin(false);
             setShowRegister(true);
           }}
@@ -176,9 +178,9 @@ function AppLayout() {
       {/* Register Modal */}
       {showRegister && (
         <Register
+          isOpen={showRegister}
           onClose={() => setShowRegister(false)}
-          onSuccess={handleRegisterSuccess}
-          onLoginClick={() => {
+          onSwitchToLogin={() => {
             setShowRegister(false);
             setShowLogin(true);
           }}

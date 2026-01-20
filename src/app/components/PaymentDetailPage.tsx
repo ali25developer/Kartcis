@@ -87,7 +87,7 @@ export function PaymentDetailPage({
   const vaNumber = pendingOrder.vaNumber || (pendingOrder as any).vaNumber;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 pt-20 pb-8">
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-lg overflow-hidden shadow-sm">
           <div className="p-6 border-b bg-gradient-to-r from-sky-600 to-sky-700">
@@ -117,52 +117,93 @@ export function PaymentDetailPage({
               </div>
             </Card>
 
-            {/* VA Number */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Nomor Virtual Account {paymentMethod}
-              </label>
-              <div className="flex gap-2">
-                <div className="flex-1 p-4 bg-gray-50 border border-gray-300 rounded-lg">
-                  <p className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
-                    {vaNumber}
-                  </p>
+            {/* Payment Details - Different for QRIS vs VA/Ewallet */}
+            {paymentType === 'qris' ? (
+              <>
+                {/* QRIS QR Code */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Scan QR Code untuk Pembayaran
+                  </label>
+                  <div className="bg-white border-2 border-gray-300 rounded-lg p-6 flex flex-col items-center">
+                    {/* Mock QR Code - using placeholder */}
+                    <div className="w-64 h-64 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-4">
+                      <div className="text-center">
+                        <QrCode className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">QR Code QRIS</p>
+                        <p className="text-xs text-gray-400 mt-1">ID: {vaNumber}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 text-center">
+                      Scan menggunakan aplikasi e-wallet atau mobile banking yang mendukung QRIS
+                    </p>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => copyToClipboard(vaNumber)}
-                  className="h-auto px-4"
-                >
-                  <Copy className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
 
-            {/* Amount */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Total Pembayaran
-              </label>
-              <div className="flex gap-2">
-                <div className="flex-1 p-4 bg-gray-50 border border-gray-300 rounded-lg">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatPrice(pendingOrder.amount)}
+                {/* Amount */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Total Pembayaran
+                  </label>
+                  <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">
+                    <p className="text-2xl font-bold text-gray-900 text-center">
+                      {formatPrice(pendingOrder.amount)}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* VA Number / E-wallet Account */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    {paymentType === 'ewallet' 
+                      ? `Nomor ${paymentMethod}` 
+                      : `Nomor Virtual Account ${paymentMethod}`}
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 p-4 bg-gray-50 border border-gray-300 rounded-lg">
+                      <p className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
+                        {vaNumber}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyToClipboard(vaNumber)}
+                      className="h-auto px-4"
+                    >
+                      <Copy className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Total Pembayaran
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 p-4 bg-gray-50 border border-gray-300 rounded-lg">
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatPrice(pendingOrder.amount)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyToClipboard(pendingOrder.amount.toString())}
+                      className="h-auto px-4"
+                    >
+                      <Copy className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    ⚠️ Transfer sesuai jumlah di atas agar pembayaran dapat diproses otomatis
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => copyToClipboard(pendingOrder.amount.toString())}
-                  className="h-auto px-4"
-                >
-                  <Copy className="h-5 w-5" />
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                ⚠️ Transfer sesuai jumlah di atas agar pembayaran dapat diproses otomatis
-              </p>
-            </div>
+              </>
+            )}
 
             {/* Order Details */}
             {pendingOrder.orderDetails?.items && (
@@ -186,56 +227,113 @@ export function PaymentDetailPage({
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Cara Pembayaran</h3>
               <Card className="p-4 space-y-3">
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
-                    1
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Buka aplikasi mobile banking atau internet banking {paymentMethod} Anda
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
-                    2
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Pilih menu Transfer ke Virtual Account atau Rekening Lain
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
-                    3
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Masukkan nomor Virtual Account: <span className="font-mono font-semibold">{vaNumber}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
-                    4
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Masukkan jumlah transfer: <span className="font-semibold">{formatPrice(pendingOrder.amount)}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
-                    5
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Periksa detail transaksi dan konfirmasi pembayaran
-                    </p>
-                  </div>
-                </div>
+                {paymentType === 'qris' ? (
+                  <>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        1
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Buka aplikasi e-wallet atau mobile banking yang mendukung QRIS (GoPay, OVO, Dana, LinkAja, ShopeePay, dll)
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        2
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Pilih fitur Scan QR atau QRIS
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        3
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Scan QR Code yang ditampilkan di atas
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        4
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Nominal pembayaran <span className="font-semibold">{formatPrice(pendingOrder.amount)}</span> akan otomatis terisi
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        5
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Konfirmasi dan selesaikan pembayaran
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        1
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Buka aplikasi mobile banking atau internet banking {paymentMethod} Anda
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        2
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Pilih menu Transfer ke Virtual Account atau Rekening Lain
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        3
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Masukkan nomor Virtual Account: <span className="font-mono font-semibold">{vaNumber}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        4
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Masukkan jumlah transfer: <span className="font-semibold">{formatPrice(pendingOrder.amount)}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-600 text-white flex items-center justify-center text-sm font-semibold">
+                        5
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Periksa detail transaksi dan konfirmasi pembayaran
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </Card>
             </div>
 

@@ -33,7 +33,7 @@ const paymentMethods: Record<PaymentMethodType, PaymentMethod[]> = {
     { id: 'LinkAja', name: 'LinkAja', type: 'ewallet' },
   ],
   qris: [
-    { id: 'QRIS', name: 'QRIS (Semua E-Wallet & M-Banking)', type: 'qris' },
+    { id: 'QRIS', name: 'QRIS', type: 'qris' },
   ],
   credit_card: [
     { id: 'CreditCard', name: 'Kartu Kredit/Debit', type: 'credit_card' },
@@ -104,53 +104,41 @@ export function PaymentMethodSelection({
         </div>
       </div>
 
-      {/* QRIS */}
+      {/* Others (QRIS & Credit Card) */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <QrCode className="h-4 w-4 text-gray-500" />
-          <h3 className="text-sm font-medium text-gray-700">QRIS</h3>
+          <CreditCard className="h-4 w-4 text-gray-500" />
+          <h3 className="text-sm font-medium text-gray-700">Others</h3>
         </div>
-        <div className="grid gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {paymentMethods.qris.map((method) => (
             <button
               key={method.id}
               type="button"
               onClick={() => onSelectMethod(method.id)}
-              className={`py-2 px-3 border-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+              className={`py-2 px-3 border-2 rounded-lg text-center text-sm font-medium transition-all ${
                 selectedMethod === method.id
                   ? 'border-sky-600 bg-sky-50 text-sky-700'
                   : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
               }`}
               disabled={disabled}
             >
-              <QrCode className="h-5 w-5" />
-              <span>{method.name}</span>
+              {method.name}
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Credit Card */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <CreditCard className="h-4 w-4 text-gray-500" />
-          <h3 className="text-sm font-medium text-gray-700">Kartu Kredit/Debit</h3>
-        </div>
-        <div className="grid gap-3">
           {paymentMethods.credit_card.map((method) => (
             <button
               key={method.id}
               type="button"
               onClick={() => onSelectMethod(method.id)}
-              className={`py-2 px-3 border-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+              className={`py-2 px-3 border-2 rounded-lg text-center text-sm font-medium transition-all ${
                 selectedMethod === method.id
                   ? 'border-sky-600 bg-sky-50 text-sky-700'
                   : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
               }`}
               disabled={disabled}
             >
-              <CreditCard className="h-5 w-5" />
-              <span>{method.name}</span>
+              {method.name}
             </button>
           ))}
         </div>

@@ -34,7 +34,7 @@ export function HomePage() {
     try {
       setEvents(eventsData);
       setCategories(categoriesData);
-      setFeaturedEvents(eventsData.filter(e => e.featured));
+      setFeaturedEvents(eventsData.filter(e => e.isFeatured));
     } catch (error) {
       console.error('Error loading events:', error);
     } finally {
@@ -223,7 +223,7 @@ export function HomePage() {
         {/* Featured Events Carousel */}
         {!searchQuery && featuredEvents.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-3xl font-bold mb-6">Event Unggulan</h2>
+            <h2 className="text-3xl font-bold mb-6">Populer</h2>
             <div className="relative">
               <div 
                 ref={scrollContainerRef}
@@ -286,32 +286,31 @@ export function HomePage() {
           </div>
         )}
 
-        {/* Category Filter */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-4">Kategori</h2>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <Badge
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                className={`cursor-pointer px-4 py-2 text-sm ${
-                  selectedCategory === category
-                    ? "bg-sky-600 hover:bg-sky-700"
-                    : "hover:bg-gray-100"
-                }`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
         {/* Events Grid */}
         <div>
-          <h2 className="text-3xl font-bold mb-6">
+          <h2 className="text-3xl font-bold mb-4">
             {searchQuery ? `Hasil Pencarian (${filteredEvents.length})` : 'Semua Event'}
           </h2>
+          
+          {/* Category Filter - Only show when not searching */}
+          {!searchQuery && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {categories.map((category) => (
+                <Badge
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  className={`cursor-pointer px-4 py-2 text-sm ${
+                    selectedCategory === category
+                      ? "bg-sky-600 hover:bg-sky-700"
+                      : "hover:bg-gray-100"
+                  }`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </Badge>
+              ))}
+            </div>
+          )}
           
           {loading ? (
             <div className="flex justify-center items-center py-12">

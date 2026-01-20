@@ -51,7 +51,7 @@
   
   /* UI Elements */
   --border: #e2e8f0;
-  --input: transparent;
+  --input: #e2e8f0;
   --input-background: #ffffff;
   --switch-background: #cbd5e1;
   --ring: #0284c7;
@@ -266,13 +266,13 @@
   /* Small text utility */
   small,
   .text-sm {
-    font-size: 1rem; /* 14px */
+    font-size: 1rem !important; /* 14px - Override Tailwind default */
     line-height: 1.5;
   }
 
   /* Extra small text */
   .text-xs {
-    font-size: 0.857rem; /* 12px */
+    font-size: 0.857rem !important; /* 12px - Override Tailwind default */
     line-height: 1.5;
   }
 
