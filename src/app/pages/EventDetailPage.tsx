@@ -232,7 +232,7 @@ export function EventDetailPage() {
                 <div className="flex items-start gap-3">
                   <Calendar className="h-5 w-5 text-sky-600 mt-1" />
                   <div>
-                    <p className="font-semibold">Tanggal & Waktu</p>
+                    <p className="text-sm font-semibold">Tanggal & Waktu</p>
                     <p className="text-gray-600">
                       {formatDate(event.date)} · {formatTime(event.time)}
                     </p>
@@ -242,7 +242,7 @@ export function EventDetailPage() {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-sky-600 mt-1" />
                   <div>
-                    <p className="font-semibold">Lokasi</p>
+                    <p className="text-sm font-semibold">Lokasi</p>
                     <p className="text-gray-600">{event.venue}, {event.city}</p>
                   </div>
                 </div>
@@ -250,7 +250,7 @@ export function EventDetailPage() {
                 <div className="flex items-start gap-3">
                   <Tag className="h-5 w-5 text-sky-600 mt-1" />
                   <div>
-                    <p className="font-semibold">Kategori</p>
+                    <p className="text-sm font-semibold">Kategori</p>
                     <p className="text-gray-600">{event.category}</p>
                   </div>
                 </div>
@@ -258,7 +258,7 @@ export function EventDetailPage() {
                 <div className="flex items-start gap-3">
                   <Users className="h-5 w-5 text-sky-600 mt-1" />
                   <div>
-                    <p className="font-semibold">Organizer</p>
+                    <p className="text-sm font-semibold">Organizer</p>
                     <p className="text-gray-600">{event.organizer}</p>
                   </div>
                 </div>

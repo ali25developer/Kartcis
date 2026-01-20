@@ -242,7 +242,7 @@ export function CheckoutPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">Pemesanan Tiket</h1>
-          <p className="text-gray-600 mt-2">Lengkapi data dan pilih metode pembayaran</p>
+          <p className="text-gray-600 mt-2 text-lg">Lengkapi data dan pilih metode pembayaran</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -358,10 +358,10 @@ export function CheckoutPage() {
                   className="w-full h-32 object-cover rounded-lg mb-3"
                 />
                 <h3 className="text-xl font-semibold">{event.title}</h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-gray-600 mt-1 text-base">
                   {formatDate(event.date)} · {formatTime(event.time)}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-gray-600 text-base">
                   {event.venue}, {event.city}
                 </p>
               </div>
@@ -378,8 +378,8 @@ export function CheckoutPage() {
                   const price = ticket.price;
 
                   return (
-                    <div key={ticketId} className="flex justify-between text-sm">
-                      <span className="text-gray-600">
+                    <div key={ticketId} className="flex justify-between">
+                      <span className="text-gray-600 text-sm">
                         {ticket.name} × {quantity}
                       </span>
                       <span className="font-semibold">
