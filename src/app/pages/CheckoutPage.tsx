@@ -43,8 +43,10 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   
-  const state = location.state as CheckoutState | null;
+  const locationState = location.state as CheckoutState | null;
   
+  // Save state to component state to prevent loss
+  const [checkoutData, setCheckoutData] = useState<CheckoutState | null>(null);
   const [loading, setLoading] = useState(false);
   const [participants, setParticipants] = useState<ParticipantData[]>([]);
   const [primaryContactIndex, setPrimaryContactIndex] = useState(0);
@@ -90,14 +92,28 @@ export function CheckoutPage() {
     }
   }, [user, participants.length, primaryContactIndex]);
 
-  // Initialize participants based on selected tickets
+  // Initialize participants based on selected tickets - RUN ONCE
   useEffect(() => {
-    if (!state || !state.event || !state.selectedTickets) return;
+    console.log('🎫 Initializing participants...', { 
+      hasState: !!locationState,
+      hasEvent: !!locationState?.event,
+      hasSelectedTickets: !!locationState?.selectedTickets,
+      selectedTickets: locationState?.selectedTickets
+    });
+
+    if (!locationState || !locationState.event || !locationState.selectedTickets) {
+      console.log('❌ Cannot initialize - missing state');
+      return;
+    }
 
     const participantsList: ParticipantData[] = [];
-    Object.entries(state.selectedTickets).forEach(([ticketId, quantity]) => {
-      const ticket = state.event.ticketTypes.find(t => String(t.id) === ticketId);
-      if (!ticket) return;
+    Object.entries(locationState.selectedTickets).forEach(([ticketId, quantity]) => {
+      console.log('🎟️ Processing ticket:', { ticketId, quantity });
+      const ticket = locationState.event.ticketTypes.find(t => String(t.id) === ticketId);
+      if (!ticket) {
+        console.log('⚠️ Ticket not found:', ticketId);
+        return;
+      }
 
       // Create a participant entry for each ticket
       for (let i = 0; i < quantity; i++) {
@@ -110,16 +126,35 @@ export function CheckoutPage() {
       }
     });
 
+    console.log('✅ Participants created:', participantsList.length, participantsList);
     setParticipants(participantsList);
-  }, [state]);
+    setCheckoutData(locationState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Initialize ONLY ONCE on mount
 
   useEffect(() => {
-    // Redirect if no state
-    if (!state || !state.event || !state.selectedTickets) {
+    // Redirect if no state - CHECK ONLY ONCE on mount
+    if (!locationState || !locationState.event || !locationState.selectedTickets) {
+      console.log('❌ No state on mount, redirecting...');
       toast.error("Silakan pilih tiket terlebih dahulu");
       navigate('/');
       return;
     }
+
+    // Check if selectedTickets is actually populated
+    const hasTickets = Object.keys(locationState.selectedTickets).length > 0;
+    if (!hasTickets) {
+      console.log('❌ No tickets in selectedTickets:', locationState.selectedTickets);
+      toast.error("Silakan pilih tiket terlebih dahulu");
+      navigate('/');
+      return;
+    }
+
+    console.log('✅ CheckoutPage received state:', { 
+      event: locationState.event.title, 
+      selectedTickets: locationState.selectedTickets,
+      ticketCount: Object.keys(locationState.selectedTickets).length
+    });
 
     // Check if there's an active pending order
     const activePendingOrder = pendingOrderStorage.getActive();
@@ -127,13 +162,33 @@ export function CheckoutPage() {
       setPendingOrderId(activePendingOrder.orderId);
       setShowPendingAlert(true);
     }
-  }, [state, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
-  if (!state || !state.event || !state.selectedTickets) {
+  if (!checkoutData || !checkoutData.event || !checkoutData.selectedTickets) {
+    console.log('⚠️ Render check: No state, returning null');
     return null;
   }
 
-  const { event, selectedTickets } = state;
+  const { event, selectedTickets } = checkoutData;
+
+  // Show loading while participants are being initialized
+  console.log('🔍 Render check:', { 
+    participantsLength: participants.length,
+    hasEvent: !!event,
+    hasSelectedTickets: !!selectedTickets 
+  });
+
+  if (participants.length === 0) {
+    console.log('⏳ Showing loading spinner - participants not ready yet');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+      </div>
+    );
+  }
+
+  console.log('✅ Rendering checkout form with', participants.length, 'participants');
 
   const getTotalQuantity = () => {
     return Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);

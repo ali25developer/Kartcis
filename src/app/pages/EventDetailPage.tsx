@@ -93,6 +93,13 @@ export function EventDetailPage() {
   const handleCheckout = () => {
     const totalQuantity = getTotalQuantity();
     
+    console.log('🛒 Checkout clicked', { 
+      selectedTickets, 
+      totalQuantity,
+      keys: Object.keys(selectedTickets),
+      values: Object.values(selectedTickets)
+    });
+    
     if (totalQuantity === 0) {
       toast.error("Pilih tiket terlebih dahulu");
       return;

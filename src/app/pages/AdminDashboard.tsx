@@ -20,6 +20,8 @@ import {
 import { Button } from '@/app/components/ui/button';
 import { Card } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import { Input } from '@/app/components/ui/input';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { adminApi, type Transaction, type TransactionStats } from '@/app/services/adminApi';
 
@@ -304,34 +306,38 @@ export function AdminDashboard() {
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
+              <Input
                 type="text"
                 placeholder="Cari order number, nama, email, atau event..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                 }}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="pl-10"
               />
             </div>
 
             {/* Status Filter */}
             <div className="flex gap-2">
-              <select
+              <Select
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                onValueChange={(value) => {
+                  setStatusFilter(value);
                   setCurrentPage(1);
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
-                <option value="all">Semua Status</option>
-                <option value="completed">Selesai</option>
-                <option value="pending">Pending</option>
-                <option value="expired">Expired</option>
-                <option value="cancelled">Dibatalkan</option>
-              </select>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Semua Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="completed">Selesai</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </Card>
