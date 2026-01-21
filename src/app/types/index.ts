@@ -138,6 +138,7 @@ export interface User {
   name: string;
   email: string;
   phone: string | null;
+  role?: 'user' | 'admin'; // Add role field
   created_at: string;
   updated_at: string;
 }

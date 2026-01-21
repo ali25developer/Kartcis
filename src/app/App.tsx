@@ -14,8 +14,26 @@ import { CheckoutPage } from "./pages/CheckoutPage";
 import { PaymentPage } from "./pages/PaymentPage";
 import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
 import { MyTicketsPage } from "./pages/MyTicketsPage";
+import { AdminDashboard } from "./pages/AdminDashboard";
 import { pendingOrderStorage } from "./utils/pendingOrderStorage";
 import type { HelpModalType } from "./types";
+
+// Protected Route Component - defined outside to prevent re-creation
+function ProtectedRoute({ children, onShowLogin }: { children: React.ReactNode, onShowLogin: () => void }) {
+  const { isAuthenticated } = useAuth();
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      onShowLogin();
+    }
+  }, [isAuthenticated, onShowLogin]);
+  
+  if (!isAuthenticated) {
+    return null;
+  }
+  
+  return <>{children}</>;
+}
 
 function AppLayout() {
   const navigate = useNavigate();
@@ -44,20 +62,28 @@ function AppLayout() {
     const checkPendingOrder = () => {
       const activePendingOrder = pendingOrderStorage.getActive();
       if (activePendingOrder) {
-        setPendingOrder(activePendingOrder);
+        setPendingOrder(prev => {
+          // Only update if actually changed to prevent re-renders
+          if (prev?.orderId === activePendingOrder.orderId) return prev;
+          return activePendingOrder;
+        });
         const timeLeft = Math.floor((activePendingOrder.expiryTime - Date.now()) / 1000);
-        setPendingOrderTimeLeft(timeLeft > 0 ? timeLeft : 0);
+        setPendingOrderTimeLeft(prev => {
+          // Only update if changed
+          const newTimeLeft = timeLeft > 0 ? timeLeft : 0;
+          return prev === newTimeLeft ? prev : newTimeLeft;
+        });
       } else {
-        setPendingOrder(null);
-        setPendingOrderTimeLeft(0);
+        setPendingOrder(prev => prev === null ? prev : null);
+        setPendingOrderTimeLeft(prev => prev === 0 ? prev : 0);
       }
     };
 
     // Listen to custom event for pending order changes
     window.addEventListener('storage', checkPendingOrder);
     
-    // Also check periodically in case of same-tab changes
-    const interval = setInterval(checkPendingOrder, 1000);
+    // Check every 5 seconds instead of every 1 second to reduce re-renders
+    const interval = setInterval(checkPendingOrder, 5000);
 
     return () => {
       window.removeEventListener('storage', checkPendingOrder);
@@ -68,6 +94,9 @@ function AppLayout() {
   // Countdown timer for pending order
   useEffect(() => {
     if (!pendingOrder || pendingOrderTimeLeft <= 0) return;
+    
+    // Don't run countdown timer on admin page to prevent re-renders
+    if (location.pathname === '/admin') return;
 
     const timer = setInterval(() => {
       setPendingOrderTimeLeft(prev => {
@@ -83,7 +112,7 @@ function AppLayout() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [pendingOrder, pendingOrderTimeLeft]);
+  }, [pendingOrder, pendingOrderTimeLeft, location.pathname]);
 
   // When user logs out, keep showing their pending order if exists
   useEffect(() => {
@@ -108,20 +137,6 @@ function AppLayout() {
   const handleRegisterSuccess = () => {
     setShowRegister(false);
     setShowLogin(true);
-  };
-
-  // Protected Route wrapper - use Navigate instead of setState
-  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    useEffect(() => {
-      if (!isAuthenticated) {
-        setShowLogin(true);
-      }
-    }, []);
-
-    if (!isAuthenticated) {
-      return null;
-    }
-    return <>{children}</>;
   };
 
   // Hide header on payment pages for cleaner UX
@@ -156,8 +171,16 @@ function AppLayout() {
         <Route 
           path="/my-tickets" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute onShowLogin={() => setShowLogin(true)}>
               <MyTicketsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute onShowLogin={() => setShowLogin(true)}>
+              <AdminDashboard />
             </ProtectedRoute>
           } 
         />

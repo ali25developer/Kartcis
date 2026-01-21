@@ -1,32 +1,17 @@
-import { X, CheckCircle, Download, Mail, Ticket } from 'lucide-react';
+import { CheckCircle, Download, Mail, Ticket } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router';
+import type { PendingOrder } from '../types/pendingOrder';
 
 interface PaymentSuccessProps {
-  isOpen: boolean;
-  onClose: () => void;
-  orderDetails: {
-    orderId: string;
-    items: Array<{
-      eventTitle: string;
-      ticketType: string;
-      quantity: number;
-      price: number;
-      eventImage: string;
-    }>;
-    customerInfo: {
-      name: string;
-      email: string;
-      phone: string;
-    };
-    totalAmount: number;
-  };
-  onViewMyTickets?: () => void;
+  pendingOrder: PendingOrder;
 }
 
-export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets }: PaymentSuccessProps) {
+export function PaymentSuccess({ pendingOrder }: PaymentSuccessProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -41,32 +26,21 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
     alert('Download e-ticket will be implemented with backend integration');
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/50 overflow-y-auto"
-      onClick={onClose}
-    >
-      <div className="min-h-screen py-8 px-4">
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="max-w-2xl mx-auto bg-white rounded-lg overflow-hidden"
-        >
+    <div className="min-h-screen bg-gray-50 pt-20 pb-8">
+      <div className="max-w-2xl mx-auto px-4">
+        <div className="bg-white rounded-lg overflow-hidden shadow-lg">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-green-600 to-green-700">
+          <div className="p-6 border-b bg-gradient-to-r from-green-600 to-green-700">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-lg">
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">Pembayaran Berhasil!</h2>
-                <p className="text-green-100 text-sm">Order ID: {orderDetails.orderId}</p>
+                <p className="text-green-100 text-sm">Order ID: {pendingOrder.orderId}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-              <X className="h-6 w-6" />
-            </Button>
           </div>
 
           <div className="p-6 space-y-6">
@@ -83,7 +57,7 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
                   <p className="text-sm text-gray-600">
                     {isAuthenticated
                       ? 'Tiket sudah tersimpan di menu "Tiket Saya". Anda juga akan menerima e-ticket via email.'
-                      : `Kami telah mengirim e-ticket ke ${orderDetails.customerInfo.email}. Periksa inbox atau folder spam.`}
+                      : `Kami telah mengirim e-ticket ke ${pendingOrder.customerInfo.email}. Periksa inbox atau folder spam.`}
                   </p>
                 </div>
               </div>
@@ -93,7 +67,7 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Detail Pesanan</h3>
               <Card className="divide-y">
-                {orderDetails.items.map((item, index) => (
+                {pendingOrder.items.map((item, index) => (
                   <div key={index} className="p-4 flex gap-4">
                     <img
                       src={item.eventImage}
@@ -110,10 +84,10 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
                     </div>
                   </div>
                 ))}
-                <div className="border-t pt-4 mt-4">
+                <div className="p-4">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                    <span className="text-2xl font-bold text-gray-900">{formatPrice(orderDetails.totalAmount)}</span>
+                    <span className="text-2xl font-bold text-gray-900">{formatPrice(pendingOrder.totalAmount)}</span>
                   </div>
                 </div>
               </Card>
@@ -125,27 +99,24 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
               <Card className="p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Nama</span>
-                  <span className="font-medium text-gray-900">{orderDetails.customerInfo.name}</span>
+                  <span className="font-medium text-gray-900">{pendingOrder.customerInfo.name}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Email</span>
-                  <span className="font-medium text-gray-900">{orderDetails.customerInfo.email}</span>
+                  <span className="font-medium text-gray-900">{pendingOrder.customerInfo.email}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">No. HP</span>
-                  <span className="font-medium text-gray-900">{orderDetails.customerInfo.phone}</span>
+                  <span className="font-medium text-gray-900">{pendingOrder.customerInfo.phone}</span>
                 </div>
               </Card>
             </div>
 
             {/* Actions */}
             <div className="space-y-3">
-              {isAuthenticated && onViewMyTickets && (
+              {isAuthenticated && (
                 <Button
-                  onClick={() => {
-                    onViewMyTickets();
-                    onClose();
-                  }}
+                  onClick={() => navigate('/my-tickets')}
                   className="w-full bg-sky-600 hover:bg-sky-700"
                 >
                   <Ticket className="h-5 w-5 mr-2" />
@@ -160,6 +131,14 @@ export function PaymentSuccess({ isOpen, onClose, orderDetails, onViewMyTickets 
               >
                 <Download className="h-5 w-5 mr-2" />
                 Download E-Ticket (PDF)
+              </Button>
+
+              <Button
+                onClick={() => navigate('/')}
+                variant="outline"
+                className="w-full border-gray-300 hover:bg-gray-50"
+              >
+                Kembali ke Beranda
               </Button>
 
               {!isAuthenticated && (

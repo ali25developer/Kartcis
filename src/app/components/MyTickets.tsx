@@ -66,9 +66,8 @@ export function MyTickets({ isOpen, onClose, tickets, onEventClick }: MyTicketsP
     }
   };
 
-  const upcomingTickets = tickets.filter(t => isUpcoming(t.eventDate) && t.eventStatus !== 'cancelled');
-  const pastTickets = tickets.filter(t => !isUpcoming(t.eventDate) && t.eventStatus !== 'cancelled');
-  const cancelledTickets = tickets.filter(t => t.eventStatus === 'cancelled');
+  const upcomingTickets = (tickets || []).filter(t => isUpcoming(t.eventDate) && t.eventStatus !== 'cancelled');
+  const pastTickets = (tickets || []).filter(t => !isUpcoming(t.eventDate) && t.eventStatus !== 'cancelled');
 
   if (!isOpen) return null;
 
@@ -116,18 +115,6 @@ export function MyTickets({ isOpen, onClose, tickets, onEventClick }: MyTicketsP
                     <h3 className="font-semibold text-gray-900 mb-4">Event Selesai</h3>
                     <div className="space-y-3">
                       {pastTickets.map((ticket) => (
-                        <TicketCard key={ticket.id} ticket={ticket} formatPrice={formatPrice} formatDate={formatDate} isUpcoming={false} onEventClick={onEventClick} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Cancelled Events */}
-                {cancelledTickets.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-4">Event Dibatalkan</h3>
-                    <div className="space-y-3">
-                      {cancelledTickets.map((ticket) => (
                         <TicketCard key={ticket.id} ticket={ticket} formatPrice={formatPrice} formatDate={formatDate} isUpcoming={false} onEventClick={onEventClick} />
                       ))}
                     </div>

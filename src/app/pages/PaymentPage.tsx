@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { PaymentDetailPage } from "@/app/components/PaymentDetailPage";
 import { pendingOrderStorage } from "@/app/utils/pendingOrderStorage";
+import { purchasedTicketStorage } from "@/app/utils/purchasedTicketStorage";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function PaymentPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [pendingOrder, setPendingOrder] = useState<any>(null);
 
@@ -48,7 +51,32 @@ export function PaymentPage() {
   const handlePaymentSuccess = () => {
     if (!pendingOrder) return;
     
+    // Update order status to paid
     pendingOrderStorage.updateStatus(pendingOrder.orderId, 'paid');
+    
+    // Create tickets from order items
+    if (user) {
+      const tickets = pendingOrder.items.map((item: any, index: number) => ({
+        id: `${pendingOrder.orderId}-${index}`,
+        userId: user.id,
+        eventId: item.eventId,
+        eventTitle: item.eventTitle,
+        eventDate: item.eventDate,
+        eventTime: item.eventTime,
+        venue: item.venue,
+        city: item.city,
+        ticketType: item.ticketType,
+        quantity: item.quantity,
+        price: item.price,
+        eventImage: item.eventImage,
+        orderDate: new Date().toISOString(),
+        ticketCode: `TKT-${pendingOrder.orderId}-${index}`.toUpperCase(),
+        eventStatus: 'active' as const,
+      }));
+      
+      purchasedTicketStorage.addMultiple(tickets);
+    }
+    
     navigate(`/payment/success/${pendingOrder.orderId}`);
   };
 

@@ -22,6 +22,15 @@ const MOCK_USERS = [
     password: 'demo123',
     name: 'Demo User',
     phone: '08123456789',
+    role: 'user',
+  },
+  {
+    id: 999,
+    email: 'admin@kartcis.id',
+    password: 'admin123',
+    name: 'Admin KARTCIS',
+    phone: '08111222333',
+    role: 'admin',
   },
 ];
 
@@ -134,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: foundUser.name,
       email: foundUser.email,
       phone: foundUser.phone,
+      role: foundUser.role as 'user' | 'admin',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -151,14 +161,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Simulate Google OAuth (in production, this would open Google OAuth popup)
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Mock Google user data
+    // Mock Google user data with random name
     const mockToken = `mock_google_jwt_${Date.now()}_${Math.random().toString(36)}`;
     const tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
 
+    // Generate random Indonesian name
+    const firstNames = ['Budi', 'Andi', 'Siti', 'Rina', 'Dewi', 'Agus', 'Dian', 'Rudi', 'Fitri', 'Hendra'];
+    const lastNames = ['Santoso', 'Wijaya', 'Pratama', 'Kusuma', 'Permata', 'Utomo', 'Setiawan', 'Lestari', 'Saputra', 'Anggraini'];
+    const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const randomName = `${randomFirstName} ${randomLastName}`;
+
     const userData: User = {
       id: Math.floor(Math.random() * 10000),
-      name: 'Google User',
-      email: 'user@gmail.com',
+      name: randomName,
+      email: `${randomFirstName.toLowerCase()}.${randomLastName.toLowerCase()}@gmail.com`,
       phone: '08123456789',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

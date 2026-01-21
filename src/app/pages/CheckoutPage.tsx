@@ -72,21 +72,23 @@ export function CheckoutPage() {
 
   useEffect(() => {
     // Update form when user logs in
-    if (user) {
+    if (user && participants.length > 0 && participants[primaryContactIndex]) {
       setParticipants(prev => {
         const updated = [...prev];
-        updated[primaryContactIndex] = {
-          ...updated[primaryContactIndex],
-          data: {
-            ...updated[primaryContactIndex].data,
-            fullName: user.name,
-            email: user.email
-          }
-        };
+        if (updated[primaryContactIndex]) {
+          updated[primaryContactIndex] = {
+            ...updated[primaryContactIndex],
+            data: {
+              ...updated[primaryContactIndex].data,
+              fullName: user.name,
+              email: user.email
+            }
+          };
+        }
         return updated;
       });
     }
-  }, [user]);
+  }, [user, participants.length, primaryContactIndex]);
 
   // Initialize participants based on selected tickets
   useEffect(() => {
@@ -279,8 +281,13 @@ export function CheckoutPage() {
         const price = ticket.price;
 
         return {
+          eventId: event.id,
           eventTitle: event.title,
           eventImage: event.image,
+          eventDate: event.date,
+          eventTime: event.time,
+          venue: event.venue,
+          city: event.city,
           ticketType: ticket.name,
           quantity,
           price,
@@ -319,8 +326,15 @@ export function CheckoutPage() {
         vaNumber,
         qrisUrl,
         amount: getTotalPrice(),
+        totalAmount: getTotalPrice(),
         expiryTime: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
         createdAt: Date.now(),
+        items: orderItems,
+        customerInfo: {
+          name: participants[primaryContactIndex].data.fullName,
+          email: participants[primaryContactIndex].data.email,
+          phone: participants[primaryContactIndex].data.phone,
+        },
         orderDetails: {
           items: orderItems,
           customerInfo: {

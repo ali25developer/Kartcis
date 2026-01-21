@@ -7,11 +7,34 @@ export interface PendingOrder {
   vaNumber?: string; // only for VA
   qrisUrl?: string; // only for QRIS
   amount: number;
+  totalAmount: number; // Alias for amount (for compatibility)
   expiryTime: number; // timestamp
   createdAt: number; // timestamp
-  orderDetails: {
+  items: Array<{
+    eventId: string;
+    eventTitle: string;
+    eventDate: string;
+    eventTime: string;
+    venue: string;
+    city: string;
+    ticketType: string;
+    quantity: number;
+    price: number;
+    eventImage: string;
+  }>;
+  customerInfo: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  orderDetails?: { // Keep for backward compatibility
     items: Array<{
+      eventId?: string;
       eventTitle: string;
+      eventDate?: string;
+      eventTime?: string;
+      venue?: string;
+      city?: string;
       ticketType: string;
       quantity: number;
       price: number;

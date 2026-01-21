@@ -103,6 +103,11 @@ chmod +x deploy.sh
 
 ## 📚 Documentation
 
+- **[🔌 API Specification](./api-spec/README.md)** - Complete REST API spec untuk backend integration
+- **[📋 API Endpoints Cheatsheet](./api-spec/ENDPOINTS_CHEATSHEET.md)** - Quick reference 70+ endpoints
+- **[🔗 Frontend Integration Guide](./api-spec/FRONTEND_INTEGRATION_GUIDE.md)** - Connect backend dengan React frontend
+- **[✅ Implementation Checklist](./api-spec/IMPLEMENTATION_CHECKLIST.md)** - Step-by-step backend implementation
+- **[🗄️ Database Schema](./api-spec/database-schema.md)** - Complete database structure (10 tables)
 - **[🐳 Docker Guide](./DOCKER_GUIDE.md)** - Panduan lengkap Docker deployment
 - **[🔐 Authentication Guide](./AUTHENTICATION_GUIDE.md)** - Sistem authentication & security
 - **[🐳 Docker Quick Start](./DOCKER_README.md)** - Quick reference Docker commands
@@ -310,7 +315,7 @@ make test-app       # Test application
 ## 🔐 Security
 
 - ✅ HTTPS ready (Nginx SSL support)
-- ��� Security headers (XSS, Frame, Content-Type)
+-  Security headers (XSS, Frame, Content-Type)
 - ✅ Password validation
 - ✅ Session timeout (30 minutes)
 - ✅ JWT token expiry

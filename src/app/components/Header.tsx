@@ -1,4 +1,4 @@
-import { User, Menu, X, LogIn, Clock, AlertCircle, LogOut } from 'lucide-react';
+import { User, Menu, X, LogIn, Clock, AlertCircle, LogOut, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
@@ -63,6 +63,19 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
           <div className="hidden md:flex items-center gap-2">
             {isAuthenticated ? (
               <>
+                {user?.role === 'admin' && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      navigate('/admin');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                  >
+                    <Shield className="h-5 w-5 mr-2" />
+                    Admin
+                  </Button>
+                )}
                 <Button variant="ghost" onClick={handleMyTicketsClick} className="text-gray-700">
                   <User className="h-5 w-5 mr-2" />
                   {user?.name || 'Tiket Saya'}
@@ -98,6 +111,19 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                 <div className="px-4 py-2 text-sm text-gray-600">
                   Halo, <span className="font-medium text-gray-900">{user?.name}</span>
                 </div>
+                {user?.role === 'admin' && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      navigate('/admin');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full justify-start text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                  >
+                    <Shield className="h-5 w-5 mr-2" />
+                    Admin Dashboard
+                  </Button>
+                )}
                 <Button 
                   variant="ghost" 
                   onClick={handleMyTicketsClick}

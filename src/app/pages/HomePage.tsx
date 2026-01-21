@@ -27,6 +27,7 @@ export function HomePage() {
   const [currentBannerSlide, setCurrentBannerSlide] = useState(0);
   const autoPlayIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
 
   // Load data from static import
   useEffect(() => {
@@ -145,6 +146,17 @@ export function HomePage() {
     navigate(`/event/${eventId}`);
   };
 
+  const scrollToSearchBar = () => {
+    if (searchBarRef.current) {
+      searchBarRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus on search input after scrolling
+      setTimeout(() => {
+        const input = searchBarRef.current?.querySelector('input');
+        input?.focus();
+      }, 500);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Banner Carousel */}
@@ -174,12 +186,16 @@ export function HomePage() {
           >
             <div className="text-center text-white px-4 max-w-4xl">
               <h1 className="text-3xl md:text-5xl font-bold mb-4">{banner.title}</h1>
-              <p className="text-lg md:text-2xl mb-8 text-sky-100">{banner.subtitle}</p>
+              <p className="text-lg md:text-2xl mb-8 text-white">{banner.subtitle}</p>
               <Button 
                 size="lg" 
                 className="bg-white text-sky-600 hover:bg-sky-50"
                 onClick={() => {
-                  if (index === 2) navigate('/my-tickets');
+                  if (index === 2) {
+                    navigate('/my-tickets');
+                  } else {
+                    scrollToSearchBar();
+                  }
                 }}
               >
                 {banner.cta}
@@ -205,7 +221,7 @@ export function HomePage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Search Bar */}
         <div className="mb-8">
-          <div className="relative max-w-2xl mx-auto">
+          <div className="relative max-w-2xl mx-auto" ref={searchBarRef}>
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input
               type="text"
