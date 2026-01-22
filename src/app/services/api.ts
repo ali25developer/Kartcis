@@ -162,7 +162,7 @@ const api = {
       );
 
       // Generate order number
-      const orderNumber = `MASUP-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
       // Generate VA number based on bank
       let vaNumber = '';
@@ -181,6 +181,9 @@ const api = {
         id: Date.now(),
         user_id: null,
         order_number: orderNumber,
+        customer_name: data.customer_info.name,
+        customer_email: data.customer_info.email,
+        customer_phone: data.customer_info.phone,
         total_amount: total,
         status: 'pending',
         payment_method: data.payment_method,
@@ -208,7 +211,10 @@ const api = {
       const order: Order = {
         id: orderId,
         user_id: null,
-        order_number: `MASUP-${orderId}`,
+        order_number: `ORD-${orderId}`,
+        customer_name: 'Mock Customer',
+        customer_email: 'customer@example.com',
+        customer_phone: '08123456789',
         total_amount: 0,
         status: 'paid',
         payment_method: 'BCA',

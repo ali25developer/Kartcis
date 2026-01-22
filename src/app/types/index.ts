@@ -20,14 +20,18 @@ export interface Event {
   faqs?: FAQ[]; // Frequently asked questions
   event_date: string; // YYYY-MM-DD
   event_time: string | null; // HH:mm:ss
+  date: string; // Alias for event_date (compatibility with frontend)
+  time: string; // Alias for event_time (compatibility with frontend)
   venue: string;
   city: string;
   organizer: string;
   quota: number;
   image: string | null;
   is_featured: boolean;
-  status: 'draft' | 'published' | 'completed' | 'cancelled' | 'sold-out';
+  status: 'draft' | 'published' | 'completed' | 'cancelled' | 'sold_out';
   cancel_reason?: string; // Reason for cancellation
+  min_price: number; // Minimum ticket price
+  max_price: number; // Maximum ticket price
   created_at: string;
   updated_at: string;
   category_id: number;
@@ -72,6 +76,7 @@ export interface TicketType {
   originalPrice?: number; // For discount display
   quota: number;
   available: number;
+  sold: number; // Number of tickets sold
   status: 'available' | 'sold_out' | 'unavailable';
   created_at: string;
   updated_at: string;
@@ -93,6 +98,9 @@ export interface Order {
   id: number;
   user_id: number | null;
   order_number: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
   total_amount: number;
   status: 'pending' | 'paid' | 'cancelled' | 'expired';
   payment_method: string;
