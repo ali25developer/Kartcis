@@ -28,6 +28,7 @@ export function HomePage() {
   const autoPlayIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const featuredSectionRef = useRef<HTMLDivElement>(null);
 
   // Load data from static import
   useEffect(() => {
@@ -157,6 +158,25 @@ export function HomePage() {
     }
   };
 
+  const handleBannerClick = (action: string) => {
+    console.log('Banner clicked:', action);
+    
+    if (action === 'tickets') {
+      console.log('Going to my-tickets');
+      navigate('/my-tickets');
+    } else if (action === 'featured') {
+      console.log('Scrolling to featured events');
+      // Scroll to featured events carousel
+      if (featuredSectionRef.current) {
+        featuredSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      console.log('Scrolling to search bar');
+      // Scroll to search bar for browsing all events
+      scrollToSearchBar();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Banner Carousel */}
@@ -165,17 +185,20 @@ export function HomePage() {
           {
             title: "Temukan Event Impianmu",
             subtitle: "Marathon, Konser, Workshop & Lebih Banyak Lagi",
-            cta: "Jelajahi Event"
+            cta: "Jelajahi Event",
+            action: "browse"
           },
           {
             title: "Beli Tiket dengan Mudah",
             subtitle: "Proses Cepat & Aman dengan Virtual Account",
-            cta: "Mulai Sekarang"
+            cta: "Lihat Event Populer",
+            action: "featured"
           },
           {
             title: "Kelola Tiketmu",
             subtitle: "Akses Tiket Kapan Saja, Di Mana Saja",
-            cta: "Lihat Tiket"
+            cta: "Lihat Tiket Saya",
+            action: "tickets"
           }
         ].map((banner, index) => (
           <div
@@ -184,22 +207,15 @@ export function HomePage() {
               currentBannerSlide === index ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <div className="text-center text-white px-4 max-w-4xl">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4">{banner.title}</h1>
-              <p className="text-lg md:text-2xl mb-8 text-white">{banner.subtitle}</p>
-              <Button 
-                size="lg" 
-                className="bg-white text-sky-600 hover:bg-sky-50"
-                onClick={() => {
-                  if (index === 2) {
-                    navigate('/my-tickets');
-                  } else {
-                    scrollToSearchBar();
-                  }
-                }}
+            <div className="text-center px-4 max-w-4xl">
+              <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white">{banner.title}</h1>
+              <p className="text-lg md:text-2xl mb-8 text-white/90">{banner.subtitle}</p>
+              <button
+                className="inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-sky-600 bg-white rounded-lg hover:bg-sky-50 transition-colors shadow-lg"
+                onClick={() => handleBannerClick(banner.action)}
               >
                 {banner.cta}
-              </Button>
+              </button>
             </div>
           </div>
         ))}
@@ -238,7 +254,7 @@ export function HomePage() {
 
         {/* Featured Events Carousel */}
         {!searchQuery && featuredEvents.length > 0 && (
-          <div className="mb-12">
+          <div className="mb-12" ref={featuredSectionRef}>
             <h2 className="text-3xl font-bold mb-6">Populer</h2>
             <div className="relative">
               <div 

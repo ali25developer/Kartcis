@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router";
 import { Toaster } from "sonner";
 import { Header } from "./components/Header";
 import { Login } from "./components/Login";
