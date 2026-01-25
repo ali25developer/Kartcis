@@ -20,13 +20,13 @@ export function Footer() {
               Platform pembelian tiket event terpercaya. Temukan dan beli tiket konser, workshop, dan event seru lainnya dengan mudah dan aman.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-sky-600 transition-colors">
+              <a href="https://facebook.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-600 transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-sky-600 transition-colors">
+              <a href="https://twitter.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-600 transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-sky-600 transition-colors">
+              <a href="https://instagram.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-600 transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
             </div>

@@ -11,6 +11,7 @@ export interface PendingOrder {
   totalAmount: number; // Alias for amount (for compatibility)
   adminFee?: number; // Admin fee
   expiryTime: number; // timestamp
+  paymentUrl?: string | null; // e-wallet/payment link
   createdAt: number; // timestamp
   items: Array<{
     eventId: string;

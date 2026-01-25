@@ -142,6 +142,7 @@ export interface Order {
   admin_fee: number; // Added admin fee
   status: 'pending' | 'paid' | 'cancelled' | 'expired';
   payment_method: string;
+  payment_url: string | null;
   payment_details: any;
   expires_at: string;
   paid_at: string | null;

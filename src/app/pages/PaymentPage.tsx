@@ -75,6 +75,7 @@ export function PaymentPage() {
              paymentType,
              vaNumber: order.payment_details?.va_number,
              qrisUrl: order.payment_details?.qris_url,
+             paymentUrl: order.payment_url || order.payment_details?.payment_url,
              // Add virtual account number if explicitly available in other field
              virtualAccountNumber: order.payment_details?.virtual_account_number || order.payment_details?.va_number, 
              amount: order.total_amount,

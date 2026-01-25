@@ -86,6 +86,13 @@ export interface AdminStatsResponse {
   data: AdminStats;
 }
 
+export interface TransactionTimelineItem {
+  id: number;
+  status: string;
+  notes: string;
+  created_at: string;
+}
+
 // Mock API Functions
 export const adminApi = {
   // GET /api/admin/transactions
@@ -164,6 +171,19 @@ export const adminApi = {
     } catch (error: any) {
       console.error('Error resending email:', error);
       throw new Error('Gagal mengirim ulang email');
+    }
+  },
+
+  // GET /api/v1/admin/transactions/:id/timeline
+  getTransactionTimeline: async (id: string): Promise<{ success: boolean; data: TransactionTimelineItem[] }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/transactions/${id}/timeline`, {
+        headers: getHeaders(),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching transaction timeline:', error);
+      throw new Error('Gagal mengambil riwayat transaksi');
     }
   },
 
@@ -271,6 +291,7 @@ export const adminApi = {
         if (params?.page) queryParams.append('page', params.page.toString());
         if (params?.limit) queryParams.append('limit', params.limit.toString());
         if (params?.search) queryParams.append('search', params.search);
+        queryParams.append('include_inactive', 'true');
 
         const response = await fetch(`${API_BASE_URL}/admin/categories?${queryParams.toString()}`, {
           headers: getHeaders(),

@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { Header } from "./components/Header";
 import { Login } from "./components/Login";
 import { Register } from "./components/Register";
+import { ForgotPassword } from "./components/ForgotPassword";
 import { HelpModal } from "./components/HelpModal";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -20,6 +21,8 @@ import { HowToOrderPage } from "./pages/HowToOrderPage";
 import { Footer } from "./components/Footer";
 import { MyTicketsPage } from "./pages/MyTicketsPage";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { ProfilePage } from "./pages/ProfilePage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { pendingOrderStorage } from "./utils/pendingOrderStorage";
 import api from "./services/api";
 import type { HelpModalType } from "./types/index";
@@ -53,6 +56,7 @@ function AppLayout() {
   
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [helpModalType, setHelpModalType] = useState<HelpModalType | null>(null);
   const [pendingOrder, setPendingOrder] = useState<any>(null);
   const [pendingOrderTimeLeft, setPendingOrderTimeLeft] = useState<number>(0);
@@ -205,6 +209,7 @@ function AppLayout() {
         <Route path="/syarat-ketentuan" element={<TermsPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/refund-policy" element={<RefundPolicyPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         <Route 
           path="/my-tickets" 
@@ -222,6 +227,14 @@ function AppLayout() {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute onShowLogin={() => setShowLogin(true)}>
+              <ProfilePage />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
 
       <Footer />
@@ -235,6 +248,10 @@ function AppLayout() {
             setShowLogin(false);
             setShowRegister(true);
           }}
+          onSwitchToForgotPassword={() => {
+            setShowLogin(false);
+            setShowForgotPassword(true);
+          }}
         />
       )}
 
@@ -245,6 +262,18 @@ function AppLayout() {
           onClose={() => setShowRegister(false)}
           onSwitchToLogin={() => {
             setShowRegister(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <ForgotPassword
+          isOpen={showForgotPassword}
+          onClose={() => setShowForgotPassword(false)}
+          onBackToLogin={() => {
+            setShowForgotPassword(false);
             setShowLogin(true);
           }}
         />

@@ -1,4 +1,4 @@
-import { User, Menu, X, LogIn, Clock, LogOut, Shield, ChevronRight } from 'lucide-react';
+import { User, Menu, X, LogIn, Clock, LogOut, Shield, ChevronRight, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -37,6 +37,11 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
 
   const handleLogoClick = () => {
     navigate('/');
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
     setIsMobileMenuOpen(false);
   };
 
@@ -86,6 +91,10 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                 <Button variant="ghost" onClick={handleMyTicketsClick} className="text-gray-700">
                   <User className="h-5 w-5 mr-2" />
                   { 'Tiket Saya'}
+                </Button>
+                <Button variant="ghost" onClick={handleProfileClick} className="text-gray-700">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Profil
                 </Button>
                 <Button variant="ghost" onClick={handleLogout} className="text-gray-700">
                   <LogOut className="h-5 w-5 mr-2" />
@@ -138,6 +147,14 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                 >
                   <User className="h-5 w-5 mr-2" />
                   Tiket Saya
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={handleProfileClick}
+                  className="w-full justify-start text-gray-700"
+                >
+                  <Settings className="h-5 w-5 mr-2" />
+                  Profil
                 </Button>
                 <Button 
                   variant="ghost" 

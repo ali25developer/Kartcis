@@ -26,6 +26,16 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/app/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { Label } from '@/app/components/ui/label';
 import { 
   Select, 
@@ -72,6 +82,23 @@ export function AdminEvents() {
     custom_fields: [] as CustomField[],
     ticket_types: [] as { id?: number; name: string; price: string; original_price?: string; quota: string; description: string }[]
   };
+
+  // Alert Dialog State
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => Promise<void> | void;
+    variant?: 'default' | 'destructive';
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default',
+    confirmText: 'Ya, Lanjutkan'
+  });
 
   const [formData, setFormData] = useState(initialFormState);
 
@@ -180,48 +207,58 @@ export function AdminEvents() {
   };
 
   // Handle Delete
-  const handleDelete = async (event: Event) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus event "${event.title}"?`)) {
-      return;
-    }
+  const handleDelete = (event: Event) => {
+    setAlertConfig({
+        isOpen: true,
+        title: 'Hapus Event',
+        description: `Apakah Anda yakin ingin menghapus event "${event.title}"? Tindakan ini tidak dapat dibatalkan.`,
+        variant: 'destructive',
+        confirmText: 'Hapus',
+        onConfirm: async () => {
+            const result = await handleApi(
+                adminApi.events.delete(event.id),
+                {
+                    showSuccess: true,
+                    successMessage: 'Berhasil',
+                    description: 'Event berhasil dihapus'
+                }
+            );
 
-    const result = await handleApi(
-      adminApi.events.delete(event.id),
-      {
-        showSuccess: true,
-        successMessage: 'Berhasil',
-        description: 'Event berhasil dihapus'
-      }
-    );
-
-    if (result) {
-      fetchEvents();
-    }
+            if (result) {
+                fetchEvents();
+            }
+        }
+    });
   };
  
   // Handle Cancel Event
-  const handleCancel = async (event: Event) => {
+  const handleCancel = (event: Event) => {
     if (event.status === 'cancelled') {
         toast.error('Event sudah dibatalkan');
         return;
     }
 
-    if (!confirm(`Apakah Anda yakin ingin membatalkan event "${event.title}"?`)) {
-      return;
-    }
- 
-    const result = await handleApi(
-      adminApi.events.updateStatus(event.id, 'cancelled'),
-      {
-        showSuccess: true,
-        successMessage: 'Berhasil',
-        description: 'Event berhasil dibatalkan'
-      }
-    );
- 
-    if (result) {
-      fetchEvents();
-    }
+    setAlertConfig({
+        isOpen: true,
+        title: 'Batalkan Event',
+        description: `Apakah Anda yakin ingin membatalkan event "${event.title}"? Status akan berubah menjadi Dibatalkan.`,
+        variant: 'destructive',
+        confirmText: 'Ya, Batalkan',
+        onConfirm: async () => {
+            const result = await handleApi(
+                adminApi.events.updateStatus(event.id, 'cancelled'),
+                {
+                    showSuccess: true,
+                    successMessage: 'Berhasil',
+                    description: 'Event berhasil dibatalkan'
+                }
+            );
+        
+            if (result) {
+                fetchEvents();
+            }
+        }
+    });
   };
 
   const openCreateModal = () => {
@@ -365,8 +402,8 @@ export function AdminEvents() {
                             }
                          >
                             {event.status === 'published' ? 'Aktif' : 
-                             event.status === 'cancelled' ? 'Batal' : 
-                             event.status === 'draft' ? 'Draft' : 'Selesai'}
+                             event.status === 'cancelled' ? 'Dibatalkan' : 
+                             event.status === 'draft' ? 'Draft' : 'Selsai'}
                          </Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -908,6 +945,40 @@ export function AdminEvents() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Global Action Confirmation Dialog */}
+      <AlertDialog 
+        open={alertConfig.isOpen} 
+        onOpenChange={(open) => {
+          if (!open) setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertConfig.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertConfig.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault(); 
+                const result = alertConfig.onConfirm();
+                if (result instanceof Promise) {
+                   result.finally(() => setAlertConfig(prev => ({ ...prev, isOpen: false })));
+                } else {
+                   setAlertConfig(prev => ({ ...prev, isOpen: false }));
+                }
+              }}
+              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'}
+            >
+              {alertConfig.confirmText || 'Lanjutkan'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

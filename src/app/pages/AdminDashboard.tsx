@@ -26,9 +26,19 @@ import { Badge } from '@/app/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Input } from '@/app/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { useAuth } from '@/app/contexts/AuthContext';
 import { toast } from 'sonner';
-import { adminApi, type Transaction, type AdminStats } from '@/app/services/adminApi';
+import { adminApi, type Transaction, type AdminStats, type TransactionTimelineItem } from '@/app/services/adminApi';
 import { AdminEvents } from '@/app/components/admin/AdminEvents';
 import { AdminCategories } from '@/app/components/admin/AdminCategories';
 
@@ -57,6 +67,23 @@ export function AdminDashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const isMounted = useRef(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+
+  // Alert Dialog State
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => Promise<void> | void;
+    variant?: 'default' | 'destructive';
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default',
+    confirmText: 'Ya, Lanjutkan'
+  });
 
   // Check if user is admin
   useEffect(() => {
@@ -89,7 +116,7 @@ export function AdminDashboard() {
   const fetchData = useCallback(async () => {
     if (!isAuthenticated || !user || user.role !== 'admin') return;
 
-    console.log('AdminDashboard: Fetching transactions...', { currentPage, statusFilter, debouncedSearch });
+
     setIsLoading(true);
     try {
       const response = await adminApi.getTransactions({
@@ -98,9 +125,9 @@ export function AdminDashboard() {
         status: statusFilter,
         search: debouncedSearch,
       });
-      console.log('AdminDashboard: API Response', response);
 
-      console.log('AdminDashboard: Setting transactions state', response.data?.transactions);
+
+
       setTransactions(() => response.data?.transactions || []);
       setTotalPages(response.data?.pagination?.total_pages || 1);
       setTotalItems(response.data?.pagination?.total_items || 0);
@@ -130,6 +157,35 @@ export function AdminDashboard() {
     fetchStats();
   }, [fetchData, fetchStats]);
 
+  // Timeline State
+  const [timeline, setTimeline] = useState<TransactionTimelineItem[]>([]);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
+
+  // Fetch Timeline when selectedTransaction changes
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      if (!selectedTransaction) {
+        setTimeline([]);
+        return;
+      }
+
+      setIsLoadingTimeline(true);
+      try {
+        const response = await adminApi.getTransactionTimeline(selectedTransaction.id.toString());
+        if (response.success && response.data) {
+          setTimeline(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching timeline:', error);
+        toast.error('Gagal memuat riwayat status');
+      } finally {
+        setIsLoadingTimeline(false);
+      }
+    };
+
+    fetchTimeline();
+  }, [selectedTransaction]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -137,49 +193,55 @@ export function AdminDashboard() {
     };
   }, []);
 
-  const handleResendEmail = async (transaction: Transaction) => {
-    if (!confirm(`Kirim ulang tiket ke ${transaction.customer_email}?`)) {
-      return;
-    }
-
-    setResendingId(transaction.id);
-    try {
-      const response = await adminApi.resendEmail(transaction.id.toString());
-      alert(response.message);
-      fetchData(); // Reload data for consistency
-    } catch (error: any) {
-      alert(error.message || 'Gagal mengirim ulang email');
-    } finally {
-      setResendingId(null);
-    }
+  const handleResendEmail = (transaction: Transaction) => {
+    setAlertConfig({
+      isOpen: true,
+      title: 'Kirim Ulang Tiket',
+      description: `Apakah Anda yakin ingin mengirim ulang tiket ke ${transaction.customer_email}?`,
+      confirmText: 'Kirim Email',
+      onConfirm: async () => {
+        setResendingId(transaction.id);
+        try {
+          const response = await adminApi.resendEmail(transaction.id.toString());
+          toast.success(response.message);
+          fetchData(); 
+        } catch (error: any) {
+          toast.error(error.message || 'Gagal mengirim ulang email');
+        } finally {
+          setResendingId(null);
+        }
+      }
+    });
   };
 
-  const handleChangeStatus = async (transaction: Transaction, status: string) => {
+  const handleChangeStatus = (transaction: Transaction, status: string) => {
     if (transaction.status === 'paid' || transaction.status === 'cancelled') {
         toast.error('Transaksi yang sudah dibayar atau dibatalkan tidak dapat diubah statusnya');
         return;
     }
 
-    if (!confirm(`Ubah status transaksi ${transaction.order_number} menjadi ${status}?`)) {
-      return;
-    }
-
-    try {
-      // Call API
-      const response = await adminApi.updateTransactionStatus(transaction.id.toString(), status);
-
-      if (!response.success) {
-        throw new Error(response.message || 'Gagal mengubah status di server');
+    setAlertConfig({
+      isOpen: true,
+      title: 'Konfirmasi Perubahan Status',
+      description: `Ubah status transaksi ${transaction.order_number} menjadi ${status}?`,
+      variant: 'destructive',
+      confirmText: 'Ya, Ubah Status',
+      onConfirm: async () => {
+        try {
+          const response = await adminApi.updateTransactionStatus(transaction.id.toString(), status);
+          if (!response.success) {
+            throw new Error(response.message || 'Gagal mengubah status di server');
+          }
+          toast.success('Status berhasil diubah');
+          await fetchData();
+          await fetchStats();
+          setEditingStatusId(null);
+          setNewStatus('');
+        } catch (error: any) {
+          toast.error(error.message || 'Gagal mengubah status');
+        }
       }
-
-      toast.success('Status berhasil diubah');
-      await fetchData(); // Reload transactions
-      await fetchStats(); // Reload stats
-      setEditingStatusId(null);
-      setNewStatus('');
-    } catch (error: any) {
-      alert(error.message || 'Gagal mengubah status');
-    }
+    });
   };
 
   const formatPrice = (price: number = 0) => {
@@ -528,10 +590,16 @@ export function AdminDashboard() {
           className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
           onClick={() => setSelectedTransaction(null)}
         >
+          {/* ... modal content ... */}
           <div 
             className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
+           {/* Replicating the existing modal structure implicitly by strictly following where it was. 
+               Wait, I should just append the Alert after the selectedTransaction modal block. 
+               The instruction is to replace end of file, or specifically where the JSX ends. 
+               Wait, the tool needs a target content. I'll rely on the closing tags. 
+           */}
             <div className="sticky top-0 bg-gradient-to-r from-sky-600 to-sky-700 text-white p-6 border-b">
               <div className="flex items-center justify-between">
                 <div>
@@ -677,10 +745,88 @@ export function AdminDashboard() {
                   </div>
                 </div>
               )}
+
+              {/* Transaction Timeline */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-sky-600" />
+                  Activity Log
+                </h3>
+                <div className="bg-white border rounded-lg p-6">
+                  {isLoadingTimeline ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
+                    </div>
+                  ) : timeline.length === 0 ? (
+                    <p className="text-gray-500 text-center text-sm">Belum ada riwayat status.</p>
+                  ) : (
+                    <div className="relative pl-4 border-l-2 border-gray-200 space-y-8">
+                       {timeline
+                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) // Ensure newest first
+                        .map((item, index) => (
+                        <div key={item.id} className="relative">
+                           {/* Dot Indicator */}
+                           <div className={`absolute -left-[22.5px] top-1.5 h-3 w-3 rounded-full border-2 border-white ${
+                              index === 0 ? 'bg-sky-600 ring-4 ring-sky-100' : 'bg-gray-300'
+                           }`} />
+                           
+                           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                              <div>
+                                 <div className="mb-1">
+                                    {getStatusBadge(item.status)}
+                                 </div>
+                                 <p className="text-sm text-gray-900 font-medium">
+                                    {item.notes || 'Status diperbarui'}
+                                 </p>
+                              </div>
+                              <span className="text-xs text-gray-500 font-mono whitespace-nowrap bg-gray-50 px-2 py-1 rounded">
+                                 {formatDateTime(item.created_at)}
+                              </span>
+                           </div>
+                        </div>
+                       ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Global Action Confirmation Dialog */}
+      <AlertDialog 
+        open={alertConfig.isOpen} 
+        onOpenChange={(open) => {
+          if (!open) setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertConfig.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertConfig.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault(); // Prevent auto-close if async? No, usually fine.
+                const result = alertConfig.onConfirm();
+                if (result instanceof Promise) {
+                   result.finally(() => setAlertConfig(prev => ({ ...prev, isOpen: false })));
+                } else {
+                   setAlertConfig(prev => ({ ...prev, isOpen: false }));
+                }
+              }}
+              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'}
+            >
+              {alertConfig.confirmText || 'Lanjutkan'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

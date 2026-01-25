@@ -18,11 +18,29 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/app/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { Label } from '@/app/components/ui/label';
 import { toast } from 'sonner';
 import { adminApi } from '@/app/services/adminApi';
 import type { Category, PaginationMetadata } from '@/app/types';
 import { handleApi } from '@/app/utils/helpers';
+import { Badge } from '@/app/components/ui/badge';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/app/components/ui/select';
 import { ImageUpload } from '@/app/components/admin/ImageUpload';
 import { Switch } from '@/app/components/ui/switch';
 
@@ -46,6 +64,23 @@ export function AdminCategories() {
     image: '',
     display_order: 1,
     is_active: true
+  });
+
+  // Alert Dialog State
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => Promise<void> | void;
+    variant?: 'default' | 'destructive';
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default',
+    confirmText: 'Ya, Lanjutkan'
   });
 
   // Debounce search
@@ -119,23 +154,28 @@ export function AdminCategories() {
   };
 
   // Handle Delete
-  const handleDelete = async (category: Category) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus kategori "${category.name}"?`)) {
-      return;
-    }
+  const handleDelete = (category: Category) => {
+    setAlertConfig({
+      isOpen: true,
+      title: 'Hapus Kategori',
+      description: `Apakah Anda yakin ingin menghapus kategori "${category.name}"? Action ini tidak dapat dibatalkan.`,
+      variant: 'destructive',
+      confirmText: 'Hapus',
+      onConfirm: async () => {
+        const result = await handleApi(
+          adminApi.categories.delete(category.id),
+          {
+            showSuccess: true,
+            successMessage: 'Berhasil',
+            description: 'Kategori berhasil dihapus'
+          }
+        );
 
-    const result = await handleApi(
-      adminApi.categories.delete(category.id),
-      {
-        showSuccess: true,
-        successMessage: 'Berhasil',
-        description: 'Kategori berhasil dihapus'
+        if (result) {
+          fetchCategories();
+        }
       }
-    );
-
-    if (result) {
-      fetchCategories();
-    }
+    });
   };
 
   const openCreateModal = () => {
@@ -170,8 +210,14 @@ export function AdminCategories() {
     });
   };
 
-  // No client-side filtering needed
-  const filteredCategories = categories;
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  const filteredCategories = categories.filter(category => {
+    if (filterStatus === 'all') return true;
+    if (filterStatus === 'active') return category.is_active;
+    if (filterStatus === 'inactive') return !category.is_active;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -197,6 +243,19 @@ export function AdminCategories() {
               className="pl-9"
             />
           </div>
+          <Select
+            value={filterStatus}
+            onValueChange={(value) => setFilterStatus(value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="active">Aktif</SelectItem>
+              <SelectItem value="inactive">Tidak Aktif</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="border rounded-lg overflow-hidden">
@@ -208,20 +267,21 @@ export function AdminCategories() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Slug</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Deskripsi</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                       Loading...
                     </td>
                   </tr>
                 ) : filteredCategories.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                       Tidak ada kategori ditemukan
                     </td>
                   </tr>
@@ -233,6 +293,14 @@ export function AdminCategories() {
                       <td className="px-4 py-3 text-sm text-gray-500 font-mono">{category.slug}</td>
                       <td className="px-4 py-3 text-sm text-gray-500 truncate max-w-[300px]">
                         {category.description || '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                         <Badge 
+                            variant={category.is_active ? 'default' : 'secondary'}
+                            className={category.is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
+                         >
+                            {category.is_active ? 'Aktif' : 'Tidak Aktif'}
+                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-2">
@@ -392,6 +460,40 @@ export function AdminCategories() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Global Action Confirmation Dialog */}
+      <AlertDialog 
+        open={alertConfig.isOpen} 
+        onOpenChange={(open) => {
+          if (!open) setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertConfig.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertConfig.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault(); 
+                const result = alertConfig.onConfirm();
+                if (result instanceof Promise) {
+                   result.finally(() => setAlertConfig(prev => ({ ...prev, isOpen: false })));
+                } else {
+                   setAlertConfig(prev => ({ ...prev, isOpen: false }));
+                }
+              }}
+              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'}
+            >
+              {alertConfig.confirmText || 'Lanjutkan'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

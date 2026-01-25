@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   register: (name: string, phone: string, email: string, password: string) => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string; phone?: string; password?: string; password_confirmation?: string }) => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
 }
@@ -146,6 +147,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: { name?: string; email?: string; phone?: string; password?: string; password_confirmation?: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.updateProfile(data);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Gagal memperbarui profil');
+      }
+      setUser(response.data);
+      toast.success('Profil berhasil diperbarui');
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      toast.error(error.message || 'Gagal memperbarui profil');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     // Call API logout but don't wait for it
     authApi.logout(); 
@@ -165,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         loginWithGoogle,
         register,
+        updateProfile,
         logout,
         checkAuth,
       }}

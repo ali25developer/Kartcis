@@ -223,8 +223,8 @@ export function EventDetailPage() {
 
               {/* Featured Badge */}
               {event.is_featured && isEventAvailable && (
-                <Badge className="absolute top-4 right-4 bg-yellow-500 text-black">
-                  FEATURED
+                <Badge className="absolute top-4 right-4 bg-orange-500 text-white">
+                  Populer
                 </Badge>
               )}
 

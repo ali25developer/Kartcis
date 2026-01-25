@@ -59,6 +59,53 @@ export const authApi = {
     }
   },
 
+  updateProfile: async (data: { name?: string; email?: string; phone?: string; password?: string; password_confirmation?: string }): Promise<ApiResponse<User>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { success: false, message: 'Failed to update profile' };
+    }
+  },
+
+  forgotPassword: async (email: string): Promise<ApiResponse<null>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ email }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      return { success: false, message: 'Gagal mengirim permintaan reset password' };
+    }
+  },
+
+  resetPassword: async (data: { email: string; token: string; password: string; password_confirmation: string }): Promise<ApiResponse<null>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            email: data.email,
+            token: data.token,
+            password: data.password,
+            password_confirm: data.password_confirmation 
+        }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { success: false, message: 'Gagal mereset password' };
+    }
+  },
+
   getMe: async (): Promise<ApiResponse<User>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {

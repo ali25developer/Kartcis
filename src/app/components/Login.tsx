@@ -11,9 +11,10 @@ interface LoginProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToRegister: () => void;
+  onSwitchToForgotPassword?: () => void;
 }
 
-export function Login({ isOpen, onClose, onSwitchToRegister }: LoginProps) {
+export function Login({ isOpen, onClose, onSwitchToRegister, onSwitchToForgotPassword }: LoginProps) {
   const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -186,19 +187,37 @@ export function Login({ isOpen, onClose, onSwitchToRegister }: LoginProps) {
             </div>
 
             {/* Remember Me */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                disabled={isLoading}
-              />
-              <label
-                htmlFor="remember"
-                className="text-sm text-gray-700 cursor-pointer select-none"
-              >
-                Ingat saya (24 jam)
-              </label>
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between">
+               <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    disabled={isLoading}
+                  />
+                  <label
+                    htmlFor="remember"
+                    className="text-sm text-gray-700 cursor-pointer select-none"
+                  >
+                    Ingat saya
+                  </label>
+               </div>
+               <button 
+                  type="button"
+                  className="text-sm font-medium text-sky-600 hover:text-sky-500"
+                  onClick={(e) => {
+                     e.preventDefault();
+                     if (onSwitchToForgotPassword) {
+                       onSwitchToForgotPassword();
+                     } else {
+                        // Fallback if needed, though prop should be passed
+                        console.warn('onSwitchToForgotPassword not provided');
+                     }
+                  }}
+               >
+                  Lupa password?
+               </button>
             </div>
 
             {/* Submit Button */}

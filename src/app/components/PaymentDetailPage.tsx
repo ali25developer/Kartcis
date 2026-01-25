@@ -192,7 +192,26 @@ export function PaymentDetailPage({
                   </div>
 
                   {/* Payment Details */}
-                  {paymentType === 'qris' ? (
+                  {pendingOrder.paymentUrl ? (
+                    <div className="text-center space-y-4">
+                        <div className="bg-sky-50 rounded-lg p-6 border border-sky-100">
+                          <h3 className="text-lg font-semibold text-sky-900 mb-2">Lanjut ke Pembayaran</h3>
+                          <p className="text-sm text-sky-700 mb-6">
+                            Klik tombol di bawah untuk menyelesaikan pembayaran melalui {pendingOrder.paymentMethod || 'E-Wallet/Link'}.
+                          </p>
+                          <Button 
+                            size="lg"
+                            className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 min-w-[200px]"
+                            onClick={() => window.open(pendingOrder.paymentUrl!, '_blank')}
+                          >
+                            Bayar Sekarang
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Halaman pembayaran akan terbuka di tab baru.
+                        </p>
+                    </div>
+                  ) : paymentType === 'qris' ? (
                      <div className="text-center">
                         <label className="text-sm font-medium text-gray-700 mb-2 block">
                           Scan QR Code
