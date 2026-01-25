@@ -1,8 +1,7 @@
-import { User, Menu, X, LogIn, Clock, AlertCircle, LogOut, Shield } from 'lucide-react';
+import { User, Menu, X, LogIn, Clock, LogOut, Shield, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from '@/app/utils/toast';
 
@@ -42,9 +41,17 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
   };
 
   const formatTime = (seconds: number) => {
+    if (seconds <= 0) return '00:00';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}j ${minutes}m`;
+    const secs = Math.floor(seconds % 60);
+    
+    const parts = [];
+    if (hours > 0) parts.push(hours.toString().padStart(2, '0'));
+    parts.push(minutes.toString().padStart(2, '0'));
+    parts.push(secs.toString().padStart(2, '0'));
+    
+    return parts.join(':');
   };
 
   return (
@@ -78,7 +85,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                 )}
                 <Button variant="ghost" onClick={handleMyTicketsClick} className="text-gray-700">
                   <User className="h-5 w-5 mr-2" />
-                  {user?.name || 'Tiket Saya'}
+                  { 'Tiket Saya'}
                 </Button>
                 <Button variant="ghost" onClick={handleLogout} className="text-gray-700">
                   <LogOut className="h-5 w-5 mr-2" />
@@ -159,22 +166,33 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
       {pendingPayment && (
         <div 
           onClick={pendingPayment.onClick}
-          className="bg-amber-500 text-white cursor-pointer hover:bg-amber-600 transition-colors"
+          className="bg-gradient-to-r from-amber-500 to-orange-600 text-white cursor-pointer hover:from-amber-600 hover:to-orange-700 transition-all shadow-md animate-in slide-in-from-top duration-500"
         >
-          <div className="container mx-auto px-4 py-2.5">
+          <div className="container mx-auto px-4 py-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                  <span className="font-medium text-sm">Menunggu Pembayaran</span>
-                  <span className="text-xs sm:text-sm opacity-90">
-                    Order #{pendingPayment.orderId}
-                  </span>
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-1.5 rounded-full animate-pulse">
+                  <Clock className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-3">
+                  <span className="font-bold text-sm tracking-wide">MENUNGGU PEMBAYARAN</span>
+                  <div className="flex items-center gap-1.5 opacity-90 text-xs">
+                    <span className="bg-white/10 px-2 py-0.5 rounded">#{pendingPayment.orderId}</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 flex-shrink-0" />
-                <span className="font-semibold text-sm">{formatTime(pendingPayment.timeLeft)}</span>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-black/10 px-3 py-1 rounded-lg border border-white/10">
+                  <span className="text-[10px] uppercase font-bold text-white/70">Sisa Waktu:</span>
+                  <span className="font-mono font-bold text-sm tabular-nums">
+                    {formatTime(pendingPayment.timeLeft)}
+                  </span>
+                </div>
+                <div className="hidden sm:flex items-center gap-1 text-xs font-bold border-l border-white/20 pl-4">
+                  BAYAR SEKARANG
+                  <ChevronRight className="h-4 w-4" />
+                </div>
               </div>
             </div>
           </div>

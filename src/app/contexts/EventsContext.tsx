@@ -28,11 +28,11 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         ]);
 
         if (eventsRes.success && eventsRes.data) {
-          setEvents(eventsRes.data);
+          setEvents(eventsRes.data.events);
         }
 
         if (categoriesRes.success && categoriesRes.data) {
-          setCategories(categoriesRes.data);
+          setCategories(categoriesRes.data.categories);
         }
 
         setError(null);

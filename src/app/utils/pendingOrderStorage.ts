@@ -39,8 +39,16 @@ export const pendingOrderStorage = {
   add: (order: PendingOrder): void => {
     try {
       const orders = pendingOrderStorage.getAll();
-      orders.push(order);
+      const existingIndex = orders.findIndex(o => o.orderId === order.orderId);
+      
+      if (existingIndex !== -1) {
+        orders[existingIndex] = order;
+      } else {
+        orders.push(order);
+      }
+      
       localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+      window.dispatchEvent(new CustomEvent('pending-orders-changed'));
     } catch (error) {
       console.error('Error saving pending order:', error);
     }
@@ -55,6 +63,7 @@ export const pendingOrderStorage = {
       if (orderIndex !== -1) {
         orders[orderIndex].status = status;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+        window.dispatchEvent(new CustomEvent('pending-orders-changed'));
       }
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -67,6 +76,7 @@ export const pendingOrderStorage = {
       const orders = pendingOrderStorage.getAll();
       const filtered = orders.filter(order => order.orderId !== orderId);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      window.dispatchEvent(new CustomEvent('pending-orders-changed'));
     } catch (error) {
       console.error('Error removing pending order:', error);
     }
@@ -76,6 +86,7 @@ export const pendingOrderStorage = {
   clear: (): void => {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      window.dispatchEvent(new CustomEvent('pending-orders-changed'));
     } catch (error) {
       console.error('Error clearing pending orders:', error);
     }

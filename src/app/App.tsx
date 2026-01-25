@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Header } from "./components/Header";
 import { Login } from "./components/Login";
@@ -13,21 +13,32 @@ import { EventDetailPage } from "./pages/EventDetailPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { PaymentPage } from "./pages/PaymentPage";
 import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { TermsPage } from "./pages/TermsPage";
+import { RefundPolicyPage } from "./pages/RefundPolicyPage";
+import { HowToOrderPage } from "./pages/HowToOrderPage";
+import { Footer } from "./components/Footer";
 import { MyTicketsPage } from "./pages/MyTicketsPage";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { pendingOrderStorage } from "./utils/pendingOrderStorage";
-import type { HelpModalType } from "./types";
+import api from "./services/api";
+import type { HelpModalType } from "./types/index";
 
 // Protected Route Component - defined outside to prevent re-creation
+// Protected Route Component - defined outside to prevent re-creation
 function ProtectedRoute({ children, onShowLogin }: { children: React.ReactNode, onShowLogin: () => void }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       onShowLogin();
     }
-  }, [isAuthenticated, onShowLogin]);
+  }, [isAuthenticated, isLoading, onShowLogin]);
   
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
+
   if (!isAuthenticated) {
     return null;
   }
@@ -59,37 +70,57 @@ function AppLayout() {
 
   // Listen for storage changes to update pending order state
   useEffect(() => {
-    const checkPendingOrder = () => {
-      const activePendingOrder = pendingOrderStorage.getActive();
-      if (activePendingOrder) {
-        setPendingOrder(prev => {
+    const checkPendingOrder = async () => {
+      const active = pendingOrderStorage.getActive();
+      if (active) {
+        // If we have a pending order locally, verify its REAL status with the server
+        try {
+          const response = await api.orders.checkStatus(active.orderId);
+          if (response.success && response.data) {
+            const serverStatus = response.data.status;
+            if (serverStatus !== 'pending') {
+              // If it's no longer pending on the server, remove it locally
+              pendingOrderStorage.remove(active.orderId);
+              setPendingOrder(null);
+              setPendingOrderTimeLeft(0); // Also reset time left
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Background status check failed:", error);
+        }
+
+        setPendingOrder((prev: any) => {
           // Only update if actually changed to prevent re-renders
-          if (prev?.orderId === activePendingOrder.orderId) return prev;
-          return activePendingOrder;
+          if (prev?.orderId === active.orderId) return prev;
+          return active;
         });
-        const timeLeft = Math.floor((activePendingOrder.expiryTime - Date.now()) / 1000);
         setPendingOrderTimeLeft(prev => {
-          // Only update if changed
-          const newTimeLeft = timeLeft > 0 ? timeLeft : 0;
+          const newTimeLeft = Math.max(0, Math.floor((active.expiryTime - Date.now()) / 1000));
           return prev === newTimeLeft ? prev : newTimeLeft;
         });
       } else {
-        setPendingOrder(prev => prev === null ? prev : null);
+        setPendingOrder((prev: any) => prev === null ? prev : null);
         setPendingOrderTimeLeft(prev => prev === 0 ? prev : 0);
       }
     };
 
-    // Listen to custom event for pending order changes
+    // Run check immediately on mount/update (refresh or navigation)
+    checkPendingOrder();
+
+    // Listen to storage changes and custom app event
     window.addEventListener('storage', checkPendingOrder);
+    window.addEventListener('pending-orders-changed', checkPendingOrder);
     
-    // Check every 5 seconds instead of every 1 second to reduce re-renders
-    const interval = setInterval(checkPendingOrder, 5000);
+    // Check every 2 minutes (120000ms) instead of frequently
+    const interval = setInterval(checkPendingOrder, 120000);
 
     return () => {
       window.removeEventListener('storage', checkPendingOrder);
+      window.removeEventListener('pending-orders-changed', checkPendingOrder);
       clearInterval(interval);
     };
-  }, []);
+  }, [location.pathname]);
 
   // Countdown timer for pending order
   useEffect(() => {
@@ -99,7 +130,7 @@ function AppLayout() {
     if (location.pathname === '/admin') return;
 
     const timer = setInterval(() => {
-      setPendingOrderTimeLeft(prev => {
+      setPendingOrderTimeLeft((prev: number) => {
         const newTime = prev - 1;
         if (newTime <= 0) {
           // Order expired
@@ -121,8 +152,12 @@ function AppLayout() {
       if (activePendingOrder) {
         setPendingOrder(activePendingOrder);
       }
+    } else {
+      // Auto-close auth modals if user becomes authenticated
+      if (showLogin) setShowLogin(false);
+      if (showRegister) setShowRegister(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, showLogin, showRegister]);
 
   const handlePendingPaymentClick = () => {
     if (pendingOrder) {
@@ -130,17 +165,10 @@ function AppLayout() {
     }
   };
 
-  const handleLoginSuccess = () => {
-    setShowLogin(false);
-  };
 
-  const handleRegisterSuccess = () => {
-    setShowRegister(false);
-    setShowLogin(true);
-  };
 
-  // Hide header on payment pages for cleaner UX
-  const showHeader = !location.pathname.startsWith('/payment/');
+  // Always show header
+  const showHeader = true;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,7 +179,7 @@ function AppLayout() {
         <Header
           onLoginClick={() => setShowLogin(true)}
           pendingPayment={
-            pendingOrder && pendingOrderTimeLeft > 0
+            pendingOrder && pendingOrderTimeLeft > 0 && !location.pathname.includes(`/payment/${pendingOrder.orderId}`)
               ? {
                   orderId: pendingOrder.orderId,
                   timeLeft: pendingOrderTimeLeft,
@@ -168,6 +196,16 @@ function AppLayout() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment/:orderId" element={<PaymentPage />} />
         <Route path="/payment/success/:orderId" element={<PaymentSuccessPage />} />
+        
+        {/* Support & Legal Pages */}
+        <Route path="/cara-pesan" element={<HowToOrderPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/kebijakan-privasi" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-conditions" element={<TermsPage />} />
+        <Route path="/syarat-ketentuan" element={<TermsPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/refund-policy" element={<RefundPolicyPage />} />
+        
         <Route 
           path="/my-tickets" 
           element={
@@ -185,6 +223,8 @@ function AppLayout() {
           } 
         />
       </Routes>
+
+      <Footer />
 
       {/* Login Modal */}
       {showLogin && (

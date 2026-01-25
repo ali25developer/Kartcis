@@ -64,19 +64,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
+      
       if (token) {
         const response = await authApi.getMe();
+
         if (response.success && response.data) {
           setUser(response.data);
+        } else if (response.data) {
+           setUser(response.data as unknown as User);
         } else {
-          // Token invalid or expired
           logout();
         }
       } else {
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error('Auth check error:', error);
       logout();
     } finally {
       setIsLoading(false);
@@ -150,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('token_expiry');
     setUser(null);
+    window.location.href = '/';
   };
 
   return (

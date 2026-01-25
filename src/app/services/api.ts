@@ -1,6 +1,7 @@
 import { API_BASE_URL, getHeaders } from '../config';
 import type {
   ApiResponse,
+  PaginatedResponse,
   Event,
   Category,
   Order,
@@ -11,8 +12,8 @@ import type {
 // Real API Service
 const api = {
   events: {
-    getAll: async (params?: any): Promise<ApiResponse<Event[]>> => {
-      try {
+    getAll: async (params?: any): Promise<PaginatedResponse<Event, 'events'>> => {
+    try {
         const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page);
         if (params?.limit) queryParams.append('limit', params.limit);
@@ -24,20 +25,10 @@ const api = {
           headers: getHeaders(),
         });
         
-        const res = await response.json();
-        // Since frontend expects flat array in some places but we agreed to support existing structure,
-        // we might need to map if backend returns { data: { events: [] } } but frontend expects { data: [] }
-        // For now assuming we adjusted backend spec to return flat list or we adapt here:
-        
-        if (res.success && res.data && res.data.events) {
-           // Adapter: if backend returns pagination object
-           return { ...res, data: res.data.events };
-        }
-        
-        return res;
+        return await response.json();
       } catch (error) {
         console.error('Get all events error:', error);
-        return { success: false, message: 'Network error' };
+        throw error;
       }
     },
 
@@ -52,7 +43,7 @@ const api = {
       }
     },
 
-    getById: async (id: number): Promise<ApiResponse<Event>> => {
+    getById: async (id: number | string): Promise<ApiResponse<Event>> => {
       try {
         // In real backend usually by slug or id. Frontend uses ID mostly.
         const response = await fetch(`${API_BASE_URL}/events/${id}`, {
@@ -76,25 +67,30 @@ const api = {
       }
     },
 
-    getByCategory: async (categoryId: number): Promise<ApiResponse<Event[]>> => {
+    getByCategory: async (categoryId: number): Promise<PaginatedResponse<Event, 'events'>> => {
        // Filter client side or call specific endpoint
-       return api.events.getAll({ category_id: categoryId });
+       return api.events.getAll({ category: String(categoryId) });
     },
 
-    search: async (query: string): Promise<ApiResponse<Event[]>> => {
+    search: async (query: string): Promise<PaginatedResponse<Event, 'events'>> => {
       return api.events.getAll({ search: query });
     },
   },
 
   categories: {
-    getAll: async (): Promise<ApiResponse<Category[]>> => {
+    getAll: async (params?: { page?: number; limit?: number }): Promise<PaginatedResponse<Category, 'categories'>> => {
       try {
-        const response = await fetch(`${API_BASE_URL}/categories`, {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+        const response = await fetch(`${API_BASE_URL}/categories?${queryParams.toString()}`, {
           headers: getHeaders(),
         });
         return await response.json();
       } catch (error) {
-        return { success: false, message: 'Network error' };
+        console.error('Get all categories error:', error);
+        throw error;
       }
     },
   },
@@ -113,7 +109,7 @@ const api = {
       }
     },
 
-    confirmPayment: async (orderId: number): Promise<ApiResponse<Order>> => {
+    confirmPayment: async (orderId: number | string): Promise<ApiResponse<Order>> => {
       try {
         const response = await fetch(`${API_BASE_URL}/orders/${orderId}/pay`, {
           method: 'POST',
@@ -125,9 +121,32 @@ const api = {
       }
     },
     
-    getById: async (orderId: number): Promise<ApiResponse<Order>> => {
+    getById: async (orderId: number | string): Promise<ApiResponse<Order>> => {
       try {
         const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        return { success: false, message: 'Network error' };
+      }
+    },
+
+    checkStatus: async (orderId: number | string): Promise<ApiResponse<Order>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        return { success: false, message: 'Network error' };
+      }
+    },
+
+    cancel: async (orderId: number | string): Promise<ApiResponse<Order>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+          method: 'POST',
           headers: getHeaders(),
         });
         return await response.json();
@@ -138,7 +157,7 @@ const api = {
   },
 
   tickets: {
-    getByOrder: async (orderId: number): Promise<ApiResponse<Ticket[]>> => {
+    getByOrder: async (orderId: number | string): Promise<ApiResponse<Ticket[]>> => {
       try {
         const response = await fetch(`${API_BASE_URL}/orders/${orderId}/tickets`, {
           headers: getHeaders(),
@@ -149,7 +168,19 @@ const api = {
       }
     },
 
-    getByUser: async (userId: number): Promise<ApiResponse<Ticket[]>> => {
+    getMyTickets: async (): Promise<ApiResponse<{ upcoming: Ticket[], past: Ticket[] }>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/tickets/my-tickets`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        return { success: false, message: 'Network error' };
+      }
+    },
+
+    // Deprecated: use getMyTickets instead
+    getByUser: async (): Promise<ApiResponse<Ticket[]>> => {
       try {
         const response = await fetch(`${API_BASE_URL}/tickets`, {
           headers: getHeaders(),
@@ -169,15 +200,15 @@ export const eventService = {
     // It fetches from new APIs and composes the result
     try {
         const [eventsRes, catsRes, featuredRes] = await Promise.all([
-            api.events.getAll(),
-            api.categories.getAll(),
+            api.events.getAll({ limit: 12 }),
+            api.categories.getAll({ limit: 100 }),
             api.events.getFeatured()
         ]);
         
         return {
-            events: eventsRes.data || [],
-            categories: catsRes.data || [],
-            featuredEvents: featuredRes.data || [],
+            events: eventsRes.data.events || [],
+            categories: catsRes.data.categories || [],
+            featuredEvents: featuredRes.data || [], // getFeatured seems to still return flat array based on name, but usually it's also paginated
         };
     } catch (e) {
         console.error(e);

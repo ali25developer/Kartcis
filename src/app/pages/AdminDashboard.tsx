@@ -1,84 +1,79 @@
-import { useState, useEffect, useRef, memo } from 'react';
-import { useNavigate } from 'react-router';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
-  Filter, 
-  Download, 
   Mail, 
   CheckCircle, 
   Clock, 
-  XCircle, 
+  XCircle,
   AlertCircle,
-  TrendingUp,
-  Users,
   DollarSign,
   ShoppingCart,
   Edit2,
   Check,
-  X
+  X,
+  LayoutDashboard,
+  Calendar,
+  Tags,
+  Loader2,
+  Eye,
+  User
 } from 'lucide-react';
+import { formatDateTime } from '@/app/utils/helpers';
 import { Button } from '@/app/components/ui/button';
 import { Card } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Input } from '@/app/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { useAuth } from '@/app/contexts/AuthContext';
-import { adminApi, type Transaction, type TransactionStats } from '@/app/services/adminApi';
+import { toast } from 'sonner';
+import { adminApi, type Transaction, type AdminStats } from '@/app/services/adminApi';
+import { AdminEvents } from '@/app/components/admin/AdminEvents';
+import { AdminCategories } from '@/app/components/admin/AdminCategories';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [stats, setStats] = useState<TransactionStats>({
-    total: 0,
-    completed: 0,
-    pending: 0,
-    expired: 0,
-    cancelled: 0,
+  const [stats, setStats] = useState<AdminStats>({
+    total_transactions: 0,
+    paid_transactions: 0,
+    pending_transactions: 0,
     total_revenue: 0,
+    total_users: 0,
+    total_events: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [resendingId, setResendingId] = useState<string | null>(null);
-  const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
+  const [totalItems, setTotalItems] = useState(0);
+  const [resendingId, setResendingId] = useState<number | null>(null);
+  const [editingStatusId, setEditingStatusId] = useState<number | null>(null);
   const [newStatus, setNewStatus] = useState<string>('');
-  const hasCheckedAuth = useRef(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const isMounted = useRef(true);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  // Check if user is admin - only once on mount
+  // Check if user is admin
   useEffect(() => {
-    console.log('🔐 Auth check effect triggered', { 
-      hasCheckedAuth: hasCheckedAuth.current, 
-      isAuthenticated,
-      userRole: user?.role 
-    });
-    
-    if (!hasCheckedAuth.current && isAuthenticated) {
+    if (isAuthenticated) {
       if (!user || user.role !== 'admin') {
-        console.log('❌ Not admin, redirecting...');
         navigate('/');
-        return;
       }
-      console.log('✅ Admin verified');
-      hasCheckedAuth.current = true;
     }
   }, [user, isAuthenticated, navigate]);
 
   // Debounce search input
   useEffect(() => {
-    console.log('🔍 Search debounce effect', { searchQuery });
-    
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current);
     }
 
     searchTimeout.current = setTimeout(() => {
-      console.log('⏱️ Search debounce complete, setting:', searchQuery);
       setDebouncedSearch(searchQuery);
       setCurrentPage(1);
     }, 500);
@@ -90,71 +85,54 @@ export function AdminDashboard() {
     };
   }, [searchQuery]);
 
-  // Fetch transactions - simplified and isolated
+  // Fetch transactions logic
+  const fetchData = useCallback(async () => {
+    if (!isAuthenticated || !user || user.role !== 'admin') return;
+
+    console.log('AdminDashboard: Fetching transactions...', { currentPage, statusFilter, debouncedSearch });
+    setIsLoading(true);
+    try {
+      const response = await adminApi.getTransactions({
+        page: currentPage,
+        limit: 10,
+        status: statusFilter,
+        search: debouncedSearch,
+      });
+      console.log('AdminDashboard: API Response', response);
+
+      console.log('AdminDashboard: Setting transactions state', response.data?.transactions);
+      setTransactions(() => response.data?.transactions || []);
+      setTotalPages(response.data?.pagination?.total_pages || 1);
+      setTotalItems(response.data?.pagination?.total_items || 0);
+    } catch (error: any) {
+      console.error('Fetch error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, statusFilter, debouncedSearch, isAuthenticated, user]);
+
+  // Fetch admin stats
+  const fetchStats = useCallback(async () => {
+    if (!isAuthenticated || !user || user.role !== 'admin') return;
+
+    try {
+      const response = await adminApi.getStats();
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch (error: any) {
+      console.error('Fetch stats error:', error);
+    }
+  }, [isAuthenticated, user]);
+
   useEffect(() => {
-    console.log('📊 Fetch effect triggered', {
-      hasCheckedAuth: hasCheckedAuth.current,
-      userRole: user?.role,
-      currentPage,
-      statusFilter,
-      debouncedSearch,
-      isMounted: isMounted.current
-    });
-    
-    // Only proceed if we've checked auth and user is admin
-    if (!hasCheckedAuth.current) {
-      console.log('⏸️ Skipping - auth not checked yet');
-      return;
-    }
-    if (!user || user.role !== 'admin') {
-      console.log('⏸️ Skipping - not admin');
-      return;
-    }
-    
-    const fetchData = async () => {
-      console.log('🚀 Starting fetch...');
-      if (!isMounted.current) {
-        console.log('⏸️ Component unmounted, skipping fetch');
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        const response = await adminApi.getTransactions({
-          page: currentPage,
-          limit: 10,
-          status: statusFilter,
-          search: debouncedSearch,
-        });
-
-        console.log('✅ Fetch success', {
-          transactionsCount: response.data.transactions.length,
-          stats: response.data.stats
-        });
-
-        if (isMounted.current) {
-          setTransactions(response.data.transactions);
-          setStats(response.data.stats);
-          setTotalPages(response.data.pagination.totalPages);
-        }
-      } catch (error: any) {
-        console.error('❌ Fetch error:', error);
-      } finally {
-        if (isMounted.current) {
-          setIsLoading(false);
-          console.log('🏁 Fetch complete');
-        }
-      }
-    };
-
     fetchData();
-  }, [currentPage, statusFilter, debouncedSearch]);
+    fetchStats();
+  }, [fetchData, fetchStats]);
 
   // Cleanup on unmount
   useEffect(() => {
-    console.log('🎬 Component mounted');
     return () => {
-      console.log('💀 Component unmounting');
       isMounted.current = false;
     };
   }, []);
@@ -166,8 +144,9 @@ export function AdminDashboard() {
 
     setResendingId(transaction.id);
     try {
-      const response = await adminApi.resendEmail(transaction.id);
+      const response = await adminApi.resendEmail(transaction.id.toString());
       alert(response.message);
+      fetchData(); // Reload data for consistency
     } catch (error: any) {
       alert(error.message || 'Gagal mengirim ulang email');
     } finally {
@@ -176,37 +155,26 @@ export function AdminDashboard() {
   };
 
   const handleChangeStatus = async (transaction: Transaction, status: string) => {
+    if (transaction.status === 'paid' || transaction.status === 'cancelled') {
+        toast.error('Transaksi yang sudah dibayar atau dibatalkan tidak dapat diubah statusnya');
+        return;
+    }
+
     if (!confirm(`Ubah status transaksi ${transaction.order_number} menjadi ${status}?`)) {
       return;
     }
 
     try {
-      const oldStatus = transaction.status;
-      
-      // Update local state immediately for better UX
-      setTransactions(prev => 
-        prev.map(t => t.id === transaction.id ? { ...t, status: status as any } : t)
-      );
-      
-      // Update stats
-      setStats(prev => {
-        const newStats = { ...prev };
-        // Decrease old status count
-        if (oldStatus === 'completed') newStats.completed--;
-        else if (oldStatus === 'pending') newStats.pending--;
-        else if (oldStatus === 'expired') newStats.expired--;
-        else if (oldStatus === 'cancelled') newStats.cancelled--;
-        
-        // Increase new status count
-        if (status === 'completed') newStats.completed++;
-        else if (status === 'pending') newStats.pending++;
-        else if (status === 'expired') newStats.expired++;
-        else if (status === 'cancelled') newStats.cancelled++;
-        
-        return newStats;
-      });
+      // Call API
+      const response = await adminApi.updateTransactionStatus(transaction.id.toString(), status);
 
-      alert(`Status berhasil diubah menjadi ${status}`);
+      if (!response.success) {
+        throw new Error(response.message || 'Gagal mengubah status di server');
+      }
+
+      toast.success('Status berhasil diubah');
+      await fetchData(); // Reload transactions
+      await fetchStats(); // Reload stats
       setEditingStatusId(null);
       setNewStatus('');
     } catch (error: any) {
@@ -214,7 +182,7 @@ export function AdminDashboard() {
     }
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number = 0) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -222,25 +190,26 @@ export function AdminDashboard() {
     }).format(price);
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  /* Removed local formatDate */
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      completed: { className: 'bg-green-50 text-green-700 border-green-200', icon: CheckCircle, label: 'Selesai' },
-      pending: { className: 'bg-yellow-50 text-yellow-700 border-yellow-200', icon: Clock, label: 'Pending' },
-      expired: { className: 'bg-gray-50 text-gray-700 border-gray-200', icon: AlertCircle, label: 'Expired' },
+      paid: { className: 'bg-green-50 text-green-700 border-green-200', icon: CheckCircle, label: 'Lunas' },
+      pending: { className: 'bg-yellow-50 text-yellow-700 border-yellow-200', icon: Clock, label: 'Menunggu Pembayaran' },
+      expired: { className: 'bg-gray-50 text-gray-700 border-gray-200', icon: AlertCircle, label: 'Kadaluarsa' },
       cancelled: { className: 'bg-red-50 text-red-700 border-red-200', icon: XCircle, label: 'Dibatalkan' },
     };
 
     const config = variants[status as keyof typeof variants];
+    
+    if (!config) {
+      return (
+        <Badge variant="outline">
+          {status}
+        </Badge>
+      );
+    }
+
     const Icon = config.icon;
 
     return (
@@ -261,254 +230,457 @@ export function AdminDashboard() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">Kelola semua transaksi dan pembelian tiket</p>
+          <p className="text-gray-600 mt-1">Kelola transaksi, event, dan kategori</p>
         </div>
 
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card className="p-4 bg-gradient-to-br from-sky-500 to-sky-600 text-white border-0">
-              <div className="flex items-center justify-between mb-2">
-                <ShoppingCart className="h-8 w-8 opacity-80" />
-                <span className="text-2xl font-bold">{stats.total}</span>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-white p-1 border shadow-sm">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700">
+              <LayoutDashboard className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="events" className="data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700">
+              <Calendar className="h-4 w-4 mr-2" />
+              Event
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700">
+              <Tags className="h-4 w-4 mr-2" />
+              Kategori
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+             {/* Stats Cards */}
+            {stats && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="p-4 bg-gradient-to-br from-sky-500 to-sky-600 text-white border-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <ShoppingCart className="h-8 w-8 opacity-80" />
+                    <span className="text-2xl font-bold">{stats.total_transactions}</span>
+                  </div>
+                  <p className="text-sm text-sky-100">Total Transaksi</p>
+                </Card>
+                {/* ... other stats cards ... */}
+                 <Card className="p-4 bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <CheckCircle className="h-8 w-8 opacity-80" />
+                    <span className="text-2xl font-bold">{stats.paid_transactions}</span>
+                  </div>
+                  <p className="text-sm text-green-100">Lunas</p>
+                </Card>
+
+                <Card className="p-4 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white border-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <Clock className="h-8 w-8 opacity-80" />
+                    <span className="text-2xl font-bold">{stats.pending_transactions}</span>
+                  </div>
+                  <p className="text-sm text-yellow-100">Menunggu Pembayaran</p>
+                </Card>
+
+                <Card className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <DollarSign className="h-8 w-8 opacity-80" />
+                    <span className="text-xl font-bold">{formatPrice(stats.total_revenue)}</span>
+                  </div>
+                  <p className="text-sm text-purple-100">Total Revenue</p>
+                </Card>
               </div>
-              <p className="text-sm text-sky-100">Total Transaksi</p>
+            )}
+
+            {/* Filters */}
+            <Card className="p-4 mb-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
+                  <Input
+                    type="text"
+                    placeholder="Cari order number, nama, email, atau event..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => {
+                      setStatusFilter(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Semua Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      <SelectItem value="paid">Lunas</SelectItem>
+                      <SelectItem value="pending">Menunggu Pembayaran</SelectItem>
+                      <SelectItem value="expired">Kadaluarsa</SelectItem>
+                      <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </Card>
 
-            <Card className="p-4 bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-              <div className="flex items-center justify-between mb-2">
-                <CheckCircle className="h-8 w-8 opacity-80" />
-                <span className="text-2xl font-bold">{stats.completed}</span>
-              </div>
-              <p className="text-sm text-green-100">Selesai</p>
-            </Card>
-
-            <Card className="p-4 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white border-0">
-              <div className="flex items-center justify-between mb-2">
-                <Clock className="h-8 w-8 opacity-80" />
-                <span className="text-2xl font-bold">{stats.pending}</span>
-              </div>
-              <p className="text-sm text-yellow-100">Pending</p>
-            </Card>
-
-            <Card className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-              <div className="flex items-center justify-between mb-2">
-                <DollarSign className="h-8 w-8 opacity-80" />
-                <span className="text-xl font-bold">{formatPrice(stats.total_revenue)}</span>
-              </div>
-              <p className="text-sm text-purple-100">Total Revenue</p>
-            </Card>
-          </div>
-        )}
-
-        {/* Filters */}
-        <Card className="p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
-              <Input
-                type="text"
-                placeholder="Cari order number, nama, email, atau event..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                }}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex gap-2">
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => {
-                  setStatusFilter(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Semua Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="completed">Selesai</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </Card>
-
-        {/* Transactions Table */}
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Order</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tiket</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : transactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
-                      Tidak ada transaksi ditemukan
-                    </td>
-                  </tr>
-                ) : (
-                  transactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-gray-900">{transaction.order_number}</div>
-                        <div className="text-xs text-gray-500">{transaction.payment_method}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-gray-900">{transaction.customer_name}</div>
-                        <div className="text-xs text-gray-500">{transaction.customer_email}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-900">{transaction.event_title}</div>
-                        <div className="text-xs text-gray-500">{new Date(transaction.event_date).toLocaleDateString('id-ID')}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-900">{transaction.ticket_type}</div>
-                        <div className="text-xs text-gray-500">{transaction.quantity}x tiket</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm font-semibold text-gray-900">{formatPrice(transaction.total_amount)}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {getStatusBadge(transaction.status)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-900">{formatDate(transaction.created_at)}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          {transaction.status === 'completed' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleResendEmail(transaction)}
-                              disabled={resendingId === transaction.id}
-                              className="text-xs"
-                            >
-                              {resendingId === transaction.id ? (
-                                <>Sending...</>
-                              ) : (
-                                <>
-                                  <Mail className="h-3 w-3 mr-1" />
-                                  Resend
-                                </>
+            {/* Transactions Table */}
+            <Card className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Order</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tiket</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                            <p>Loading...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : transactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                          Tidak ada transaksi ditemukan
+                        </td>
+                      </tr>
+                    ) : (
+                      transactions.map((transaction) => (
+                        <tr key={transaction.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <div className="text-sm font-medium text-gray-900">{transaction.order_number}</div>
+                            <div className="text-xs text-gray-500">{transaction.payment_method}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm font-medium text-gray-900">{transaction.customer_name}</div>
+                            <div className="text-xs text-gray-500">{transaction.customer_email}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900">
+                              {transaction.tickets?.[0]?.event?.title || transaction.order_number || 'No Title'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {transaction.tickets?.[0]?.event?.event_date && transaction.tickets[0].event.event_date !== '0001-01-01T00:00:00Z' 
+                                ? new Date(transaction.tickets[0].event.event_date).toLocaleDateString('id-ID') 
+                                : '-'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900">{transaction.tickets?.[0]?.ticket_type?.name || 'Standard'}</div>
+                            <div className="text-xs text-gray-500">{transaction.tickets?.length || 0}x tiket</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm font-semibold text-gray-900">{formatPrice(transaction.total_amount)}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {getStatusBadge(transaction.status)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900">{formatDateTime(transaction.created_at)}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              {transaction.status === 'paid' && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                                  onClick={() => handleResendEmail(transaction)}
+                                  disabled={resendingId === transaction.id}
+                                  title="Kirim ulang tiket"
+                                >
+                                  {resendingId === transaction.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Mail className="h-4 w-4" />
+                                  )}
+                                </Button>
                               )}
-                            </Button>
-                          )}
-                          
-                          {editingStatusId === transaction.id ? (
-                            <div className="flex items-center gap-1">
-                              <select
-                                value={newStatus || transaction.status}
-                                onChange={(e) => setNewStatus(e.target.value)}
-                                className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
-                              >
-                                <option value="completed">Selesai</option>
-                                <option value="pending">Pending</option>
-                                <option value="expired">Expired</option>
-                                <option value="cancelled">Dibatalkan</option>
-                              </select>
+                              
+                              {editingStatusId === transaction.id ? (
+                                <div className="flex items-center gap-1">
+                                  <select
+                                    value={newStatus || transaction.status}
+                                    onChange={(e) => setNewStatus(e.target.value)}
+                                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                  >
+                                    <option value="paid">Lunas</option>
+                                    <option value="pending">Menunggu Pembayaran</option>
+                                    <option value="expired">Kadaluarsa</option>
+                                    <option value="cancelled">Dibatalkan</option>
+                                  </select>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    onClick={() => {
+                                      if (newStatus && newStatus !== transaction.status) {
+                                        handleChangeStatus(transaction, newStatus);
+                                      } else {
+                                        setEditingStatusId(null);
+                                      }
+                                    }}
+                                    title="Simpan"
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => {
+                                      setEditingStatusId(null);
+                                      setNewStatus('');
+                                    }}
+                                    title="Batal"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                transaction.status !== 'paid' && transaction.status !== 'cancelled' && (
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                    onClick={() => {
+                                      setEditingStatusId(transaction.id);
+                                      setNewStatus(transaction.status);
+                                    }}
+                                    title="Edit status"
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                )
+                              )}
+                              
                               <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (newStatus && newStatus !== transaction.status) {
-                                    handleChangeStatus(transaction, newStatus);
-                                  } else {
-                                    setEditingStatusId(null);
-                                  }
-                                }}
-                                className="p-1 h-7 w-7"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                onClick={() => setSelectedTransaction(transaction)}
+                                title="Lihat detail"
                               >
-                                <Check className="h-3 w-3 text-green-600" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingStatusId(null);
-                                  setNewStatus('');
-                                }}
-                                className="p-1 h-7 w-7"
-                              >
-                                <X className="h-3 w-3 text-red-600" />
+                                <Eye className="h-4 w-4" />
                               </Button>
                             </div>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingStatusId(transaction.id);
-                                setNewStatus(transaction.status);
-                              }}
-                              className="text-xs"
-                            >
-                              <Edit2 className="h-3 w-3 mr-1" />
-                              Status
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Halaman {currentPage} dari {totalPages}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex gap-2">
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Menampilkan {transactions.length} dari {totalItems} transaksi | Halaman {currentPage} dari {totalPages}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Sebelumnya
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Selanjutnya
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="events">
+            <AdminEvents />
+          </TabsContent>
+
+          <TabsContent value="categories">
+            <AdminCategories />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setSelectedTransaction(null)}
+        >
+          <div 
+            className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-gradient-to-r from-sky-600 to-sky-700 text-white p-6 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sky-100 text-2xl font-bold">Detail Transaksi</h2>
+                  <p className="text-sky-100 mt-1">{selectedTransaction.order_number}</p>
+                </div>
                 <Button
+                  variant="ghost"
                   size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => setSelectedTransaction(null)}
+                  className="text-white hover:bg-white/20"
                 >
-                  Sebelumnya
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Selanjutnya
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             </div>
-          )}
-        </Card>
-      </div>
+
+            <div className="p-6 space-y-6">
+              {/* Buyer Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <User className="h-5 w-5 text-sky-600" />
+                  Informasi Pembeli
+                </h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Nama:</span>
+                    <span className="font-medium text-gray-900">{selectedTransaction.customer_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-medium text-gray-900">{selectedTransaction.customer_email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Telepon:</span>
+                    <span className="font-medium text-gray-900">{selectedTransaction.customer_phone || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium text-gray-900">{formatPrice(selectedTransaction.total_amount - (selectedTransaction.admin_fee || 0))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Biaya Admin:</span>
+                    <span className="font-medium text-gray-900">{formatPrice(selectedTransaction.admin_fee || 0)}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <span className="text-gray-600 font-semibold">Total Pembayaran:</span>
+                    <span className="font-bold text-sky-600 text-xl">{formatPrice(selectedTransaction.total_amount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Status:</span>
+                    <div>{getStatusBadge(selectedTransaction.status)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tickets/Attendees */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Daftar Peserta ({selectedTransaction.tickets?.length || 0})</h3>
+                <div className="space-y-3">
+                  {selectedTransaction.tickets && selectedTransaction.tickets.length > 0 ? (
+                    selectedTransaction.tickets.map((ticket, index) => {
+                      let customFieldResponses: Record<string, any> = {};
+                      try {
+                        if (ticket.custom_field_responses) {
+                          customFieldResponses = JSON.parse(ticket.custom_field_responses);
+                        }
+                      } catch (error) {
+                        console.error('Failed to parse custom field responses:', error);
+                      }
+
+                      return (
+                        <div key={ticket.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <p className="font-semibold text-gray-900">Peserta {index + 1}</p>
+                              <p className="text-sm text-gray-600">{ticket.ticket_type?.name || 'Standard'}</p>
+                            </div>
+                            <Badge className="bg-sky-50 text-sky-700 border-sky-200">
+                              {ticket.ticket_code}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-2 mb-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Nama:</span>
+                              <span className="font-medium text-gray-900">{ticket.attendee_name}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Email:</span>
+                              <span className="font-medium text-gray-900">{ticket.attendee_email}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Telepon:</span>
+                              <span className="font-medium text-gray-900">{ticket.attendee_phone}</span>
+                            </div>
+                          </div>
+
+                          {/* Custom Field Responses */}
+                          {Object.keys(customFieldResponses).length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-2">Informasi Tambahan:</p>
+                              <div className="space-y-1">
+                                {Object.entries(customFieldResponses).map(([key, value]) => (
+                                  <div key={key} className="flex justify-between text-sm">
+                                    <span className="text-gray-600">{key}:</span>
+                                    <span className="font-medium text-gray-900">{String(value)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">Tidak ada data tiket</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Event Information */}
+              {selectedTransaction.tickets?.[0]?.event && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Informasi Event</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Event:</span>
+                      <span className="font-medium text-gray-900">{selectedTransaction.tickets[0].event.title}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tanggal:</span>
+                      <span className="font-medium text-gray-900">
+                        {selectedTransaction.tickets[0].event.event_date && selectedTransaction.tickets[0].event.event_date !== '0001-01-01T00:00:00Z'
+                          ? new Date(selectedTransaction.tickets[0].event.event_date).toLocaleDateString('id-ID')
+                          : '-'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Lokasi:</span>
+                      <span className="font-medium text-gray-900">{selectedTransaction.tickets[0].event.venue}, {selectedTransaction.tickets[0].event.city}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

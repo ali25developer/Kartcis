@@ -18,12 +18,12 @@ export const purchasedTicketStorage = {
   },
 
   // Get tickets by user ID
-  getByUserId: (userId: string): Ticket[] => {
+  getByUserId: (userId: string | number): Ticket[] => {
     try {
       const allTickets = purchasedTicketStorage.getAll();
       // For now, we'll use a simple approach where tickets have a userId property
       // In a real app, this would be handled by the backend
-      return allTickets.filter((ticket: any) => ticket.userId === userId);
+      return allTickets.filter((ticket: any) => String(ticket.userId) === String(userId));
     } catch (error) {
       console.error('Error reading user tickets:', error);
       return [];
@@ -37,7 +37,7 @@ export const purchasedTicketStorage = {
   },
 
   // Add new purchased ticket
-  add: (ticket: Ticket & { userId?: string }): void => {
+  add: (ticket: Ticket & { userId?: string | number }): void => {
     try {
       const tickets = purchasedTicketStorage.getAll();
       tickets.push(ticket);
@@ -48,7 +48,7 @@ export const purchasedTicketStorage = {
   },
 
   // Add multiple tickets at once
-  addMultiple: (newTickets: (Ticket & { userId?: string })[]): void => {
+  addMultiple: (newTickets: (Ticket & { userId?: string | number })[]): void => {
     try {
       const tickets = purchasedTicketStorage.getAll();
       tickets.push(...newTickets);

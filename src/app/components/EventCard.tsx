@@ -2,7 +2,7 @@ import { Calendar, MapPin, Clock, Users } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Event } from '../data/events';
+import type { Event } from '../types';
 
 interface EventCardProps {
   event: Event;
@@ -12,6 +12,7 @@ interface EventCardProps {
 export function EventCard({ event, onClick }: EventCardProps) {
   const formatDate = (dateStr: string) => {
     try {
+      if (!dateStr) return 'Tanggal belum ditentukan';
       const date = new Date(dateStr);
       // Check if date is valid
       if (isNaN(date.getTime())) {
@@ -37,30 +38,31 @@ export function EventCard({ event, onClick }: EventCardProps) {
     }).format(price);
   };
 
-  const totalAvailable = event.ticketTypes && Array.isArray(event.ticketTypes) && event.ticketTypes.length > 0 
-    ? event.ticketTypes.reduce((sum, t) => sum + (Number(t.available) || 0), 0)
+  const totalAvailable = event.ticket_types && Array.isArray(event.ticket_types) && event.ticket_types.length > 0 
+    ? event.ticket_types.reduce((sum, t) => sum + (Number(t.available) || 0), 0)
     : 0;
+    
   const soldOutPercentage = event.quota && event.quota > 0 
     ? ((event.quota - totalAvailable) / event.quota) * 100
     : 0;
   
-  // Auto-detect sold out: either status is 'sold-out' OR totalAvailable is 0
-  const isSoldOut = event.status === 'sold-out' || totalAvailable === 0;
+  // Auto-detect sold out: either status is 'sold_out' OR totalAvailable is 0
+  const isSoldOut = event.status === 'sold_out' || (event.ticket_types && event.ticket_types.length > 0 && totalAvailable === 0);
   const isCancelled = event.status === 'cancelled';
   
-  // Check if any ticket has discount
-  const hasDiscount = event.ticketTypes && Array.isArray(event.ticketTypes) && event.ticketTypes.some(t => t.originalPrice && t.originalPrice > t.price);
-  const lowestTicket = event.ticketTypes && Array.isArray(event.ticketTypes) && event.ticketTypes.length > 0 
-    ? event.ticketTypes.reduce((min, ticket) => 
+  // Check if any ticket has discount (using originalPrice which is optional in TicketType)
+  const hasDiscount = event.ticket_types && Array.isArray(event.ticket_types) && event.ticket_types.some(t => t.originalPrice && t.originalPrice > t.price);
+  const lowestTicket = event.ticket_types && Array.isArray(event.ticket_types) && event.ticket_types.length > 0 
+    ? event.ticket_types.reduce((min, ticket) => 
         ticket.price < min.price ? ticket : min
-      , event.ticketTypes[0])
+      , event.ticket_types[0])
     : null;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group bg-white border-gray-200" onClick={onClick}>
-      <div className="relative aspect-[16/9] overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group bg-white border-gray-200 flex flex-col h-full" onClick={onClick}>
+      <div className="relative aspect-[16/9] overflow-hidden flex-shrink-0">
         <img 
-          src={event.image} 
+          src={event.image || '/placeholder-event.jpg'} 
           alt={event.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
@@ -80,17 +82,19 @@ export function EventCard({ event, onClick }: EventCardProps) {
           </div>
         )}
         
-        {event.isFeatured && !isSoldOut && !isCancelled && (
+        {event.is_featured && !isSoldOut && !isCancelled && (
           <Badge className="absolute top-3 left-3 bg-orange-500 border-0 text-sm px-2.5 py-0.5">
             Populer
           </Badge>
         )}
-        <Badge className="absolute top-3 right-3 bg-white text-gray-900 border-0 text-sm px-2.5 py-0.5">
-          {event.category}
-        </Badge>
+        {event.category && (
+          <Badge className="absolute top-3 right-3 bg-white text-gray-900 border-0 text-sm px-2.5 py-0.5">
+            {event.category.name}
+          </Badge>
+        )}
       </div>
 
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1">
         <h3 className="text-xl font-semibold text-gray-900 mb-1 line-clamp-1">
           {event.title}
         </h3>
@@ -99,7 +103,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
         <div className="space-y-2 mb-4 min-h-[72px]">
           <div className="flex items-center text-sm text-gray-700">
             <Calendar className="h-4 w-4 mr-2 text-sky-600 flex-shrink-0" />
-            <span className="line-clamp-1">{formatDate(event.date)}</span>
+            <span className="line-clamp-1">{formatDate(event.date || event.event_date)}</span>
           </div>
           <div className="flex items-center text-sm text-gray-700">
             <MapPin className="h-4 w-4 mr-2 text-sky-600 flex-shrink-0" />
@@ -121,28 +125,30 @@ export function EventCard({ event, onClick }: EventCardProps) {
           </div>
         )}
 
-        <div className="flex items-end justify-between pt-3 border-t gap-3">
+        <div className="flex items-end justify-between pt-3 border-t gap-3 mt-auto">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 mb-1">Mulai dari</p>
-            {lowestTicket && lowestTicket.originalPrice && lowestTicket.originalPrice > lowestTicket.price ? (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-gray-400 line-through">
-                    {formatPrice(lowestTicket.originalPrice)}
+            <div className="h-[74px] flex flex-col justify-end">
+              <p className="text-xs text-gray-500 mb-1">Mulai dari</p>
+              {lowestTicket && lowestTicket.originalPrice && lowestTicket.originalPrice > lowestTicket.price ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-400 line-through">
+                      {formatPrice(lowestTicket.originalPrice)}
+                    </p>
+                    <Badge className="bg-orange-500 text-white border-0 text-xs px-1.5 py-0">
+                      {Math.round((1 - lowestTicket.price / lowestTicket.originalPrice) * 100)}%
+                    </Badge>
+                  </div>
+                  <p className="font-bold text-sky-600 text-2xl leading-none">
+                    {formatPrice(lowestTicket.price)}
                   </p>
-                  <Badge className="bg-orange-500 text-white border-0 text-xs px-1.5 py-0">
-                    {Math.round((1 - lowestTicket.price / lowestTicket.originalPrice) * 100)}%
-                  </Badge>
                 </div>
-                <p className="font-bold text-sky-600 text-2xl">
-                  {formatPrice(lowestTicket.price)}
+              ) : (
+                <p className="font-bold text-sky-600 text-2xl leading-none">
+                  {formatPrice(event.min_price || lowestTicket?.price || 0)}
                 </p>
-              </div>
-            ) : (
-              <p className="font-bold text-sky-600 text-2xl">
-                {lowestTicket ? formatPrice(lowestTicket.price) : formatPrice(event.price?.min || 0)}
-              </p>
-            )}
+              )}
+            </div>
           </div>
           <Button className="bg-sky-600 hover:bg-sky-700 flex-shrink-0">
             Lihat Detail

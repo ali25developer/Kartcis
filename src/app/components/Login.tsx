@@ -1,4 +1,4 @@
-import { X, Eye, EyeOff } from 'lucide-react';
+import { X, Eye, EyeOff, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -260,6 +260,21 @@ export function Login({ isOpen, onClose, onSwitchToRegister }: LoginProps) {
             >
               Daftar sekarang
             </button>
+          </div>
+
+          {/* Quick Exit/Home Link */}
+          <div className="mt-4 pt-4 border-t text-center">
+            <a 
+              href="/" 
+              className="inline-flex items-center text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/'; // Hard redirect to clear state/modal
+              }}
+            >
+              <Home className="h-3 w-3 mr-1" />
+              Kembali ke Beranda
+            </a>
           </div>
         </div>
       </div>

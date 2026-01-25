@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-import { X, Calendar, MapPin, Clock, Download, QrCode } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import { Calendar, MapPin, Clock, Download, QrCode, Loader2 } from 'lucide-react';
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { purchasedTicketStorage } from "@/app/utils/purchasedTicketStorage";
+import { api } from "@/app/services/api";
+import type { Ticket as ApiTicket } from "@/app/types";
 import type { Ticket } from "@/app/components/MyTickets";
 import QRCode from 'qrcode';
 import { useRef } from 'react';
@@ -14,25 +15,64 @@ import { createPortal } from 'react-dom';
 export function MyTicketsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [upcomingTickets, setUpcomingTickets] = useState<Ticket[]>([]);
+  const [pastTickets, setPastTickets] = useState<Ticket[]>([]);
   const [selectedTicketForQR, setSelectedTicketForQR] = useState<Ticket | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchTickets = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const response = await api.tickets.getMyTickets();
+            if (response.success && response.data) {
+                // Helper to map API ticket to Component Ticket
+                const mapTicket = (t: ApiTicket): Ticket => ({
+                    id: t.id.toString(),
+                    eventId: t.event_id.toString(),
+                    eventTitle: t.event?.title || 'Unknown Event',
+                    eventDate: t.event?.event_date || '',
+                    eventTime: t.event?.event_time || '',
+                    venue: t.event?.venue || '',
+                    city: t.event?.city || '',
+                    ticketType: t.ticket_type?.name || 'Standard',
+                    quantity: 1,
+                    price: t.ticket_type?.price || 0,
+                    eventImage: t.event?.image || '',
+                    orderDate: t.created_at,
+                    ticketCode: t.ticket_code,
+                    customFieldResponses: t.custom_field_responses,
+                    eventStatus: t.event?.status === 'cancelled' ? 'cancelled' : 'active',
+                    cancelReason: t.event?.cancel_reason
+                });
+
+                const upcoming = (response.data.upcoming || []).map(mapTicket);
+                // Ensure upcoming are sorted by date ascending (soonest first)
+                upcoming.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+                setUpcomingTickets(upcoming);
+
+                const past = (response.data.past || []).map(mapTicket);
+                // Ensure past are sorted by date descending (most recent first)
+                past.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+                setPastTickets(past);
+            }
+        } catch (error) {
+            console.error('Error fetching tickets:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (user) {
-      const userTickets = purchasedTicketStorage.getByUserId(user.id);
-      console.log('=== DEBUG: Loaded tickets ===');
-      console.log('User ID:', user.id);
-      console.log('Total tickets:', userTickets.length);
-      console.log('Tickets:', userTickets);
-      setTickets(userTickets);
+        fetchTickets();
     }
   }, [user]);
 
   // Generate QR code when modal opens
   useEffect(() => {
     if (selectedTicketForQR && qrCanvasRef.current) {
-      console.log('Generating QR code for:', selectedTicketForQR.ticketCode);
       QRCode.toCanvas(qrCanvasRef.current, selectedTicketForQR.ticketCode, { 
         width: 200,
         margin: 2,
@@ -69,22 +109,11 @@ export function MyTicketsPage() {
     }).format(price);
   };
 
-  const isUpcoming = (dateStr: string) => {
-    try {
-      const eventDate = new Date(dateStr);
-      const today = new Date();
-      return !isNaN(eventDate.getTime()) && eventDate > today;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const upcomingTickets = tickets.filter(t => isUpcoming(t.eventDate) && t.eventStatus !== 'cancelled');
-  const pastTickets = tickets.filter(t => !isUpcoming(t.eventDate) && t.eventStatus !== 'cancelled');
-
-  const handleEventClick = (eventId: string) => {
+  const handleEventClick = (eventId: string | number) => {
     navigate(`/event/${eventId}`);
   };
+
+  const hasNoTickets = upcomingTickets.length === 0 && pastTickets.length === 0;
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-8">
@@ -98,7 +127,11 @@ export function MyTicketsPage() {
           </div>
 
           <div className="p-6">
-            {tickets.length === 0 ? (
+            {loading ? (
+                <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                </div>
+            ) : hasNoTickets ? (
               <div className="text-center py-12">
                 <QrCode className="h-16 w-16 text-gray-300 mx-auto mb-3" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">Belum Ada Tiket</h3>
@@ -126,7 +159,6 @@ export function MyTicketsPage() {
                           isUpcoming 
                           onEventClick={handleEventClick}
                           onShowQR={() => {
-                            console.log('Setting selected ticket for QR:', ticket.ticketCode);
                             setSelectedTicketForQR(ticket);
                           }}
                         />
@@ -164,7 +196,6 @@ export function MyTicketsPage() {
         <div 
           className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4"
           onClick={() => {
-            console.log('Closing QR modal');
             setSelectedTicketForQR(null);
           }}
         >
@@ -186,7 +217,6 @@ export function MyTicketsPage() {
               <Button 
                 type="button"
                 onClick={() => {
-                  console.log('Close button clicked');
                   setSelectedTicketForQR(null);
                 }}
                 className="w-full bg-sky-600 hover:bg-sky-700"
@@ -214,20 +244,12 @@ function TicketCard({
   formatPrice: (price: number) => string;
   formatDate: (date: string) => string;
   isUpcoming: boolean;
-  onEventClick?: (eventId: string) => void;
+  onEventClick?: (eventId: string | number) => void;
   onShowQR?: () => void;
 }) {
   const isCancelled = ticket.eventStatus === 'cancelled';
 
-  console.log('=== DEBUG: TicketCard render ===');
-  console.log('Ticket:', ticket.ticketCode, ticket.eventTitle);
-  console.log('isUpcoming:', isUpcoming);
-  console.log('isCancelled:', isCancelled);
-  console.log('Will render buttons?', isUpcoming && !isCancelled);
-  console.log('onShowQR exists?', !!onShowQR);
-
   const handleDownloadTicket = async () => {
-    console.log('Download ticket clicked for:', ticket.ticketCode);
     try {
       // Create ticket data
       const ticketData = {
@@ -401,6 +423,32 @@ function TicketCard({
             </a>
           </div>
 
+          {/* Custom Field Responses */}
+          {ticket.customFieldResponses && (() => {
+            try {
+              const responses = JSON.parse(ticket.customFieldResponses);
+              const entries = Object.entries(responses);
+              if (entries.length > 0) {
+                return (
+                  <div className="mt-3 p-3 bg-sky-50 border border-sky-200 rounded-lg">
+                    <p className="text-xs font-semibold text-sky-900 mb-2">Informasi Tambahan</p>
+                    <div className="space-y-1">
+                      {entries.map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-gray-600">{key}:</span>
+                          <span className={`font-medium ${isCancelled ? 'text-gray-500' : 'text-gray-900'}`}>{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+            } catch (error) {
+              console.error('Failed to parse custom field responses:', error);
+            }
+            return null;
+          })()}
+
           <div className="flex items-center justify-between pt-3 border-t">
             <div>
               <p className="text-xs text-gray-600">Kode Tiket</p>
@@ -421,7 +469,6 @@ function TicketCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('QR Button clicked!');
                 if (onShowQR) {
                   onShowQR();
                 }

@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, Calendar, MapPin, Clock, Users, Tag, AlertCircle, Loader2 } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Calendar, MapPin, Users, Tag, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card } from "@/app/components/ui/card";
 import { Separator } from "@/app/components/ui/separator";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { events as eventsData, type Event, type TicketType } from "@/app/data/events";
+import type { Event, TicketType } from "@/app/types";
+import api from "@/app/services/api";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
 import { pendingOrderStorage } from "@/app/utils/pendingOrderStorage";
 import {
@@ -38,21 +39,30 @@ export function EventDetailPage() {
       return;
     }
 
-    setLoading(true);
-    const foundEvent = eventsData.find(e => e.id === eventId);
-    
-    if (foundEvent) {
-      setEvent(foundEvent);
-    } else {
-      toast.error("Event tidak ditemukan");
-      navigate('/');
-    }
-    setLoading(false);
+    const fetchEvent = async () => {
+      setLoading(true);
+      try {
+        const response = await api.events.getById(eventId);
+        if (response.success && response.data) {
+          setEvent(response.data);
+        } else {
+          toast.error("Event tidak ditemukan");
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Error fetching event:', error);
+        toast.error("Gagal memuat event");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvent();
   }, [eventId, navigate]);
 
   const handleTicketQuantityChange = (ticketType: TicketType, delta: number) => {
     // Check if event is available (not sold out or cancelled)
-    const isSoldOut = event?.status === 'sold-out';
+    const isSoldOut = event?.status === 'sold_out';
     const isCancelled = event?.status === 'cancelled';
     if (isSoldOut || isCancelled) return;
     
@@ -80,7 +90,7 @@ export function EventDetailPage() {
     if (!event) return 0;
     
     return Object.entries(selectedTickets).reduce((sum, [ticketId, quantity]) => {
-      const ticket = event.ticketTypes.find(t => String(t.id) === ticketId);
+      const ticket = event.ticket_types?.find(t => String(t.id) === ticketId);
       if (!ticket) return sum;
       
       // Use original price if exists (no discount), otherwise use regular price
@@ -92,13 +102,6 @@ export function EventDetailPage() {
 
   const handleCheckout = () => {
     const totalQuantity = getTotalQuantity();
-    
-    console.log('🛒 Checkout clicked', { 
-      selectedTickets, 
-      totalQuantity,
-      keys: Object.keys(selectedTickets),
-      values: Object.values(selectedTickets)
-    });
     
     if (totalQuantity === 0) {
       toast.error("Pilih tiket terlebih dahulu");
@@ -172,7 +175,7 @@ export function EventDetailPage() {
   }
 
   // Check if event is available (not sold out and not cancelled)
-  const isSoldOut = event.status === 'sold-out';
+  const isSoldOut = event.status === 'sold_out';
   const isCancelled = event.status === 'cancelled';
   const isEventAvailable = !isSoldOut && !isCancelled;
   const totalQuantity = getTotalQuantity();
@@ -201,7 +204,7 @@ export function EventDetailPage() {
             {/* Event Image */}
             <div className="relative w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden bg-gray-200">
               <img
-                src={event.image}
+                src={event.image || ''}
                 alt={event.title}
                 className="w-full h-full object-cover"
               />
@@ -219,7 +222,7 @@ export function EventDetailPage() {
               )}
 
               {/* Featured Badge */}
-              {event.isFeatured && isEventAvailable && (
+              {event.is_featured && isEventAvailable && (
                 <Badge className="absolute top-4 right-4 bg-yellow-500 text-black">
                   FEATURED
                 </Badge>
@@ -227,7 +230,7 @@ export function EventDetailPage() {
 
               {/* Category Badge */}
               <Badge className="absolute top-4 left-4 bg-sky-600">
-                {event.category}
+                {event.category?.name || 'Uncategorized'}
               </Badge>
             </div>
 
@@ -241,7 +244,7 @@ export function EventDetailPage() {
                   <div>
                     <p className="text-sm font-semibold">Tanggal & Waktu</p>
                     <p className="text-gray-600">
-                      {formatDate(event.date)} · {formatTime(event.time)}
+                      {formatDate(event.event_date)} · {formatTime(event.event_time ??'')}
                     </p>
                   </div>
                 </div>
@@ -258,7 +261,7 @@ export function EventDetailPage() {
                   <Tag className="h-5 w-5 text-sky-600 mt-1" />
                   <div>
                     <p className="text-sm font-semibold">Kategori</p>
-                    <p className="text-gray-600">{event.category}</p>
+                    <p className="text-gray-600">{event.category?.name || 'Uncategorized'}</p>
                   </div>
                 </div>
 
@@ -319,13 +322,13 @@ export function EventDetailPage() {
               )}
 
               <div className="space-y-4 mb-6">
-                {event.ticketTypes.map((ticket) => {
+                {event.ticket_types?.map((ticket) => {
                   const quantity = selectedTickets[ticket.id] || 0;
                   
-                  // Calculate discount if originalPrice exists
-                  const hasDiscount = ticket.originalPrice && ticket.originalPrice > ticket.price;
+                  // Only show discount if originalPrice is explicitly set and greater than current price
+                  const hasDiscount = Boolean(ticket.originalPrice && Number(ticket.originalPrice) > ticket.price);
                   const discountPercent = hasDiscount 
-                    ? Math.round(((ticket.originalPrice! - ticket.price) / ticket.originalPrice!) * 100)
+                    ? Math.round(((Number(ticket.originalPrice) - ticket.price) / Number(ticket.originalPrice)) * 100)
                     : 0;
 
                   return (

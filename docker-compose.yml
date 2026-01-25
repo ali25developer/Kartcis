@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # KARTCIS.ID Frontend Application
+  # KARTCIS.ID Frontend Application (Nginx Production)
   kartcis-frontend:
     build:
       context: .
@@ -20,16 +20,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
     labels:
       - "com.kartcis.description=KARTCIS.ID Ticketing System Frontend"
-      - "com.kartcis.version=1.0.0"
 
-  # Development mode (optional - untuk development)
+  # Development mode (Frontend Dev)
   kartcis-dev:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
       target: development
     container_name: kartcis-ticketing-dev
     restart: unless-stopped
@@ -40,12 +38,10 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8000/api/v1
     networks:
       - kartcis-network
     command: npm run dev -- --host
-    profiles:
-      - dev
 
 networks:
   kartcis-network:

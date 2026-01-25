@@ -16,4 +16,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 100, // Increase polling frequency
+    },
+    hmr: {
+      clientPort: 5173, // Ensure HMR connects to the correct host port
+    },
+    host: true,
+    port: 5173,
+    strictPort: true, // Fail if port is busy instead of picking another one
+  },
 })

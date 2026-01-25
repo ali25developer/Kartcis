@@ -2,7 +2,7 @@ import { CheckCircle, Download, Mail, Ticket } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import type { PendingOrder } from '../types/pendingOrder';
 
 interface PaymentSuccessProps {

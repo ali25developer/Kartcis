@@ -19,6 +19,7 @@ export interface Ticket {
   eventImage: string;
   orderDate: string;
   ticketCode: string;
+  customFieldResponses?: string; // JSON string of custom field responses
   eventStatus?: 'active' | 'cancelled'; // Status of the event
   cancelReason?: string; // Reason if event is cancelled
 }

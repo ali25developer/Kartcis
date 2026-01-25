@@ -5,9 +5,11 @@ export interface PendingOrder {
   paymentMethod: string; // BCA, GoPay, QRIS, CreditCard, etc
   paymentType: PaymentMethodType; // va, ewallet, qris, credit_card
   vaNumber?: string; // only for VA
+  virtualAccountNumber?: string; // alias for vaNumber
   qrisUrl?: string; // only for QRIS
   amount: number;
   totalAmount: number; // Alias for amount (for compatibility)
+  adminFee?: number; // Admin fee
   expiryTime: number; // timestamp
   createdAt: number; // timestamp
   items: Array<{
@@ -46,5 +48,5 @@ export interface PendingOrder {
       phone: string;
     };
   };
-  status: 'pending' | 'paid' | 'expired';
+  status: 'pending' | 'paid' | 'expired' | 'cancelled';
 }

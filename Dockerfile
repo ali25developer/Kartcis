@@ -1,7 +1,7 @@
 # Multi-stage build for KARTCIS.ID React App
 
-# Stage 1: Build
-FROM node:20-alpine AS builder
+# Stage 1: Base/Development
+FROM node:20-alpine AS development
 
 # Set working directory
 WORKDIR /app
@@ -10,15 +10,24 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
 
+# Expose Vite port
+EXPOSE 5173
+
+# Start development server
+CMD ["npm", "run", "dev", "--", "--host"]
+
+# Stage 2: Build
+FROM development AS builder
+
 # Build the application
 RUN npm run build
 
-# Stage 2: Production with Nginx
+# Stage 3: Production with Nginx
 FROM nginx:alpine AS production
 
 # Copy custom nginx config

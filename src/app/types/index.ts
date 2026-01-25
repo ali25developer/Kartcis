@@ -1,9 +1,33 @@
-// API Response wrapper
+export interface PaginationMetadata {
+  current_page: number;
+  total_pages: number;
+  total_items: number;
+  per_page: number;
+}
+
+export type PaginatedData<T, K extends string> = {
+  [key in K]: T[];
+};
+
+export interface PaginatedResponse<T, K extends string> {
+  success: boolean;
+  data: PaginatedData<T, K> & { pagination: PaginationMetadata };
+  message?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
+}
+
+// Custom Fields for events
+export interface CustomField {
+  name: string;
+  type: 'text' | 'select';
+  options?: string[];
+  required: boolean;
 }
 
 // Database schema types (match dengan backend)
@@ -18,6 +42,7 @@ export interface Event {
   agenda?: AgendaItem[]; // Event schedule/rundown
   organizer_info?: OrganizerInfo; // Detailed organizer information
   faqs?: FAQ[]; // Frequently asked questions
+  custom_fields?: string; // JSON string from backend
   event_date: string; // YYYY-MM-DD
   event_time: string | null; // HH:mm:ss
   date: string; // Alias for event_date (compatibility with frontend)
@@ -37,6 +62,7 @@ export interface Event {
   category_id: number;
   category?: Category;
   ticket_types?: TicketType[];
+  fee_percentage?: number; // Admin fee percentage (default 5.0)
 }
 
 export interface AgendaItem {
@@ -63,6 +89,10 @@ export interface Category {
   name: string;
   slug: string;
   description: string | null;
+  icon?: string; // FontAwesome class or URL
+  image?: string; // URL from upload
+  display_order?: number;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +122,13 @@ export interface CartItem {
   event_image: string;
   ticket_type_name: string;
   ticket_price: number;
+  // Checkout/Cart usage might enrich this with attendees for payload construction
+  attendees?: {
+    name: string;
+    email: string;
+    phone: string;
+    custom_field_responses?: string;
+  }[];
 }
 
 export interface Order {
@@ -102,6 +139,7 @@ export interface Order {
   customer_email: string;
   customer_phone: string;
   total_amount: number;
+  admin_fee: number; // Added admin fee
   status: 'pending' | 'paid' | 'cancelled' | 'expired';
   payment_method: string;
   payment_details: any;
@@ -133,6 +171,7 @@ export interface Ticket {
   attendee_name: string;
   attendee_email: string;
   attendee_phone: string;
+  custom_field_responses?: string; // JSON string of custom field responses
   status: 'active' | 'used' | 'cancelled';
   check_in_at: string | null;
   created_at: string;
@@ -152,7 +191,16 @@ export interface User {
 }
 
 export interface CheckoutRequest {
-  items: CartItem[];
+  items: {
+    ticket_type_id: number;
+    quantity: number;
+    attendees: {
+      name: string;
+      email: string;
+      phone: string;
+      custom_field_responses?: string;
+    }[];
+  }[];
   payment_method: string;
   customer_info: {
     name: string;
@@ -160,3 +208,5 @@ export interface CheckoutRequest {
     phone: string;
   };
 }
+
+export type HelpModalType = 'cara-pesan' | 'syarat-ketentuan' | 'kebijakan-privasi';

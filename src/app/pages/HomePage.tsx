@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
@@ -7,19 +7,23 @@ import { Button } from "@/app/components/ui/button";
 import { EventCard } from "@/app/components/EventCard";
 import { SponsorSection } from "@/app/components/SponsorSection";
 import type { Event } from "@/app/types";
-import { events as eventsData, categories as categoriesData } from "@/app/data/events";
+import api from "@/app/services/api";
 
 export function HomePage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation(); // Keep track of location state
+  const searchInputRef = useRef<HTMLInputElement>(null); // Ref for input focus
   
   const [events, setEvents] = useState<Event[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(['Semua']);
   const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -29,19 +33,127 @@ export function HomePage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const featuredSectionRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Load data from static import
+  // Auto-scroll logic for search/home changes
   useEffect(() => {
-    setLoading(true);
-    try {
-      setEvents(eventsData);
-      setCategories(categoriesData);
-      setFeaturedEvents(eventsData.filter(e => e.isFeatured));
-    } catch (error) {
-      console.error('Error loading events:', error);
-    } finally {
-      setLoading(false);
+    // If state contains 'scrollTo', handle it
+    if (location.state?.scrollTo === 'search') {
+      setTimeout(() => {
+        // Manual custom smooth scroll calculation for better control
+        if (searchBarRef.current) {
+            const headerOffset = 100; // Adjust based on your header height
+            const elementPosition = searchBarRef.current.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: "smooth"
+            });
+            searchInputRef.current?.focus({ preventScroll: true });
+        }
+      }, 100);
+      // Clear state to prevent re-scroll
+      navigate(location.pathname, { replace: true, state: {} });
+    } else if (location.state?.scrollTo === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      navigate(location.pathname, { replace: true, state: {} });
+    } else if (location.pathname === '/' && !location.state?.scrollTo) {
+        // Just standard home navigation
     }
+  }, [location.state, location.pathname, navigate]);
+
+  // Load events and featured data
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (currentPage === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      try {
+        const eventsRes = await api.events.getAll({
+          page: currentPage,
+          limit: 12,
+          search: debouncedSearchQuery,
+          category: selectedCategory === "Semua" ? undefined : selectedCategory
+        });
+
+        if (eventsRes.success && eventsRes.data) {
+          const newEvents = eventsRes.data.events;
+          const paginationData = eventsRes.data.pagination;
+
+          if (currentPage === 1) {
+            setEvents(newEvents);
+          } else {
+            setEvents(prev => [...prev, ...newEvents]);
+          }
+
+          setHasMore(paginationData.current_page < paginationData.total_pages);
+        }
+      } catch (error) {
+        console.error('Error loading events:', error);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    };
+
+    fetchEvents();
+  }, [currentPage, debouncedSearchQuery, selectedCategory]);
+
+  // Handle Search/Category Change
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+  }, [debouncedSearchQuery, selectedCategory]);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    if (loading || !hasMore) return;
+
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+        setCurrentPage(prev => prev + 1);
+      }
+    }, { threshold: 0.1 });
+
+    if (sentinelRef.current) {
+      observerRef.current.observe(sentinelRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, [loading, loadingMore, hasMore]);
+
+  // Load categories and featured once
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [categoriesRes, featuredRes] = await Promise.all([
+          api.categories.getAll({ limit: 100 }),
+          api.events.getFeatured()
+        ]);
+
+        if (categoriesRes.success && categoriesRes.data) {
+          const categoryNames = ['Semua', ...categoriesRes.data.categories.map((c: any) => c.name)];
+          setCategories(categoryNames);
+        }
+
+        if (featuredRes.success && featuredRes.data) {
+          setFeaturedEvents(featuredRes.data);
+        }
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      }
+    };
+
+    fetchInitialData();
   }, []);
 
   // Detect mobile screen
@@ -100,13 +212,13 @@ export function HomePage() {
   }, [isAutoPlaying, totalPages]);
 
   // Auto-slide for banners
-  useEffect(() => {
-    const bannerTimer = setInterval(() => {
-      setCurrentBannerSlide((prev) => (prev + 1) % 3);
-    }, 5000);
+  // useEffect(() => {
+  //   const bannerTimer = setInterval(() => {
+  //     setCurrentBannerSlide((prev) => (prev + 1) % 3);
+  //   }, 5000);
 
-    return () => clearInterval(bannerTimer);
-  }, []);
+  //   return () => clearInterval(bannerTimer);
+  // }, []);
 
   const handlePrevSlide = () => {
     setIsAutoPlaying(false);
@@ -122,58 +234,32 @@ export function HomePage() {
     scrollToSlide(newSlide);
   };
 
-  // Filter events based on category and search
-  const filteredEvents = useMemo(() => {
-    let filtered = events;
+  // No client-side filtering needed anymore as we fetch from server
+  const filteredEvents = events;
 
-    if (selectedCategory !== "Semua") {
-      filtered = filtered.filter(event => event.category === selectedCategory);
-    }
-
-    if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase();
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(query) ||
-        event.city.toLowerCase().includes(query) ||
-        event.venue.toLowerCase().includes(query) ||
-        event.category.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [events, selectedCategory, debouncedSearchQuery]);
-
-  const handleEventClick = (eventId: string) => {
+  const handleEventClick = (eventId: string | number) => {
     navigate(`/event/${eventId}`);
   };
 
-  const scrollToSearchBar = () => {
-    if (searchBarRef.current) {
-      searchBarRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Focus on search input after scrolling
-      setTimeout(() => {
-        const input = searchBarRef.current?.querySelector('input');
-        input?.focus();
-      }, 500);
-    }
-  };
-
-  const handleBannerClick = (action: string) => {
-    console.log('Banner clicked:', action);
-    
+  const handleBannerAction = (action: string) => {
     if (action === 'tickets') {
-      console.log('Going to my-tickets');
       navigate('/my-tickets');
-    } else if (action === 'featured') {
-      console.log('Scrolling to featured events');
-      // Scroll to featured events carousel
-      if (featuredSectionRef.current) {
-        featuredSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
     } else {
-      console.log('Scrolling to search bar');
-      // Scroll to search bar for browsing all events
-      scrollToSearchBar();
+      const targetId = action === 'featured' ? 'featured-events' : 'search-bar';
+      const element = document.getElementById(targetId);
+      if (element) {
+        const header = document.querySelector('header');
+        const headerHeight = header ? header.offsetHeight : 0;
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = element.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - headerHeight - 20; // 20px extra padding
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
     }
   };
 
@@ -188,31 +274,38 @@ export function HomePage() {
             cta: "Jelajahi Event",
             action: "browse"
           },
-          {
-            title: "Beli Tiket dengan Mudah",
-            subtitle: "Proses Cepat & Aman dengan Virtual Account",
-            cta: "Lihat Event Populer",
-            action: "featured"
-          },
-          {
-            title: "Kelola Tiketmu",
-            subtitle: "Akses Tiket Kapan Saja, Di Mana Saja",
-            cta: "Lihat Tiket Saya",
-            action: "tickets"
-          }
+          // {
+          //   title: "Beli Tiket dengan Mudah",
+          //   subtitle: "Proses Cepat & Aman dengan Virtual Account",
+          //   cta: "Lihat Event Populer",
+          //   action: "featured"
+          // },
+          // {
+          //   title: "Kelola Tiketmu",
+          //   subtitle: "Akses Tiket Kapan Saja, Di Mana Saja",
+          //   cta: "Lihat Tiket Saya",
+          //   action: "tickets"
+          // }
         ].map((banner, index) => (
           <div
             key={index}
-            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${
-              currentBannerSlide === index ? 'opacity-100' : 'opacity-0'
+            className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${
+              currentBannerSlide === index 
+                ? 'opacity-100 z-10 scale-100' 
+                : 'opacity-0 pointer-events-none z-0 scale-95'
             }`}
           >
             <div className="text-center px-4 max-w-4xl">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white">{banner.title}</h1>
-              <p className="text-lg md:text-2xl mb-8 text-white/90">{banner.subtitle}</p>
+              <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white uppercase tracking-tight">{banner.title}</h1>
+              <p className="text-lg md:text-2xl mb-8 text-white/90 font-medium">{banner.subtitle}</p>
               <button
-                className="inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-sky-600 bg-white rounded-lg hover:bg-sky-50 transition-colors shadow-lg"
-                onClick={() => handleBannerClick(banner.action)}
+                className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-sky-700 bg-white rounded-xl hover:bg-sky-50 transition-all active:scale-95 shadow-2xl hover:shadow-white/20"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (currentBannerSlide === index) {
+                    handleBannerAction(banner.action);
+                  }
+                }}
               >
                 {banner.cta}
               </button>
@@ -221,7 +314,7 @@ export function HomePage() {
         ))}
         
         {/* Banner Indicators */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+        {/* <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
           {[0, 1, 2].map((index) => (
             <button
               key={index}
@@ -231,15 +324,16 @@ export function HomePage() {
               }`}
             />
           ))}
-        </div>
+        </div> */}
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Search Bar */}
-        <div className="mb-8">
+        <div className="mb-8" id="search-bar">
           <div className="relative max-w-2xl mx-auto" ref={searchBarRef}>
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input
+              ref={searchInputRef}
               type="text"
               placeholder="Cari event berdasarkan nama, kota, atau kategori..."
               value={searchQuery}
@@ -254,7 +348,7 @@ export function HomePage() {
 
         {/* Featured Events Carousel */}
         {!searchQuery && featuredEvents.length > 0 && (
-          <div className="mb-12" ref={featuredSectionRef}>
+          <div className="mb-12" id="featured-events" ref={featuredSectionRef}>
             <h2 className="text-3xl font-bold mb-6">Populer</h2>
             <div className="relative">
               <div 
@@ -357,15 +451,30 @@ export function HomePage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event) => (
-                <EventCard 
-                  key={event.id}
-                  event={event}
-                  onClick={() => handleEventClick(event.id)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredEvents.map((event) => (
+                  <EventCard 
+                    key={event.id}
+                    event={event}
+                    onClick={() => handleEventClick(event.id)}
+                  />
+                ))}
+              </div>
+
+              {/* Infinite Scroll Sentinel & Loader */}
+              <div ref={sentinelRef} className="h-20 flex justify-center items-center mt-8">
+                {loadingMore && (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                    <p className="text-sm text-gray-500">Memuat lebih banyak event...</p>
+                  </div>
+                )}
+                {!hasMore && events.length > 0 && (
+                  <p className="text-gray-400 text-sm">Semua event sudah ditampilkan</p>
+                )}
+              </div>
+            </>
           )}
         </div>
 

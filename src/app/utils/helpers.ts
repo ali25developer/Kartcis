@@ -1,56 +1,55 @@
-import type { Event as ApiEvent } from '../types';
-import type { Event as V44Event } from '../data/events';
+import { toast } from './toast';
+import type { ApiResponse } from '../types';
 
-// Convert API Event format to V44 Event format for compatibility with existing components
-export function convertApiEventToV44(apiEvent: ApiEvent): V44Event {
-  // Map status
-  let eventStatus: 'active' | 'sold-out' | 'cancelled' | undefined;
-  if (apiEvent.status === 'sold-out') {
-    eventStatus = 'sold-out';
-  } else if (apiEvent.status === 'cancelled') {
-    eventStatus = 'cancelled';
+/**
+ * Centralized API response handler
+ * Automatically shows error toast if success is false
+ */
+export async function handleApi<T>(
+  request: Promise<ApiResponse<T>>,
+  options?: {
+    showSuccess?: boolean;
+    successMessage?: string;
+    description?: string;
   }
+): Promise<T | null> {
+  try {
+    const response = await request;
 
-  return {
-    id: apiEvent.id.toString(),
-    title: apiEvent.title,
-    organizer: apiEvent.organizer,
-    category: (apiEvent.category?.name as any) || 'Olahraga',
-    date: apiEvent.event_date,
-    time: apiEvent.event_time || '00:00',
-    venue: apiEvent.venue,
-    city: apiEvent.city,
-    image: apiEvent.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1080" height="720"%3E%3Crect width="1080" height="720" fill="%23e5e7eb"/%3E%3C/svg%3E',
-    price: {
-      min: apiEvent.ticket_types && apiEvent.ticket_types.length > 0
-        ? Math.min(...apiEvent.ticket_types.map(t => t.price))
-        : 0,
-      max: apiEvent.ticket_types && apiEvent.ticket_types.length > 0
-        ? Math.max(...apiEvent.ticket_types.map(t => t.price))
-        : 0,
-    },
-    description: apiEvent.description,
-    detailedDescription: apiEvent.detailed_description,
-    facilities: apiEvent.facilities,
-    terms: apiEvent.terms,
-    agenda: apiEvent.agenda,
-    organizerInfo: apiEvent.organizer_info,
-    faqs: apiEvent.faqs,
-    status: eventStatus,
-    cancelReason: apiEvent.cancel_reason,
-    isFeatured: apiEvent.is_featured,
-    ticketTypes: (apiEvent.ticket_types || []).map(tt => ({
-      id: tt.id.toString(),
-      name: tt.name,
-      price: tt.price,
-      originalPrice: tt.originalPrice, // Include originalPrice for discount display
-      available: tt.available,
-      total: tt.quota,
-      description: tt.description || '',
-    })),
-    quota: apiEvent.quota,
-    registrationForm: [],
-  };
+    if (response.success) {
+      if (options?.showSuccess) {
+        toast.success(options.successMessage || 'Berhasil', {
+          description: options.description,
+        });
+      }
+      return response.data as T;
+    } else {
+      // Handle detailed validation errors if present
+      let errorDesc = response.message || 'Terjadi kesalahan sistem';
+      
+      // If backend provides an "errors" object, we try to format it
+      const anyResponse = response as any;
+      if (anyResponse.errors) {
+        if (typeof anyResponse.errors === 'object') {
+          const firstError = Object.values(anyResponse.errors)[0];
+          if (firstError) errorDesc = String(firstError);
+        } else if (typeof anyResponse.errors === 'string') {
+          errorDesc = anyResponse.errors;
+        }
+      }
+
+      toast.error('Gagal', {
+        description: errorDesc,
+      });
+      return null;
+    }
+  } catch (error: any) {
+    console.error('API Error:', error);
+    toast.error('Gagal', {
+      description: error.message || 'Terjadi kesalahan koneksi',
+    });
+    return null;
+  }
 }
 
 // Format currency to IDR
@@ -66,12 +65,38 @@ export function formatCurrency(amount: number): string {
 
 // Format date to Indonesian format
 export function formatDate(dateString: string): string {
+  if (!dateString) return '-';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
+  
   return new Intl.DateTimeFormat('id-ID', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+  }).format(date);
+}
+
+// Convert ISO string or any date string to YYYY-MM-DD for <input type="date">
+export function formatISOToDate(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+}
+
+// Format date and time to Indonesian format
+export function formatDateTime(dateString: string): string {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 }
 
