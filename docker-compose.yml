@@ -6,7 +6,7 @@ services:
       target: production
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     environment:
       - NODE_ENV=production
     healthcheck:
