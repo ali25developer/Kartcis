@@ -43,10 +43,10 @@ services:
       - kartcis-network
     command: npm run dev -- --host
 
-networks:
-  kartcis-network:
-    driver: bridge
-    name: kartcis-network
+# networks:
+#   kartcis-network:
+#     driver: bridge
+#     name: kartcis-network
 
 volumes:
   node_modules:
