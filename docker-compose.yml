@@ -1,53 +1,18 @@
-version: '3.8'
-
 services:
-  # KARTCIS.ID Frontend Application (Nginx Production)
   kartcis-frontend:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: kartcis-ticketing-web
     restart: unless-stopped
     ports:
       - "80:80"
     environment:
       - NODE_ENV=production
-    networks:
-      - kartcis-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
     labels:
       - "com.kartcis.description=KARTCIS.ID Ticketing System Frontend"
-
-  # Development mode (Frontend Dev)
-  kartcis-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: kartcis-ticketing-dev
-    restart: unless-stopped
-    ports:
-      - "5173:5173"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - VITE_API_URL=http://localhost:8000/api/v1
-    networks:
-      - kartcis-network
-    command: npm run dev -- --host
-
-# networks:
-#   kartcis-network:
-#     driver: bridge
-#     name: kartcis-network
-
-volumes:
-  node_modules:
-    driver: local
