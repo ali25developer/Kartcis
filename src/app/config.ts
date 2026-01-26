@@ -1,4 +1,4 @@
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'https://api.kartcis.id';
 export const API_BASE_URL = rawBaseUrl.endsWith('/api/v1') ? rawBaseUrl : `${rawBaseUrl}/api/v1`;
 
 export const getHeaders = (token?: string) => {
