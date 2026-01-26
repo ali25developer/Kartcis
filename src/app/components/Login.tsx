@@ -124,11 +124,6 @@ export function Login({ isOpen, onClose, onSwitchToRegister, onSwitchToForgotPas
         {/* Content */}
         <div className="p-6">
           {/* Demo Credentials Info */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-900 font-medium mb-1">Demo Account:</p>
-            <p className="text-xs text-blue-700">Email: demo@masup.id</p>
-            <p className="text-xs text-blue-700">Password: demo123</p>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
