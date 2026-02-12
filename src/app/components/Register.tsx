@@ -300,7 +300,7 @@ export function Register({ isOpen, onClose, onSwitchToLogin }: RegisterProps) {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-sky-600 hover:bg-sky-700"
+              className="w-full bg-primary hover:bg-primary-hover"
             >
               {isLoading ? 'Memproses...' : 'Daftar'}
             </Button>
@@ -351,7 +351,7 @@ export function Register({ isOpen, onClose, onSwitchToLogin }: RegisterProps) {
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="text-sky-600 hover:text-sky-700 font-medium"
+              className="text-primary hover:text-primary-hover font-medium"
             >
               Login sekarang
             </button>

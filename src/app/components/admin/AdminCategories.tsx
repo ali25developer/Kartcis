@@ -226,7 +226,7 @@ export function AdminCategories() {
           <h2 className="text-xl font-bold text-gray-900">Kategori Event</h2>
           <p className="text-sm text-gray-600">Kelola kategori untuk pengelompokan event</p>
         </div>
-        <Button onClick={openCreateModal} className="bg-sky-600 hover:bg-sky-700">
+        <Button onClick={openCreateModal} className="bg-primary hover:bg-primary-hover">
           <Plus className="h-4 w-4 mr-2" />
           Tambah Kategori
         </Button>
@@ -307,7 +307,7 @@ export function AdminCategories() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                            className="h-8 w-8 text-primary hover:text-primary-hover hover:bg-primary-light"
                             onClick={() => openEditModal(category)}
                           >
                             <Edit2 className="h-4 w-4" />
@@ -446,7 +446,7 @@ export function AdminCategories() {
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" className="bg-sky-600 hover:bg-sky-700" disabled={isSubmitting}>
+              <Button type="submit" className="bg-primary hover:bg-primary-hover" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -487,7 +487,7 @@ export function AdminCategories() {
                    setAlertConfig(prev => ({ ...prev, isOpen: false }));
                 }
               }}
-              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'}
+              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary-hover'}
             >
               {alertConfig.confirmText || 'Lanjutkan'}
             </AlertDialogAction>

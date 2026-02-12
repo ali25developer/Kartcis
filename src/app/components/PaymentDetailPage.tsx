@@ -127,7 +127,7 @@ export function PaymentDetailPage({
       case 'paid': return 'from-green-600 to-green-700';
       case 'cancelled': return 'from-red-600 to-red-700';
       case 'expired': return 'from-gray-600 to-gray-700';
-      default: return 'from-sky-600 to-sky-700';
+      default: return 'from-primary to-primary-hover';
     }
   };
 
@@ -181,12 +181,12 @@ export function PaymentDetailPage({
              {status === 'pending' && (
                 <Card className="bg-white p-6 shadow-sm">
                   {/* Timer */}
-                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-6">
+                  <div className="p-4 bg-accent-orange-light border border-orange-200 rounded-lg mb-6">
                     <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-orange-600" />
+                      <Clock className="h-5 w-5 text-accent-orange-hover" />
                       <div className="flex-1">
                         <p className="text-sm text-gray-700 mb-1">Selesaikan pembayaran dalam</p>
-                        <p className="text-2xl font-bold text-orange-600">{formatTime(timeLeft)}</p>
+                        <p className="text-2xl font-bold text-accent-orange-hover">{formatTime(timeLeft)}</p>
                       </div>
                     </div>
                   </div>
@@ -194,14 +194,14 @@ export function PaymentDetailPage({
                   {/* Payment Details */}
                   {pendingOrder.paymentUrl ? (
                     <div className="text-center space-y-4">
-                        <div className="bg-sky-50 rounded-lg p-6 border border-sky-100">
+                        <div className="bg-primary-light rounded-lg p-6 border border-sky-100">
                           <h3 className="text-lg font-semibold text-sky-900 mb-2">Lanjut ke Pembayaran</h3>
-                          <p className="text-sm text-sky-700 mb-6">
+                          <p className="text-sm text-primary-hover mb-6">
                             Klik tombol di bawah untuk menyelesaikan pembayaran melalui {pendingOrder.paymentMethod || 'E-Wallet/Link'}.
                           </p>
                           <Button 
                             size="lg"
-                            className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 min-w-[200px]"
+                            className="w-full sm:w-auto bg-primary hover:bg-primary-hover min-w-[200px]"
                             onClick={() => window.open(pendingOrder.paymentUrl!, '_blank')}
                           >
                             Bayar Sekarang
@@ -257,7 +257,7 @@ export function PaymentDetailPage({
                   <div className="mt-8 space-y-3">
                     <Button
                         onClick={checkPaymentStatus}
-                        className="w-full bg-sky-600 hover:bg-sky-700"
+                        className="w-full bg-primary hover:bg-primary-hover"
                         disabled={isCheckingStatus}
                     >
                         {isCheckingStatus ? 'Memeriksa...' : 'Cek Status Pembayaran'}
@@ -375,7 +375,7 @@ export function PaymentDetailPage({
                     )}
                    <div className="border-t pt-3 flex justify-between items-center mt-2">
                       <span className="font-bold text-gray-900">Total</span>
-                      <span className="font-bold text-xl text-sky-600">{formatPrice(pendingOrder.amount)}</span>
+                      <span className="font-bold text-xl text-primary">{formatPrice(pendingOrder.amount)}</span>
                    </div>
                 </div>
              </Card>

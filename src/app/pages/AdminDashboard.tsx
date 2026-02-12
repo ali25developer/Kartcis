@@ -297,15 +297,15 @@ export function AdminDashboard() {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-white p-1 border shadow-sm">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
               <LayoutDashboard className="h-4 w-4 mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="events" className="data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700">
+            <TabsTrigger value="events" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
               <Calendar className="h-4 w-4 mr-2" />
               Event
             </TabsTrigger>
-            <TabsTrigger value="categories" className="data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700">
+            <TabsTrigger value="categories" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
               <Tags className="h-4 w-4 mr-2" />
               Kategori
             </TabsTrigger>
@@ -315,7 +315,7 @@ export function AdminDashboard() {
              {/* Stats Cards */}
             {stats && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Card className="p-4 bg-gradient-to-br from-sky-500 to-sky-600 text-white border-0">
+                <Card className="p-4 bg-gradient-to-br from-primary-light0 to-primary text-white border-0">
                   <div className="flex items-center justify-between mb-2">
                     <ShoppingCart className="h-8 w-8 opacity-80" />
                     <span className="text-2xl font-bold">{stats.total_transactions}</span>
@@ -406,7 +406,7 @@ export function AdminDashboard() {
                       <tr>
                         <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
                           <div className="flex flex-col items-center justify-center gap-2">
-                            <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             <p>Loading...</p>
                           </div>
                         </td>
@@ -457,7 +457,7 @@ export function AdminDashboard() {
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  className="h-8 w-8 text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                                  className="h-8 w-8 text-primary hover:text-primary-hover hover:bg-primary-light"
                                   onClick={() => handleResendEmail(transaction)}
                                   disabled={resendingId === transaction.id}
                                   title="Kirim ulang tiket"
@@ -475,7 +475,7 @@ export function AdminDashboard() {
                                   <select
                                     value={newStatus || transaction.status}
                                     onChange={(e) => setNewStatus(e.target.value)}
-                                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-light0"
                                   >
                                     <option value="paid">Lunas</option>
                                     <option value="pending">Menunggu Pembayaran</option>
@@ -515,7 +515,7 @@ export function AdminDashboard() {
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                    className="h-8 w-8 text-accent-orange-hover hover:text-orange-700 hover:bg-accent-orange-light"
                                     onClick={() => {
                                       setEditingStatusId(transaction.id);
                                       setNewStatus(transaction.status);
@@ -600,7 +600,7 @@ export function AdminDashboard() {
                The instruction is to replace end of file, or specifically where the JSX ends. 
                Wait, the tool needs a target content. I'll rely on the closing tags. 
            */}
-            <div className="sticky top-0 bg-gradient-to-r from-sky-600 to-sky-700 text-white p-6 border-b">
+            <div className="sticky top-0 bg-gradient-to-r from-primary to-primary-hover text-white p-6 border-b">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sky-100 text-2xl font-bold">Detail Transaksi</h2>
@@ -621,7 +621,7 @@ export function AdminDashboard() {
               {/* Buyer Information */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <User className="h-5 w-5 text-sky-600" />
+                  <User className="h-5 w-5 text-primary" />
                   Informasi Pembeli
                 </h3>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2">
@@ -647,7 +647,7 @@ export function AdminDashboard() {
                   </div>
                   <div className="flex justify-between pt-2 border-t">
                     <span className="text-gray-600 font-semibold">Total Pembayaran:</span>
-                    <span className="font-bold text-sky-600 text-xl">{formatPrice(selectedTransaction.total_amount)}</span>
+                    <span className="font-bold text-primary text-xl">{formatPrice(selectedTransaction.total_amount)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Status:</span>
@@ -678,7 +678,7 @@ export function AdminDashboard() {
                               <p className="font-semibold text-gray-900">Peserta {index + 1}</p>
                               <p className="text-sm text-gray-600">{ticket.ticket_type?.name || 'Standard'}</p>
                             </div>
-                            <Badge className="bg-sky-50 text-sky-700 border-sky-200">
+                            <Badge className="bg-primary-light text-primary-hover border-sky-200">
                               {ticket.ticket_code}
                             </Badge>
                           </div>
@@ -749,13 +749,13 @@ export function AdminDashboard() {
               {/* Transaction Timeline */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-sky-600" />
+                  <Clock className="h-5 w-5 text-primary" />
                   Activity Log
                 </h3>
                 <div className="bg-white border rounded-lg p-6">
                   {isLoadingTimeline ? (
                     <div className="flex justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                   ) : timeline.length === 0 ? (
                     <p className="text-gray-500 text-center text-sm">Belum ada riwayat status.</p>
@@ -767,7 +767,7 @@ export function AdminDashboard() {
                         <div key={item.id} className="relative">
                            {/* Dot Indicator */}
                            <div className={`absolute -left-[22.5px] top-1.5 h-3 w-3 rounded-full border-2 border-white ${
-                              index === 0 ? 'bg-sky-600 ring-4 ring-sky-100' : 'bg-gray-300'
+                              index === 0 ? 'bg-primary ring-4 ring-sky-100' : 'bg-gray-300'
                            }`} />
                            
                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
@@ -820,7 +820,7 @@ export function AdminDashboard() {
                    setAlertConfig(prev => ({ ...prev, isOpen: false }));
                 }
               }}
-              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'}
+              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary-hover'}
             >
               {alertConfig.confirmText || 'Lanjutkan'}
             </AlertDialogAction>

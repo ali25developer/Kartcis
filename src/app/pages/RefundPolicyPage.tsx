@@ -7,7 +7,7 @@ export function RefundPolicyPage() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-amber-600 p-8 sm:p-12 text-white">
+          <div className="bg-gradient-to-r from-accent-orange to-accent-orange-hover p-8 sm:p-12 text-white">
             <Link to="/" className="inline-flex items-center text-orange-100 hover:text-white mb-8 transition-colors">
               <ArrowLeft className="h-5 w-5 mr-2" />
               Kembali ke Beranda
@@ -27,9 +27,9 @@ export function RefundPolicyPage() {
           <div className="p-8 sm:p-12 space-y-12">
             
             {/* Kebijakan Dasar */}
-            <section className="bg-orange-50 rounded-xl p-6 border border-orange-100">
+            <section className="bg-accent-orange-light rounded-xl p-6 border border-orange-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                <AlertTriangle className="h-5 w-5 text-accent-orange-hover" />
                 Prinsip Dasar
               </h2>
               <p className="text-gray-700 leading-relaxed">
@@ -75,21 +75,21 @@ export function RefundPolicyPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Proses Pengajuan Refund</h2>
               <div className="relative border-l-2 border-gray-200 pl-8 space-y-10">
                 <div className="relative">
-                  <div className="absolute -left-[41px] top-0 bg-white border-2 border-orange-500 text-orange-600 h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                  <div className="absolute -left-[41px] top-0 bg-white border-2 border-accent-orange text-accent-orange-hover h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
                   <h3 className="font-semibold text-gray-900 text-lg">Konfirmasi Pembatalan</h3>
                   <p className="text-gray-600 mt-2">
                     Tunggu pengumuman resmi pembatalan event dari kami via email/WhatsApp. Kami akan mengirimkan link formulir refund.
                   </p>
                 </div>
                 <div className="relative">
-                  <div className="absolute -left-[41px] top-0 bg-white border-2 border-orange-500 text-orange-600 h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                  <div className="absolute -left-[41px] top-0 bg-white border-2 border-accent-orange text-accent-orange-hover h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
                   <h3 className="font-semibold text-gray-900 text-lg">Pengisian Data</h3>
                   <p className="text-gray-600 mt-2">
                     Isi formulir refund dengan data pemesan yang sesuai ID pembelian. Pastikan nomor rekening tujuan benar.
                   </p>
                 </div>
                 <div className="relative">
-                  <div className="absolute -left-[41px] top-0 bg-white border-2 border-orange-500 text-orange-600 h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                  <div className="absolute -left-[41px] top-0 bg-white border-2 border-accent-orange text-accent-orange-hover h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
                   <h3 className="font-semibold text-gray-900 text-lg">Verifikasi & Pencairan</h3>
                   <p className="text-gray-600 mt-2">
                     Pencairan dana memakan waktu 14-30 hari kerja setelah periode pengajuan ditutup. Dana akan dikirim ke rekening pemesan awal.

@@ -266,7 +266,7 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Banner Carousel */}
-      <div className="relative w-full h-[300px] md:h-[400px] bg-gradient-to-r from-sky-600 to-sky-800 overflow-hidden">
+      <div className="relative w-full h-[300px] md:h-[400px] bg-gradient-to-r from-primary to-primary-hover overflow-hidden">
         {[
           {
             title: "Temukan Event Impianmu",
@@ -299,7 +299,7 @@ export function HomePage() {
               <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white uppercase tracking-tight">{banner.title}</h1>
               <p className="text-lg md:text-2xl mb-8 text-white/90 font-medium">{banner.subtitle}</p>
               <button
-                className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-sky-700 bg-white rounded-xl hover:bg-sky-50 transition-all active:scale-95 shadow-2xl hover:shadow-white/20"
+                className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-primary-hover bg-white rounded-xl hover:bg-primary-light transition-all active:scale-95 shadow-2xl hover:shadow-white/20"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (currentBannerSlide === index) {
@@ -338,10 +338,10 @@ export function HomePage() {
               placeholder="Cari event berdasarkan nama, kota, atau kategori..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10 py-6 text-lg rounded-full border-2 border-gray-200 focus:border-sky-500"
+              className="pl-10 pr-10 py-6 text-lg rounded-full border-2 border-gray-200 focus:border-primary-light0"
             />
             {isSearching && (
-              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 animate-spin text-sky-600" />
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 animate-spin text-primary" />
             )}
           </div>
         </div>
@@ -403,7 +403,7 @@ export function HomePage() {
                       setIsAutoPlaying(false);
                     }}
                     className={`h-2 rounded-full transition-all ${
-                      currentSlide === index ? 'bg-sky-600 w-8' : 'bg-gray-300 w-2'
+                      currentSlide === index ? 'bg-primary w-8' : 'bg-gray-300 w-2'
                     }`}
                   />
                 ))}
@@ -427,7 +427,7 @@ export function HomePage() {
                   variant={selectedCategory === category ? "default" : "outline"}
                   className={`cursor-pointer px-4 py-2 text-sm ${
                     selectedCategory === category
-                      ? "bg-sky-600 hover:bg-sky-700"
+                      ? "bg-primary hover:bg-primary-hover"
                       : "hover:bg-gray-100"
                   }`}
                   onClick={() => setSelectedCategory(category)}
@@ -440,7 +440,7 @@ export function HomePage() {
           
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-12">
@@ -466,7 +466,7 @@ export function HomePage() {
               <div ref={sentinelRef} className="h-20 flex justify-center items-center mt-8">
                 {loadingMore && (
                   <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <p className="text-sm text-gray-500">Memuat lebih banyak event...</p>
                   </div>
                 )}

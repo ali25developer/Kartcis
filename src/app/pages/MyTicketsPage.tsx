@@ -119,7 +119,7 @@ export function MyTicketsPage() {
     <div className="min-h-screen bg-gray-50 pt-20 pb-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="p-6 border-b bg-gradient-to-r from-sky-600 to-sky-700">
+          <div className="p-6 border-b bg-gradient-to-r from-primary to-primary-hover">
             <h1 className="text-3xl font-bold text-white">Tiket Saya</h1>
             <p className="text-sky-100 mt-1">
               {user ? `Halo ${user.name}, kelola dan akses semua tiket Anda` : 'Kelola dan akses semua tiket Anda'}
@@ -129,7 +129,7 @@ export function MyTicketsPage() {
           <div className="p-6">
             {loading ? (
                 <div className="flex justify-center items-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : hasNoTickets ? (
               <div className="text-center py-12">
@@ -138,7 +138,7 @@ export function MyTicketsPage() {
                 <p className="text-gray-600 mb-4">Tiket yang sudah dibeli akan muncul di sini</p>
                 <Button 
                   onClick={() => navigate('/')}
-                  className="bg-sky-600 hover:bg-sky-700"
+                  className="bg-primary hover:bg-primary-hover"
                 >
                   Jelajahi Event
                 </Button>
@@ -212,14 +212,14 @@ export function MyTicketsPage() {
               </div>
               
               <p className="text-xs text-gray-600 mb-1">Kode Tiket</p>
-              <p className="font-mono font-semibold text-sky-600 mb-4">{selectedTicketForQR.ticketCode}</p>
+              <p className="font-mono font-semibold text-primary mb-4">{selectedTicketForQR.ticketCode}</p>
               
               <Button 
                 type="button"
                 onClick={() => {
                   setSelectedTicketForQR(null);
                 }}
-                className="w-full bg-sky-600 hover:bg-sky-700"
+                className="w-full bg-primary hover:bg-primary-hover"
               >
                 Tutup
               </Button>
@@ -368,7 +368,7 @@ function TicketCard({
               {/* Clickable Event Title */}
               {ticket.eventId && onEventClick ? (
                 <h3 
-                  className={`font-semibold mb-1 cursor-pointer hover:text-sky-600 transition-colors ${isCancelled ? 'text-gray-600 hover:text-gray-700' : 'text-gray-900'}`}
+                  className={`font-semibold mb-1 cursor-pointer hover:text-primary transition-colors ${isCancelled ? 'text-gray-600 hover:text-gray-700' : 'text-gray-900'}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onEventClick(ticket.eventId!);
@@ -389,7 +389,7 @@ function TicketCard({
                 </Badge>
               )}
             </div>
-            <Badge className="bg-sky-50 text-sky-700 border-sky-200">
+            <Badge className="bg-primary-light text-primary-hover border-sky-200">
               {ticket.ticketType}
             </Badge>
           </div>
@@ -403,11 +403,11 @@ function TicketCard({
 
           <div className="grid md:grid-cols-2 gap-2 mb-4">
             <div className={`flex items-center text-sm ${isCancelled ? 'text-gray-500' : 'text-gray-700'}`}>
-              <Calendar className={`h-4 w-4 mr-2 flex-shrink-0 ${isCancelled ? 'text-gray-400' : 'text-sky-600'}`} />
+              <Calendar className={`h-4 w-4 mr-2 flex-shrink-0 ${isCancelled ? 'text-gray-400' : 'text-primary'}`} />
               {formatDate(ticket.eventDate)}
             </div>
             <div className={`flex items-center text-sm ${isCancelled ? 'text-gray-500' : 'text-gray-700'}`}>
-              <Clock className={`h-4 w-4 mr-2 flex-shrink-0 ${isCancelled ? 'text-gray-400' : 'text-sky-600'}`} />
+              <Clock className={`h-4 w-4 mr-2 flex-shrink-0 ${isCancelled ? 'text-gray-400' : 'text-primary'}`} />
               {ticket.eventTime} WIB
             </div>
             {/* Clickable Location - opens Google Maps */}
@@ -415,10 +415,10 @@ function TicketCard({
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ticket.venue + ', ' + ticket.city)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex items-center text-sm md:col-span-2 hover:text-sky-600 transition-colors cursor-pointer ${isCancelled ? 'text-gray-500 hover:text-gray-600' : 'text-gray-700'}`}
+              className={`flex items-center text-sm md:col-span-2 hover:text-primary transition-colors cursor-pointer ${isCancelled ? 'text-gray-500 hover:text-gray-600' : 'text-gray-700'}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <MapPin className={`h-4 w-4 mr-2 flex-shrink-0 ${isCancelled ? 'text-gray-400' : 'text-sky-600'}`} />
+              <MapPin className={`h-4 w-4 mr-2 flex-shrink-0 ${isCancelled ? 'text-gray-400' : 'text-primary'}`} />
               {ticket.venue}, {ticket.city}
             </a>
           </div>
@@ -430,7 +430,7 @@ function TicketCard({
               const entries = Object.entries(responses);
               if (entries.length > 0) {
                 return (
-                  <div className="mt-3 p-3 bg-sky-50 border border-sky-200 rounded-lg">
+                  <div className="mt-3 p-3 bg-primary-light border border-sky-200 rounded-lg">
                     <p className="text-xs font-semibold text-sky-900 mb-2">Informasi Tambahan</p>
                     <div className="space-y-1">
                       {entries.map(([key, value]) => (
@@ -473,7 +473,7 @@ function TicketCard({
                   onShowQR();
                 }
               }}
-              className="flex-1 bg-sky-600 hover:bg-sky-700"
+              className="flex-1 bg-primary hover:bg-primary-hover"
             >
               <QrCode className="h-4 w-4 mr-2" />
               QR Code

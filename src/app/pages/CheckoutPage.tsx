@@ -168,7 +168,7 @@ export function CheckoutPage() {
   if (participants.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -406,7 +406,7 @@ export function CheckoutPage() {
                         variant="outline" 
                         size="sm" 
                         onClick={applyToAll}
-                        className="text-sky-600 border-sky-600 hover:bg-sky-50 gap-2"
+                        className="text-primary border-primary hover:bg-primary-light gap-2"
                     >
                         <Copy className="h-4 w-4" />
                         Gunakan data yang sama untuk semua
@@ -423,7 +423,7 @@ export function CheckoutPage() {
                           ref={(el) => { participantRefs.current[index] = el; }}
                         >
                           <Card 
-                            className={`p-4 border-2 transition-all ${primaryContactIndex === index ? 'border-sky-600 bg-sky-50 shadow-md' : 'bg-gray-50 border-gray-200'}`}
+                            className={`p-4 border-2 transition-all ${primaryContactIndex === index ? 'border-primary bg-primary-light shadow-md' : 'bg-gray-50 border-gray-200'}`}
                           >
                             {/* ... Participant inputs ... */}
                             <div className="flex items-center gap-3 mb-4">
@@ -438,7 +438,7 @@ export function CheckoutPage() {
                                 <Users className="h-5 w-5 text-gray-400" />
                                 Peserta {index + 1} - {participant.ticketName}
                                 {primaryContactIndex === index && !isSingleTicket && (
-                                  <span className="ml-2 text-sm font-normal text-sky-600">(CP Utama)</span>
+                                  <span className="ml-2 text-sm font-normal text-primary">(CP Utama)</span>
                                 )}
                               </label>
                             </div>
@@ -463,7 +463,7 @@ export function CheckoutPage() {
                                 <Label htmlFor={`participant-${index}-email`}>
                                   Email <span className="text-red-500">*</span>
                                   {primaryContactIndex === index && !isSingleTicket && (
-                                    <span className="text-xs font-normal text-sky-600 ml-1">(CP)</span>
+                                    <span className="text-xs font-normal text-primary ml-1">(CP)</span>
                                   )}
                                 </Label>
                                 <Input
@@ -546,7 +546,7 @@ export function CheckoutPage() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-sky-600 hover:bg-sky-700"
+                    className="w-full bg-primary hover:bg-primary-hover"
                     size="lg"
                     disabled={loading}
                   >
@@ -594,7 +594,7 @@ export function CheckoutPage() {
                       <span className="text-gray-600 text-sm">
                         {ticket.name} × {quantity}
                       </span>
-                      <span className="font-semibold text-sky-700">
+                      <span className="font-semibold text-primary-hover">
                         {formatCurrency(price * quantity)}
                       </span>
                     </div>
@@ -615,14 +615,14 @@ export function CheckoutPage() {
 
               <Separator className="my-4" />
 
-              <div className="space-y-2 bg-sky-50 p-4 rounded-lg">
+              <div className="space-y-2 bg-primary-light p-4 rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Total Tiket:</span>
                   <span className="font-semibold">{totalQuantity}</span>
                 </div>
                 <div className="flex justify-between text-2xl font-bold">
                   <span>Total Bayar:</span>
-                  <span className="text-sky-600">{formatCurrency(totalAmount)}</span>
+                  <span className="text-primary">{formatCurrency(totalAmount)}</span>
                 </div>
               </div>
             </Card>

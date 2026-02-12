@@ -72,7 +72,7 @@ export function ImageUpload({ value, onChange, className, placeholder = "Upload 
         >
             {isUploading ? (
                 <>
-                    <Loader2 className="h-8 w-8 text-sky-600 animate-spin mb-2" />
+                    <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
                     <p className="text-sm text-gray-500">Uploading...</p>
                 </>
             ) : (

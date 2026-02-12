@@ -200,7 +200,7 @@ export function Login({ isOpen, onClose, onSwitchToRegister, onSwitchToForgotPas
                </div>
                <button 
                   type="button"
-                  className="text-sm font-medium text-sky-600 hover:text-sky-500"
+                  className="text-sm font-medium text-primary hover:text-primary-light0"
                   onClick={(e) => {
                      e.preventDefault();
                      if (onSwitchToForgotPassword) {
@@ -219,7 +219,7 @@ export function Login({ isOpen, onClose, onSwitchToRegister, onSwitchToForgotPas
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-sky-600 hover:bg-sky-700"
+              className="w-full bg-primary hover:bg-primary-hover"
             >
               {isLoading ? 'Memproses...' : 'Login'}
             </Button>
@@ -270,7 +270,7 @@ export function Login({ isOpen, onClose, onSwitchToRegister, onSwitchToForgotPas
             <button
               type="button"
               onClick={onSwitchToRegister}
-              className="text-sky-600 hover:text-sky-700 font-medium"
+              className="text-primary hover:text-primary-hover font-medium"
             >
               Daftar sekarang
             </button>

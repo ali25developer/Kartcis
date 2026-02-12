@@ -65,7 +65,9 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={handleLogoClick}>
-            <span className="text-xl font-semibold text-sky-600">KARTCIS.ID</span>
+            <div className="bg-[#ffd54c] p-1 rounded-md">
+              <img src="/assets/logo.png" alt="Kartcis Logo" className="h-10 w-auto" />
+            </div>
           </div>
 
           {/* Spacer for center alignment */}
@@ -82,7 +84,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                       navigate('/admin');
                       setIsMobileMenuOpen(false);
                     }}
-                    className="text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                    className="text-primary hover:text-primary-hover hover:bg-primary-light"
                   >
                     <Shield className="h-5 w-5 mr-2" />
                     Admin
@@ -134,7 +136,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                       navigate('/admin');
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full justify-start text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                    className="w-full justify-start text-primary hover:text-primary-hover hover:bg-primary-light"
                   >
                     <Shield className="h-5 w-5 mr-2" />
                     Admin Dashboard
@@ -183,7 +185,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
       {pendingPayment && (
         <div 
           onClick={pendingPayment.onClick}
-          className="bg-gradient-to-r from-amber-500 to-orange-600 text-white cursor-pointer hover:from-amber-600 hover:to-orange-700 transition-all shadow-md animate-in slide-in-from-top duration-500"
+          className="bg-gradient-to-r from-accent-orange to-accent-orange-hover text-white cursor-pointer hover:from-accent-orange-hover hover:to-orange-700 transition-all shadow-md animate-in slide-in-from-top duration-500"
         >
           <div className="container mx-auto px-4 py-2">
             <div className="flex items-center justify-between">

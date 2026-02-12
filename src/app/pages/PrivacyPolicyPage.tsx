@@ -8,7 +8,7 @@ export function PrivacyPolicyPage() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-sky-600 to-indigo-600 p-8 sm:p-12 text-white">
+          <div className="bg-gradient-to-r from-primary to-indigo-600 p-8 sm:p-12 text-white">
             <Link to="/" className="inline-flex items-center text-sky-100 hover:text-white mb-8 transition-colors">
               <ArrowLeft className="h-5 w-5 mr-2" />
               Kembali ke Beranda
@@ -30,7 +30,7 @@ export function PrivacyPolicyPage() {
             
             <section>
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-sky-50 rounded-lg text-sky-600">
+                <div className="p-2 bg-primary-light rounded-lg text-primary">
                   <FileText className="h-6 w-6" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">1. Informasi yang Kami Kumpulkan</h2>
@@ -56,7 +56,7 @@ export function PrivacyPolicyPage() {
 
             <section>
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-sky-50 rounded-lg text-sky-600">
+                <div className="p-2 bg-primary-light rounded-lg text-primary">
                   <Eye className="h-6 w-6" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">2. Bagaimana Kami Menggunakan Informasi Anda</h2>
@@ -91,7 +91,7 @@ export function PrivacyPolicyPage() {
 
             <section>
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-sky-50 rounded-lg text-sky-600">
+                <div className="p-2 bg-primary-light rounded-lg text-primary">
                   <Globe className="h-6 w-6" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">3. Berbagi Data dengan Pihak Ketiga</h2>
@@ -117,7 +117,7 @@ export function PrivacyPolicyPage() {
 
             <section>
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-sky-50 rounded-lg text-sky-600">
+                <div className="p-2 bg-primary-light rounded-lg text-primary">
                   <Lock className="h-6 w-6" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">4. Keamanan Data</h2>
@@ -133,7 +133,7 @@ export function PrivacyPolicyPage() {
               <p className="text-gray-600 mb-4">
                 Jika Anda memiliki pertanyaan tentang kebijakan ini, silakan hubungi:
               </p>
-              <div className="bg-sky-50 inline-block px-4 py-2 rounded-lg text-sky-700 font-medium">
+              <div className="bg-primary-light inline-block px-4 py-2 rounded-lg text-primary-hover font-medium">
                 privacy@masup.id
               </div>
               <p className="text-gray-400 text-sm mt-6">

@@ -72,7 +72,7 @@ export function ForgotPassword({ isOpen, onClose, onBackToLogin }: ForgotPasswor
                 <div className="space-y-3">
                    <Button 
                       onClick={onClose} 
-                      className="w-full bg-sky-600 hover:bg-sky-700"
+                      className="w-full bg-primary hover:bg-primary-hover"
                    >
                       Tutup
                    </Button>
@@ -111,7 +111,7 @@ export function ForgotPassword({ isOpen, onClose, onBackToLogin }: ForgotPasswor
 
                   <Button
                     type="submit"
-                    className="w-full bg-sky-600 hover:bg-sky-700"
+                    className="w-full bg-primary hover:bg-primary-hover"
                     disabled={isLoading}
                   >
                     {isLoading ? (

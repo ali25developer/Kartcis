@@ -29,14 +29,15 @@ import type { HelpModalType } from "./types/index";
 
 // Protected Route Component - defined outside to prevent re-creation
 // Protected Route Component - defined outside to prevent re-creation
-function ProtectedRoute({ children, onShowLogin }: { children: React.ReactNode, onShowLogin: () => void }) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      onShowLogin();
+      navigate('/');
     }
-  }, [isAuthenticated, isLoading, onShowLogin]);
+  }, [isAuthenticated, isLoading, navigate]);
   
   if (isLoading) {
     return null; // Or a loading spinner
@@ -214,7 +215,7 @@ function AppLayout() {
         <Route 
           path="/my-tickets" 
           element={
-            <ProtectedRoute onShowLogin={() => setShowLogin(true)}>
+            <ProtectedRoute>
               <MyTicketsPage />
             </ProtectedRoute>
           } 
@@ -222,7 +223,7 @@ function AppLayout() {
         <Route 
           path="/admin" 
           element={
-            <ProtectedRoute onShowLogin={() => setShowLogin(true)}>
+            <ProtectedRoute>
               <AdminDashboard />
             </ProtectedRoute>
           } 
@@ -230,7 +231,7 @@ function AppLayout() {
         <Route 
           path="/profile" 
           element={
-            <ProtectedRoute onShowLogin={() => setShowLogin(true)}>
+            <ProtectedRoute>
               <ProfilePage />
             </ProtectedRoute>
           } 

@@ -66,7 +66,7 @@ export function HelpModal({ isOpen = true, onClose, type }: HelpModalProps) {
                 </p>
               </div>
 
-              <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mt-6">
+              <div className="bg-primary-light border border-sky-200 rounded-lg p-4 mt-6">
                 <h4 className="font-semibold text-sky-900 mb-2">💡 Tips:</h4>
                 <ul className="text-sm text-sky-800 space-y-1 list-disc list-inside">
                   <li>Pesan tiket lebih awal untuk mendapatkan harga Early Bird</li>
@@ -259,7 +259,7 @@ export function HelpModal({ isOpen = true, onClose, type }: HelpModalProps) {
                 </p>
               </div>
 
-              <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mt-6">
+              <div className="bg-primary-light border border-sky-200 rounded-lg p-4 mt-6">
                 <h4 className="font-semibold text-sky-900 mb-2">📧 Hubungi Kami:</h4>
                 <p className="text-sm text-sky-800">
                   Jika Anda memiliki pertanyaan tentang kebijakan privasi atau ingin menggunakan 
@@ -310,7 +310,7 @@ export function HelpModal({ isOpen = true, onClose, type }: HelpModalProps) {
         <div className="p-6 border-t bg-gray-50 sticky bottom-0">
           <Button
             onClick={onClose}
-            className="w-full bg-sky-600 hover:bg-sky-700"
+            className="w-full bg-primary hover:bg-primary-hover"
           >
             Tutup
           </Button>

@@ -5,24 +5,24 @@
   --font-size: 14px;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   
-  /* Colors - Professional Blue + Energetic Orange Theme */
-  /* Primary - Trust & Professional */
-  --background: #f9fafb;
+  /* Colors - Deep Magenta + Gold Theme */
+  /* Primary - #b31356 */
+  --background: #ffffff;
   --foreground: #1e293b;
   --card: #ffffff;
   --card-foreground: #1e293b;
   --popover: #ffffff;
   --popover-foreground: #1e293b;
-  --primary: #0284c7; /* Sky-600 */
-  --primary-hover: #0369a1; /* Sky-700 */
-  --primary-light: #f0f9ff; /* Sky-50 */
+  --primary: #b31356; 
+  --primary-hover: #9c104a; 
+  --primary-light: #fff1f5; 
   --primary-foreground: #ffffff;
   
-  /* Accent - Energy & Action (NEW!) */
-  --accent-orange: #f97316; /* Orange-500 */
-  --accent-orange-hover: #ea580c; /* Orange-600 */
-  --accent-orange-light: #fff7ed; /* Orange-50 */
-  --accent-orange-foreground: #ffffff;
+  /* Accent - #ffd54c */
+  --accent-orange: #ffd54c; 
+  --accent-orange-hover: #fbc02d; 
+  --accent-orange-light: #fffbeb; 
+  --accent-orange-foreground: #1e293b;
   
   /* Semantic Colors (NEW!) */
   --success: #10b981; /* Emerald-500 */
@@ -127,7 +127,13 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
   --color-primary-foreground: var(--primary-foreground);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-orange-hover: var(--accent-orange-hover);
+  --color-accent-orange-light: var(--accent-orange-light);
+  --color-accent-orange-foreground: var(--accent-orange-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

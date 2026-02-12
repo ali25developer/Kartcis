@@ -122,7 +122,7 @@ export function ProfilePage() {
   if (authLoading) {
     return (
         <div className="min-h-screen pt-24 pb-12 flex justify-center items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
     );
   }
@@ -133,7 +133,7 @@ export function ProfilePage() {
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
-           <div className="p-6 border-b bg-gradient-to-r from-sky-600 to-sky-700">
+           <div className="p-6 border-b bg-gradient-to-r from-primary to-primary-hover">
             <h1 className="text-3xl font-bold text-white">Profil Saya</h1>
             <p className="text-sky-100 mt-1">
               Kelola informasi pribadi dan keamanan akun Anda
@@ -256,7 +256,7 @@ export function ProfilePage() {
             <div className="pt-6 flex justify-end">
               <Button 
                 type="submit" 
-                className="bg-sky-600 hover:bg-sky-700 min-w-[120px]"
+                className="bg-primary hover:bg-primary-hover min-w-[120px]"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

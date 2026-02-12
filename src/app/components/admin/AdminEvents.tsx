@@ -310,7 +310,7 @@ export function AdminEvents() {
           <h2 className="text-xl font-bold text-gray-900">Kelola Event</h2>
           <p className="text-sm text-gray-600">Buat dan kelola event yang tersedia</p>
         </div>
-        <Button onClick={openCreateModal} className="bg-sky-600 hover:bg-sky-700">
+        <Button onClick={openCreateModal} className="bg-primary hover:bg-primary-hover">
           <Plus className="h-4 w-4 mr-2" />
           Buat Event
         </Button>
@@ -411,7 +411,7 @@ export function AdminEvents() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                            className="h-8 w-8 text-primary hover:text-primary-hover hover:bg-primary-light"
                             onClick={() => openEditModal(event)}
                             title="Edit Event"
                           >
@@ -420,7 +420,7 @@ export function AdminEvents() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            className="h-8 w-8 text-accent-orange-hover hover:text-orange-700 hover:bg-accent-orange-light"
                             onClick={() => handleCancel(event)}
                             disabled={event.status === 'cancelled'}
                             title="Batalkan Event"
@@ -484,7 +484,7 @@ export function AdminEvents() {
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
             {/* Section: Informasi Dasar */}
             <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sky-700 font-semibold border-b pb-2">
+                <div className="flex items-center gap-2 text-primary-hover font-semibold border-b pb-2">
                     <Edit2 className="h-5 w-5" />
                     <h3>Informasi Dasar</h3>
                 </div>
@@ -535,7 +535,7 @@ export function AdminEvents() {
 
             {/* Section: Lokasi & Waktu */}
             <div className="space-y-4 pt-4">
-                <div className="flex items-center gap-2 text-sky-700 font-semibold border-b pb-2">
+                <div className="flex items-center gap-2 text-primary-hover font-semibold border-b pb-2">
                     <MapPin className="h-5 w-5" />
                     <h3>Lokasi & Waktu</h3>
                 </div>
@@ -587,7 +587,7 @@ export function AdminEvents() {
 
             {/* Section: Banner & Konfigurasi */}
             <div className="space-y-4 pt-4">
-                <div className="flex items-center gap-2 text-sky-700 font-semibold border-b pb-2">
+                <div className="flex items-center gap-2 text-primary-hover font-semibold border-b pb-2">
                     <Tag className="h-5 w-5" />
                     <h3>Pengaturan & Media</h3>
                 </div>
@@ -631,11 +631,11 @@ export function AdminEvents() {
                                 id="is_featured"
                                 checked={formData.is_featured}
                                 onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
-                                className="h-5 w-5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                className="h-5 w-5 rounded border-amber-400 text-accent-orange-hover focus:ring-accent-orange cursor-pointer"
                             />
                             <Label htmlFor="is_featured" className="cursor-pointer font-bold text-amber-900 text-sm">Populer</Label>
                         </div>
-                        <p className="text-[10px] text-amber-600 italic leading-tight">Event akan muncul di slide besar (Hero) halaman utama.</p>
+                        <p className="text-[10px] text-accent-orange-hover italic leading-tight">Event akan muncul di slide besar (Hero) halaman utama.</p>
                     </div>
 
                     <div className="space-y-2 col-span-3">
@@ -726,8 +726,8 @@ export function AdminEvents() {
                                 </div>
                                 
                                 {field.type === 'select' && (
-                                    <div className="col-span-2 space-y-2 bg-sky-50 p-3 rounded-lg border border-sky-100">
-                                        <Label className="text-sky-700">Daftar Pilihan (Pisahkan dengan koma)</Label>
+                                    <div className="col-span-2 space-y-2 bg-primary-light p-3 rounded-lg border border-sky-100">
+                                        <Label className="text-primary-hover">Daftar Pilihan (Pisahkan dengan koma)</Label>
                                         <Input
                                             placeholder="Contoh: S, M, L, XL"
                                             value={field.options?.join(', ') || ''}
@@ -751,7 +751,7 @@ export function AdminEvents() {
                                             newFields[index].required = e.target.checked;
                                             setFormData(prev => ({ ...prev, custom_fields: newFields }));
                                         }}
-                                        className="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary-light0"
                                     />
                                     <Label htmlFor={`req-${index}`} className="cursor-pointer font-medium">Wajib diisi oleh user</Label>
                                 </div>
@@ -768,19 +768,19 @@ export function AdminEvents() {
             </div>
 
             {/* Section: Ticket Types */}
-            <div className="bg-sky-50/50 p-8 rounded-2xl border border-sky-100 space-y-8">
+            <div className="bg-primary-light/50 p-8 rounded-2xl border border-sky-100 space-y-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="space-y-1">
                         <h3 className="text-xl font-bold text-sky-900 flex items-center gap-2">
                             <PlusCircle className="h-6 w-6" />
                             Manajemen Tiket
                         </h3>
-                        <p className="text-sm text-sky-600">Buat minimal 1 kategori tiket. Quota & Harga akan tersinkronisasi otomatis.</p>
+                        <p className="text-sm text-primary">Buat minimal 1 kategori tiket. Quota & Harga akan tersinkronisasi otomatis.</p>
                     </div>
                     <Button 
                         type="button" 
                         variant="default" 
-                        className="bg-sky-600 hover:bg-sky-700 shadow-lg shadow-sky-200"
+                        className="bg-primary hover:bg-primary-hover shadow-lg shadow-sky-200"
                         onClick={() => {
                             setFormData(prev => ({
                                 ...prev,
@@ -822,7 +822,7 @@ export function AdminEvents() {
                                                 newTickets[index].name = e.target.value;
                                                 setFormData(prev => ({ ...prev, ticket_types: newTickets }));
                                             }}
-                                            className="h-12 text-lg font-semibold bg-sky-50/20 border-sky-100 focus:border-sky-500"
+                                            className="h-12 text-lg font-semibold bg-primary-light/20 border-sky-100 focus:border-primary-light0"
                                             required
                                         />
                                     </div>
@@ -866,7 +866,7 @@ export function AdminEvents() {
                                                 newTickets[index].quota = e.target.value;
                                                 setFormData(prev => ({ ...prev, ticket_types: newTickets }));
                                             }}
-                                            className="h-12 border-orange-200 focus:border-orange-500 bg-orange-50/10 text-lg font-medium"
+                                            className="h-12 border-orange-200 focus:border-accent-orange bg-accent-orange-light/10 text-lg font-medium"
                                             required
                                         />
                                     </div>
@@ -890,11 +890,11 @@ export function AdminEvents() {
                     
                     {formData.ticket_types.length === 0 && (
                         <div className="text-center py-16 bg-white border-2 border-dashed border-sky-200 rounded-2xl">
-                            <div className="bg-sky-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="bg-primary-light w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <PlusCircle className="h-10 w-10 text-sky-200" />
                             </div>
                             <h4 className="text-sky-900 font-bold text-lg">Belum ada Tiket</h4>
-                            <p className="text-sky-500 max-w-sm mx-auto mt-1">Sistem memerlukan minimal satu kategori tiket (misal: General Admission) untuk dapat memproses event ini.</p>
+                            <p className="text-primary-light0 max-w-sm mx-auto mt-1">Sistem memerlukan minimal satu kategori tiket (misal: General Admission) untuk dapat memproses event ini.</p>
                         </div>
                     )}
                 </div>
@@ -931,7 +931,7 @@ export function AdminEvents() {
               <Button type="button" variant="outline" className="h-12 w-32" onClick={() => setIsModalOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" className="bg-sky-600 hover:bg-sky-700 h-12 flex-1 text-lg font-bold" disabled={isSubmitting}>
+              <Button type="submit" className="bg-primary hover:bg-primary-hover h-12 flex-1 text-lg font-bold" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -972,7 +972,7 @@ export function AdminEvents() {
                    setAlertConfig(prev => ({ ...prev, isOpen: false }));
                 }
               }}
-              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'}
+              className={alertConfig.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary-hover'}
             >
               {alertConfig.confirmText || 'Lanjutkan'}
             </AlertDialogAction>

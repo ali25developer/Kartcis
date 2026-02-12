@@ -9,24 +9,21 @@ export function Footer() {
           {/* Brand & About */}
           <div className="col-span-1 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 bg-sky-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">K</span>
+              <div className="bg-[#ffd54c] p-1 rounded-md">
+                <img src="/assets/logo.png" alt="Kartcis Logo" className="h-8 w-auto" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                Kartcis
-              </span>
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
               Platform pembelian tiket event terpercaya. Temukan dan beli tiket konser, workshop, dan event seru lainnya dengan mudah dan aman.
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-600 transition-colors">
+              <a href="https://facebook.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="https://twitter.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-600 transition-colors">
+              <a href="https://twitter.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="https://instagram.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-600 transition-colors">
+              <a href="https://instagram.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
             </div>
@@ -40,7 +37,7 @@ export function Footer() {
                 <Link 
                   to="/" 
                   state={{ scrollTo: 'top' }}
-                  className="text-gray-500 hover:text-sky-600 transition-colors"
+                  className="text-gray-500 hover:text-primary transition-colors"
                 >
                   Beranda
                 </Link>
@@ -49,13 +46,13 @@ export function Footer() {
                 <Link 
                   to="/" 
                   state={{ scrollTo: 'search' }}
-                  className="text-gray-500 hover:text-sky-600 transition-colors"
+                  className="text-gray-500 hover:text-primary transition-colors"
                 >
                   Cari Event
                 </Link>
               </li>
               <li>
-                <Link to="/my-tickets" className="text-gray-500 hover:text-sky-600 transition-colors">
+                <Link to="/my-tickets" className="text-gray-500 hover:text-primary transition-colors">
                   Tiket Saya
                 </Link>
               </li>
@@ -67,22 +64,22 @@ export function Footer() {
             <h3 className="font-semibold text-gray-900 mb-4">Dukungan & Legal</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/cara-pesan" className="text-gray-500 hover:text-sky-600 transition-colors">
+                <Link to="/cara-pesan" className="text-gray-500 hover:text-primary transition-colors">
                   Cara Pesan
                 </Link>
               </li>
               <li>
-                <Link to="/syarat-ketentuan" className="text-gray-500 hover:text-sky-600 transition-colors">
+                <Link to="/syarat-ketentuan" className="text-gray-500 hover:text-primary transition-colors">
                   Syarat & Ketentuan
                 </Link>
               </li>
               <li>
-                <Link to="/kebijakan-privasi" className="text-gray-500 hover:text-sky-600 transition-colors">
+                <Link to="/kebijakan-privasi" className="text-gray-500 hover:text-primary transition-colors">
                   Kebijakan Privasi
                 </Link>
               </li>
               <li>
-                <Link to="/refund-policy" className="text-gray-500 hover:text-sky-600 transition-colors">
+                <Link to="/refund-policy" className="text-gray-500 hover:text-primary transition-colors">
                   Kebijakan Refund
                 </Link>
               </li>
@@ -94,15 +91,15 @@ export function Footer() {
             <h3 className="font-semibold text-gray-900 mb-4">Hubungi Kami</h3>
             <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3 text-gray-500">
-                <MapPin className="h-5 w-5 text-sky-600 flex-shrink-0 mt-0.5" />
+                <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                 <span>Lorem ipsum, dolor sit amet consectetur adipisicing elit.</span>
               </li>
               <li className="flex items-center gap-3 text-gray-500">
-                <Phone className="h-5 w-5 text-sky-600 flex-shrink-0" />
+                <Phone className="h-5 w-5 text-primary flex-shrink-0" />
                 <span>(+62) 8312-7246-830</span>
               </li>
               <li className="flex items-center gap-3 text-gray-500">
-                <Mail className="h-5 w-5 text-sky-600 flex-shrink-0" />
+                <Mail className="h-5 w-5 text-primary flex-shrink-0" />
                 <span>support@kartcis.id</span>
               </li>
             </ul>

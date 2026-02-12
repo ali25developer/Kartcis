@@ -83,7 +83,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
         )}
         
         {event.is_featured && !isSoldOut && !isCancelled && (
-          <Badge className="absolute top-3 left-3 bg-orange-500 border-0 text-sm px-2.5 py-0.5">
+          <Badge className="absolute top-3 left-3 bg-accent-orange border-0 text-sm px-2.5 py-0.5">
             Populer
           </Badge>
         )}
@@ -102,16 +102,16 @@ export function EventCard({ event, onClick }: EventCardProps) {
 
         <div className="space-y-2 mb-4 min-h-[72px]">
           <div className="flex items-center text-sm text-gray-700">
-            <Calendar className="h-4 w-4 mr-2 text-sky-600 flex-shrink-0" />
+            <Calendar className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
             <span className="line-clamp-1">{formatDate(event.date || event.event_date)}</span>
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <MapPin className="h-4 w-4 mr-2 text-sky-600 flex-shrink-0" />
+            <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
             <span className="line-clamp-1">{event.venue}, {event.city}</span>
           </div>
           {!isSoldOut && !isCancelled && (
             <div className="flex items-center text-sm text-gray-700">
-              <Users className="h-4 w-4 mr-2 text-sky-600 flex-shrink-0" />
+              <Users className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
               <span className="line-clamp-1">Sisa {totalAvailable.toLocaleString('id-ID')} tiket</span>
             </div>
           )}
@@ -119,7 +119,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
 
         {soldOutPercentage > 80 && !isSoldOut && !isCancelled && (
           <div className="mb-3">
-            <Badge variant="outline" className="text-sm text-amber-600 border-amber-200 bg-amber-50">
+            <Badge variant="outline" className="text-sm text-accent-orange-hover border-amber-200 bg-amber-50">
               Hampir Habis
             </Badge>
           </div>
@@ -135,22 +135,22 @@ export function EventCard({ event, onClick }: EventCardProps) {
                     <p className="text-sm text-gray-400 line-through">
                       {formatPrice(lowestTicket.originalPrice)}
                     </p>
-                    <Badge className="bg-orange-500 text-white border-0 text-xs px-1.5 py-0">
+                    <Badge className="bg-accent-orange text-white border-0 text-xs px-1.5 py-0">
                       {Math.round((1 - lowestTicket.price / lowestTicket.originalPrice) * 100)}%
                     </Badge>
                   </div>
-                  <p className="font-bold text-sky-600 text-2xl leading-none">
+                  <p className="font-bold text-primary text-2xl leading-none">
                     {formatPrice(lowestTicket.price)}
                   </p>
                 </div>
               ) : (
-                <p className="font-bold text-sky-600 text-2xl leading-none">
+                <p className="font-bold text-primary text-2xl leading-none">
                   {formatPrice(event.min_price || lowestTicket?.price || 0)}
                 </p>
               )}
             </div>
           </div>
-          <Button className="bg-sky-600 hover:bg-sky-700 flex-shrink-0">
+          <Button className="bg-primary hover:bg-primary-hover flex-shrink-0">
             Lihat Detail
           </Button>
         </div>

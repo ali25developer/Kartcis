@@ -166,7 +166,7 @@ export function ResetPasswordPage() {
             <div>
               <Button
                 type="submit"
-                className="w-full bg-sky-600 hover:bg-sky-700"
+                className="w-full bg-primary hover:bg-primary-hover"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -184,7 +184,7 @@ export function ResetPasswordPage() {
           <div className="mt-6 text-center">
              <button 
                 onClick={() => navigate('/')} 
-                className="font-medium text-sky-600 hover:text-sky-500 flex items-center justify-center gap-1 mx-auto"
+                className="font-medium text-primary hover:text-primary-light0 flex items-center justify-center gap-1 mx-auto"
                 type="button"
              >
                 <ArrowLeft className="h-4 w-4" />

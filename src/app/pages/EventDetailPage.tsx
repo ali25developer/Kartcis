@@ -161,7 +161,7 @@ export function EventDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -223,13 +223,13 @@ export function EventDetailPage() {
 
               {/* Featured Badge */}
               {event.is_featured && isEventAvailable && (
-                <Badge className="absolute top-4 right-4 bg-orange-500 text-white">
+                <Badge className="absolute top-4 right-4 bg-accent-orange text-white">
                   Populer
                 </Badge>
               )}
 
               {/* Category Badge */}
-              <Badge className="absolute top-4 left-4 bg-sky-600">
+              <Badge className="absolute top-4 left-4 bg-primary">
                 {event.category?.name || 'Uncategorized'}
               </Badge>
             </div>
@@ -240,7 +240,7 @@ export function EventDetailPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="flex items-start gap-3">
-                  <Calendar className="h-5 w-5 text-sky-600 mt-1" />
+                  <Calendar className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <p className="text-sm font-semibold">Tanggal & Waktu</p>
                     <p className="text-gray-600">
@@ -250,7 +250,7 @@ export function EventDetailPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-sky-600 mt-1" />
+                  <MapPin className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <p className="text-sm font-semibold">Lokasi</p>
                     <p className="text-gray-600">{event.venue}, {event.city}</p>
@@ -258,7 +258,7 @@ export function EventDetailPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Tag className="h-5 w-5 text-sky-600 mt-1" />
+                  <Tag className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <p className="text-sm font-semibold">Kategori</p>
                     <p className="text-gray-600">{event.category?.name || 'Uncategorized'}</p>
@@ -266,7 +266,7 @@ export function EventDetailPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Users className="h-5 w-5 text-sky-600 mt-1" />
+                  <Users className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <p className="text-sm font-semibold">Organizer</p>
                     <p className="text-gray-600">{event.organizer}</p>
@@ -349,7 +349,7 @@ export function EventDetailPage() {
                               {formatCurrency(ticket.originalPrice!)}
                             </p>
                           )}
-                          <p className="text-2xl font-bold text-sky-600">
+                          <p className="text-2xl font-bold text-primary">
                             {formatCurrency(ticket.price)}
                           </p>
                           {hasDiscount && (
@@ -401,12 +401,12 @@ export function EventDetailPage() {
                     </div>
                     <div className="flex justify-between text-2xl font-bold">
                       <span>Total:</span>
-                      <span className="text-sky-600">{formatCurrency(totalPrice)}</span>
+                      <span className="text-primary">{formatCurrency(totalPrice)}</span>
                     </div>
                   </div>
 
                   <Button 
-                    className="w-full bg-sky-600 hover:bg-sky-700"
+                    className="w-full bg-primary hover:bg-primary-hover"
                     size="lg"
                     onClick={handleCheckout}
                     disabled={totalQuantity === 0}

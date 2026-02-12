@@ -156,12 +156,12 @@ export function VirtualAccountDetail({
 
           <div className="p-6 space-y-6">
             {/* Timer */}
-            <Card className="p-4 bg-orange-50 border-orange-200">
+            <Card className="p-4 bg-accent-orange-light border-orange-200">
               <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-orange-600" />
+                <Clock className="h-5 w-5 text-accent-orange-hover" />
                 <div className="flex-1">
                   <p className="text-sm text-gray-700 mb-1">Selesaikan pembayaran dalam</p>
-                  <p className="text-2xl font-bold text-orange-600">{formatTime(timeLeft)}</p>
+                  <p className="text-2xl font-bold text-accent-orange-hover">{formatTime(timeLeft)}</p>
                 </div>
               </div>
             </Card>
@@ -271,9 +271,9 @@ export function VirtualAccountDetail({
             </div>
 
             {/* Info */}
-            <Card className="p-4 bg-sky-50 border-sky-200">
+            <Card className="p-4 bg-primary-light border-sky-200">
               <div className="flex gap-3">
-                <CheckCircle2 className="h-5 w-5 text-sky-600 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-gray-900">
                     Selesaikan pembayaran sebelum batas waktu

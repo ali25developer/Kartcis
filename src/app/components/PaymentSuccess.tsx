@@ -117,7 +117,7 @@ export function PaymentSuccess({ pendingOrder }: PaymentSuccessProps) {
               {isAuthenticated && (
                 <Button
                   onClick={() => navigate('/my-tickets')}
-                  className="w-full bg-sky-600 hover:bg-sky-700"
+                  className="w-full bg-primary hover:bg-primary-hover"
                 >
                   <Ticket className="h-5 w-5 mr-2" />
                   Lihat Tiket Saya
