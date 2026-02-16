@@ -276,6 +276,7 @@ export function PaymentDetailPage({
                                        <span className="text-slate-500 font-semibold text-lg">Rp</span>
                                        <span className="text-3xl font-black text-slate-900 tracking-tight">
                                           {Math.floor(pendingOrder.amount / 1000).toLocaleString('id-ID')}
+                                          <span className="text-slate-900">.</span>
                                           <span className="text-primary underline decoration-primary/40 underline-offset-8">
                                             {(pendingOrder.amount % 1000).toString().padStart(3, '0')}
                                           </span>
