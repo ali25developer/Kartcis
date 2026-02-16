@@ -173,7 +173,12 @@ export function AdminEvents() {
       ...formData,
       category_id: parseInt(formData.category_id),
       fee_percentage: parseFloat(formData.fee_percentage) || 5.0,
-      custom_fields: formData.custom_fields.length > 0 ? JSON.stringify(formData.custom_fields) : undefined,
+      custom_fields: formData.custom_fields.length > 0 
+        ? JSON.stringify(formData.custom_fields.map(f => ({
+            ...f,
+            options: f.type === 'select' ? f.options?.filter(opt => opt.trim() !== '') : undefined
+          }))) 
+        : undefined,
       ticket_types: formData.ticket_types.map(t => ({
         ...(t.id ? { id: t.id } : {}),
         name: t.name,
@@ -734,7 +739,7 @@ export function AdminEvents() {
                                             className="bg-white"
                                             onChange={(e) => {
                                                 const newFields = [...formData.custom_fields];
-                                                newFields[index].options = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                                newFields[index].options = e.target.value.split(',').map(s => s.trim());
                                                 setFormData(prev => ({ ...prev, custom_fields: newFields }));
                                             }}
                                         />
