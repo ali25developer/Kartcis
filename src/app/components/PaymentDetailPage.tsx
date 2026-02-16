@@ -261,10 +261,10 @@ export function PaymentDetailPage({
                                        <Copy className="h-4 w-4 mr-2" /> SALIN
                                      </Button>
                                   </div>
-                                  <p className="text-xs text-slate-500 mt-2 font-medium px-1 flex items-center gap-1.5">
+                                  {/* <p className="text-xs text-slate-500 mt-2 font-medium px-1 flex items-center gap-1.5">
                                     <CheckCircle2 className="h-3 w-3 text-green-500" />
                                     a/n {pendingOrder.accountName || 'KARTCIS ID / ALI ROHMANSYAH'}
-                                  </p>
+                                  </p> */}
                                </div>
 
                                <div className="relative pt-2">
