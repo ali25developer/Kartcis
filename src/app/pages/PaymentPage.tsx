@@ -62,22 +62,36 @@ export function PaymentPage() {
              eventImage: item.event_image || item.event?.image || '',
           })) || [];
 
+          // Parse payment_details if it is a string (Go/Postgres JSONB common issue)
+          let paymentDetails = order.payment_details;
+          if (typeof paymentDetails === 'string') {
+            try {
+              paymentDetails = JSON.parse(paymentDetails);
+            } catch (e) {
+              console.error("Failed to parse payment_details string", e);
+            }
+          }
+
           // Determine payment type from payment method string
           let paymentType: PaymentMethodType = 'va';
-          const method = order.payment_method?.toLowerCase() || '';
+          const method = (order.payment_method || '').toLowerCase();
           if (method.includes('qris')) paymentType = 'qris';
           else if (method.includes('gopay') || method.includes('ovo') || method.includes('shopee')) paymentType = 'ewallet';
           else if (method.includes('card')) paymentType = 'credit_card';
+          else if (method.includes('manual')) paymentType = 'va'; // Treat manual as VA (bank transfer) logic
 
           const mappedOrder = {
              orderId: order.order_number || String(order.id),
              paymentMethod: order.payment_method,
              paymentType,
-             vaNumber: order.payment_details?.va_number,
-             qrisUrl: order.payment_details?.qris_url,
-             paymentUrl: order.payment_url || order.payment_details?.payment_url,
-             // Add virtual account number if explicitly available in other field
-             virtualAccountNumber: order.payment_details?.virtual_account_number || order.payment_details?.va_number, 
+             vaNumber: order.virtual_account_number || paymentDetails?.va_number || paymentDetails?.virtual_account_number || paymentDetails?.account_number,
+             qrisUrl: paymentDetails?.qris_url,
+             paymentUrl: order.payment_url || paymentDetails?.payment_url,
+             // Manual Transfer Specifics
+             uniqueCode: order.unique_code,
+             paymentInstructions: order.payment_instructions,
+             accountName: order.account_name || paymentDetails?.account_name || paymentDetails?.account_holder,
+             virtualAccountNumber: order.virtual_account_number || paymentDetails?.virtual_account_number || paymentDetails?.va_number || paymentDetails?.account_number, 
              amount: order.total_amount,
              totalAmount: order.total_amount,
              adminFee: order.admin_fee,
@@ -112,23 +126,22 @@ export function PaymentPage() {
 
           setPendingOrder(mappedOrder);
 
+          // Extract tickets from order data if available (avoiding redundant API call)
+          if (order.tickets && Array.isArray(order.tickets)) {
+            setTickets(order.tickets);
+          } else if (order.order_items && Array.isArray(order.order_items)) {
+            // Some backends might nest tickets inside order_items or use it as an alias
+            const flatTickets = order.order_items.flatMap((item: any) => item.tickets || []);
+            if (flatTickets.length > 0) {
+              setTickets(flatTickets);
+            }
+          }
+
           // Update storage for global banner/countdown
           if (mappedOrder.status === 'pending' && mappedOrder.expiryTime > Date.now()) {
             pendingOrderStorage.add(mappedOrder);
           } else if (mappedOrder.status === 'paid' || mappedOrder.status === 'cancelled' || mappedOrder.status === 'expired') {
             pendingOrderStorage.remove(mappedOrder.orderId);
-          }
-
-          // Fetch tickets for custom fields
-          try {
-             // Use order_number for public accessibility
-             const orderIdentifier = order.order_number || order.id;
-             const ticketsResponse = await api.tickets.getByOrder(orderIdentifier);
-             if (ticketsResponse.success && ticketsResponse.data) {
-                setTickets(ticketsResponse.data);
-             }
-          } catch (err) {
-             console.error("Failed to fetch tickets", err);
           }
 
         } else {
@@ -147,10 +160,7 @@ export function PaymentPage() {
     fetchOrder();
   }, [orderId, navigate]);
 
-  const handlePaymentSuccess = () => {
-    if (!pendingOrder) return;
-    navigate(`/payment/success/${pendingOrder.orderId}`);
-  };
+
 
   const handleCheckStatus = async () => {
     if (!orderId) return;
@@ -172,20 +182,18 @@ export function PaymentPage() {
   const handleCancel = async () => {
     if (!pendingOrder || !orderId) return;
     
-    if (window.confirm('Apakah Anda yakin ingin membatalkan pembayaran?')) {
-      try {
-        const response = await api.orders.cancel(orderId);
-        if (response.success) {
-          pendingOrderStorage.remove(pendingOrder.orderId);
-          toast.info("Pembayaran dibatalkan");
-          navigate('/');
-        } else {
-          toast.error(response.message || "Gagal membatalkan pesanan");
-        }
-      } catch (error) {
-        console.error('Error cancelling order:', error);
-        toast.error("Terjadi kesalahan saat membatalkan pesanan");
+    try {
+      const response = await api.orders.cancel(orderId);
+      if (response.success) {
+        pendingOrderStorage.remove(pendingOrder.orderId);
+        toast.info("Pembayaran dibatalkan");
+        navigate('/');
+      } else {
+        toast.error(response.message || "Gagal membatalkan pesanan");
       }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      toast.error("Terjadi kesalahan saat membatalkan pesanan");
     }
   };
 
@@ -206,7 +214,6 @@ export function PaymentPage() {
       <PaymentDetailPage
         pendingOrder={pendingOrder}
         tickets={tickets}
-        onPaymentSuccess={handlePaymentSuccess}
         onManualCheck={handleCheckStatus}
         onCancel={handleCancel}
       />

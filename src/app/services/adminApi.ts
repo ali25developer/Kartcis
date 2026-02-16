@@ -173,6 +173,20 @@ export const adminApi = {
       throw new Error('Gagal mengirim ulang email');
     }
   },
+  
+  // POST /api/v1/admin/transactions/trigger-scraping
+  triggerScraping: async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/transactions/trigger-scraping`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+      return await response.json();
+    } catch (error: any) {
+      console.error('Error triggering scraping:', error);
+      throw new Error('Gagal memicu pengecekan mutasi');
+    }
+  },
 
   // GET /api/v1/admin/transactions/:id/timeline
   getTransactionTimeline: async (id: string): Promise<{ success: boolean; data: TransactionTimelineItem[] }> => {

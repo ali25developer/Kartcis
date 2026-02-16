@@ -17,7 +17,8 @@ import {
   Tags,
   Loader2,
   Eye,
-  User
+  User,
+  RefreshCw
 } from 'lucide-react';
 import { formatDateTime } from '@/app/utils/helpers';
 import { Button } from '@/app/components/ui/button';
@@ -67,6 +68,7 @@ export function AdminDashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const isMounted = useRef(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isScraping, setIsScraping] = useState(false);
 
   // Alert Dialog State
   const [alertConfig, setAlertConfig] = useState<{
@@ -244,6 +246,27 @@ export function AdminDashboard() {
     });
   };
 
+  const handleTriggerScraping = async () => {
+    setIsScraping(true);
+    try {
+      const response = await adminApi.triggerScraping();
+      if (response.success) {
+        toast.success(response.message || 'Proses pengecekan mutasi telah dimulai. Tunggu beberapa saat lalu refresh halaman.');
+        // Refresh data after a small delay to give scraper time to work
+        setTimeout(() => {
+          fetchData();
+          fetchStats();
+        }, 5000);
+      } else {
+        toast.error(response.message || 'Gagal memicu pengecekan mutasi');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Terjadi kesalahan saat memicu pengecekan mutasi');
+    } finally {
+      setIsScraping(false);
+    }
+  };
+
   const formatPrice = (price: number = 0) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -289,10 +312,23 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-8">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">Kelola transaksi, event, dan kategori</p>
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600 mt-1">Kelola transaksi, event, dan kategori</p>
+          </div>
+          <Button 
+            onClick={handleTriggerScraping}
+            disabled={isScraping}
+            className="bg-primary hover:bg-primary-hover text-white shadow-md transition-all active:scale-95 flex items-center gap-2"
+          >
+            {isScraping ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Cek Mutasi Sekarang
+          </Button>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">

@@ -12,6 +12,9 @@ export interface PendingOrder {
   adminFee?: number; // Admin fee
   expiryTime: number; // timestamp
   paymentUrl?: string | null; // e-wallet/payment link
+  uniqueCode?: number; // for manual transfer
+  paymentInstructions?: string; // for manual transfer
+  accountName?: string; // for manual transfer
   createdAt: number; // timestamp
   items: Array<{
     eventId: string;

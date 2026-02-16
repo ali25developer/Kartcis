@@ -1,4 +1,5 @@
 services:
+  # Production Service (Nginx)
   kartcis-frontend:
     build:
       context: .
@@ -10,9 +11,31 @@ services:
     environment:
       - NODE_ENV=production
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
     labels:
       - "com.kartcis.description=KARTCIS.ID Ticketing System Frontend"
+
+  # Development Service (Vite HMR)
+  kartcis-dev:
+    profiles:
+      - dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_HMR_HOST=localhost
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

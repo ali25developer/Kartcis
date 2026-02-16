@@ -46,7 +46,7 @@ export function CheckoutPage() {
   const [participants, setParticipants] = useState<ParticipantData[]>([]);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [primaryContactIndex, setPrimaryContactIndex] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('BCA');
+  const [paymentMethod, setPaymentMethod] = useState('MANUAL_JAGO');
   
   // Refs for auto-scroll on validation error
   const participantRefs = useRef<(HTMLDivElement | null)[]>([]);

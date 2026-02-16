@@ -144,11 +144,17 @@ export interface Order {
   payment_method: string;
   payment_url: string | null;
   payment_details: any;
+  virtual_account_number?: string;
+  account_name?: string;
+  unique_code?: number;
+  payment_instructions?: string;
+  payment_method_id?: string;
   expires_at: string;
   paid_at: string | null;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
+  tickets?: Ticket[];
 }
 
 export interface OrderItem {
@@ -161,6 +167,7 @@ export interface OrderItem {
   subtotal: number;
   created_at: string;
   updated_at: string;
+  tickets?: Ticket[];
 }
 
 export interface Ticket {

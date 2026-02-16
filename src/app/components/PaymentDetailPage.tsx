@@ -1,4 +1,15 @@
-import { Copy, CheckCircle2, Clock, QrCode, XCircle, AlertCircle } from 'lucide-react';
+import { Copy, CheckCircle2, Clock, QrCode, XCircle, AlertCircle, Building2 } from 'lucide-react';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from './ui/alert-dialog';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -17,10 +28,9 @@ interface PaymentDetailPageProps {
 export function PaymentDetailPage({ 
   pendingOrder,
   tickets = [],
-  onPaymentSuccess,
   onManualCheck,
   onCancel
-}: PaymentDetailPageProps) {
+}: Omit<PaymentDetailPageProps, 'onPaymentSuccess'>) {
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
@@ -191,67 +201,147 @@ export function PaymentDetailPage({
                     </div>
                   </div>
 
-                  {/* Payment Details */}
-                  {pendingOrder.paymentUrl ? (
-                    <div className="text-center space-y-4">
-                        <div className="bg-primary-light rounded-lg p-6 border border-sky-100">
-                          <h3 className="text-lg font-semibold text-sky-900 mb-2">Lanjut ke Pembayaran</h3>
-                          <p className="text-sm text-primary-hover mb-6">
-                            Klik tombol di bawah untuk menyelesaikan pembayaran melalui {pendingOrder.paymentMethod || 'E-Wallet/Link'}.
-                          </p>
-                          <Button 
-                            size="lg"
-                            className="w-full sm:w-auto bg-primary hover:bg-primary-hover min-w-[200px]"
-                            onClick={() => window.open(pendingOrder.paymentUrl!, '_blank')}
-                          >
-                            Bayar Sekarang
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Halaman pembayaran akan terbuka di tab baru.
-                        </p>
-                    </div>
-                  ) : paymentType === 'qris' ? (
-                     <div className="text-center">
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                          Scan QR Code
-                        </label>
-                        <div className="bg-white border-2 border-gray-300 rounded-lg p-6 inline-block mb-4">
-                            <QrCode className="h-32 w-32 text-gray-800 mx-auto" />
-                            <p className="text-xs text-gray-400 mt-2">QRIS Code</p>
-                        </div>
-                        <p className="text-2xl font-bold text-gray-900 mb-2">{formatPrice(pendingOrder.amount)}</p>
+                   {/* Payment Details */}
+                   {pendingOrder.paymentUrl ? (
+                     <div className="text-center space-y-4">
+                         <div className="bg-primary-light rounded-lg p-6 border border-sky-100">
+                           <h3 className="text-lg font-semibold text-sky-900 mb-2">Lanjut ke Pembayaran</h3>
+                           <p className="text-sm text-primary-hover mb-6">
+                             Klik tombol di bawah untuk menyelesaikan pembayaran melalui {pendingOrder.paymentMethod || 'E-Wallet/Link'}.
+                           </p>
+                           <Button 
+                             size="lg"
+                             className="w-full sm:w-auto bg-primary hover:bg-primary-hover min-w-[200px]"
+                             onClick={() => window.open(pendingOrder.paymentUrl!, '_blank')}
+                           >
+                             Bayar Sekarang
+                           </Button>
+                         </div>
+                         <p className="text-xs text-gray-500 mt-2">
+                           Halaman pembayaran akan terbuka di tab baru.
+                         </p>
                      </div>
-                  ) : (
-                     <div className="space-y-4">
-                        <div>
-                           <label className="text-sm font-medium text-gray-700 mb-1 block">
-                              {paymentType === 'ewallet' ? 'Nomor E-Wallet' : 'Nomor Virtual Account'}
-                           </label>
-                           <div className="flex gap-2">
-                              <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md font-mono text-xl font-bold text-gray-900 tracking-wider">
-                                 {vaNumber || '-'}
-                              </div>
-                              <Button variant="outline" size="icon" onClick={() => copyToClipboard(vaNumber || '')}>
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                           </div>
-                        </div>
-                        <div>
-                           <label className="text-sm font-medium text-gray-700 mb-1 block">
-                              Total Transfer
-                           </label>
-                           <div className="flex gap-2">
-                              <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md text-xl font-bold text-gray-900">
-                                 {formatPrice(pendingOrder.amount)}
-                              </div>
-                              <Button variant="outline" size="icon" onClick={() => copyToClipboard(String(pendingOrder.amount))}>
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                           </div>
-                        </div>
-                     </div>
-                  )}
+                   ) : paymentType === 'qris' ? (
+                      <div className="text-center">
+                         <label className="text-sm font-medium text-gray-700 mb-2 block">
+                           Scan QR Code
+                         </label>
+                         <div className="bg-white border-2 border-gray-300 rounded-lg p-6 inline-block mb-4">
+                             <QrCode className="h-32 w-32 text-gray-800 mx-auto" />
+                             <p className="text-xs text-gray-400 mt-2">QRIS Code</p>
+                         </div>
+                         <p className="text-2xl font-bold text-gray-900 mb-2">{formatPrice(pendingOrder.amount)}</p>
+                      </div>
+                   ) : paymentMethod === 'MANUAL_JAGO' ? (
+                      <div className="space-y-6">
+                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm">
+                            <div className="flex items-center justify-between mb-6">
+                               <h4 className="text-slate-900 font-bold flex items-center gap-2">
+                                  <Building2 className="h-5 w-5 text-primary" /> Informasi Rekening Tujuan
+                               </h4>
+                               <img src="/assets/bank-jago-new.png" alt="Bank Jago" className="h-6 opacity-80" />
+                            </div>
+                            
+                            <div className="space-y-5">
+                               <div className="group relative">
+                                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
+                                     Nomor Rekening Bank Jago
+                                  </label>
+                                  <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-4 transition-all focus-within:ring-2 focus-within:ring-primary/20">
+                                     <span className="font-mono text-2xl font-bold text-slate-800 tracking-wider">
+                                        {vaNumber || '1010101020'}
+                                     </span>
+                                     <div className="ml-auto h-8 w-[1px] bg-slate-100" />
+                                     <Button 
+                                       variant="ghost" 
+                                       size="sm"
+                                       className="text-primary font-bold hover:bg-primary-light"
+                                       onClick={() => copyToClipboard(vaNumber || '1010101020')}
+                                     >
+                                       <Copy className="h-4 w-4 mr-2" /> SALIN
+                                     </Button>
+                                  </div>
+                                  <p className="text-xs text-slate-500 mt-2 font-medium px-1 flex items-center gap-1.5">
+                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                    a/n {pendingOrder.accountName || 'KARTCIS ID / ALI ROHMANSYAH'}
+                                  </p>
+                               </div>
+
+                               <div className="relative pt-2">
+                                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
+                                     Jumlah yang Harus Ditransfer
+                                  </label>
+                                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
+                                     <div className="flex items-baseline gap-1">
+                                       <span className="text-slate-500 font-semibold text-lg">Rp</span>
+                                       <span className="text-3xl font-black text-slate-900 tracking-tight">
+                                          {Math.floor(pendingOrder.amount / 1000).toLocaleString('id-ID')}
+                                          <span className="text-primary underline decoration-primary/40 underline-offset-8">
+                                            {(pendingOrder.amount % 1000).toString().padStart(3, '0')}
+                                          </span>
+                                       </span>
+                                     </div>
+                                     <Button 
+                                       variant="ghost" 
+                                       size="sm"
+                                       className="text-primary font-bold hover:bg-primary-light"
+                                       onClick={() => copyToClipboard(String(pendingOrder.amount))}
+                                     >
+                                       <Copy className="h-4 w-4 mr-2" /> SALIN
+                                     </Button>
+                                  </div>
+                                  
+                                  <div className="mt-4 flex items-start gap-3 bg-amber-50/80 border border-amber-200/50 p-4 rounded-xl">
+                                    <div className="bg-amber-100 p-1.5 rounded-full">
+                                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                                    </div>
+                                    <p className="text-xs leading-relaxed text-amber-900 font-medium">
+                                       <span className="font-bold underline">Wajib diperhatikan:</span> Pastikan nominal transfer **tepat hingga 3 digit terakhir** agar sistem kami dapat memverifikasi pembayaran Anda secara otomatis.
+                                    </p>
+                                  </div>
+                               </div>
+                            </div>
+                         </div>
+                         
+                         {pendingOrder.paymentInstructions && (
+                            <div className="border-l-4 border-slate-200 pl-4 py-1">
+                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Panduan Pembayaran</p>
+                               <p className="text-sm text-slate-600 leading-relaxed italic">
+                                  "{pendingOrder.paymentInstructions}"
+                               </p>
+                            </div>
+                         )}
+                      </div>
+                   ) : (
+                      <div className="space-y-4">
+                         <div>
+                            <label className="text-sm font-medium text-gray-700 mb-1 block">
+                               {paymentType === 'ewallet' ? 'Nomor E-Wallet' : 'Nomor Virtual Account'}
+                            </label>
+                            <div className="flex gap-2">
+                               <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md font-mono text-xl font-bold text-gray-900 tracking-wider">
+                                  {vaNumber || '-'}
+                               </div>
+                               <Button variant="outline" size="icon" onClick={() => copyToClipboard(vaNumber || '')}>
+                                 <Copy className="h-4 w-4" />
+                               </Button>
+                            </div>
+                         </div>
+                         <div>
+                            <label className="text-sm font-medium text-gray-700 mb-1 block">
+                               Total Transfer
+                            </label>
+                            <div className="flex gap-2">
+                               <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md text-xl font-bold text-gray-900">
+                                  {formatPrice(pendingOrder.amount)}
+                               </div>
+                               <Button variant="outline" size="icon" onClick={() => copyToClipboard(String(pendingOrder.amount))}>
+                                 <Copy className="h-4 w-4" />
+                               </Button>
+                            </div>
+                         </div>
+                      </div>
+                   )}
 
                   {/* Actions */}
                   <div className="mt-8 space-y-3">
@@ -262,13 +352,34 @@ export function PaymentDetailPage({
                     >
                         {isCheckingStatus ? 'Memeriksa...' : 'Cek Status Pembayaran'}
                     </Button>
-                    <Button
-                        onClick={onCancel}
-                        variant="outline"
-                        className="w-full border-gray-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
-                    >
-                        Batalkan Pesanan
-                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className="w-full border-gray-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+                        >
+                            Batalkan Pesanan
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Batalkan Pesanan?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Apakah Anda yakin ingin membatalkan pembayaran ini? Tiket Anda mungkin akan dilepas dan harus dipesan ulang jika pesanan dibatalkan.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Kembali</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={onCancel}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            Ya, Batalkan
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </Card>
              )}

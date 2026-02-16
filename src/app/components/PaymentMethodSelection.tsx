@@ -1,6 +1,5 @@
-import { Wallet, CreditCard, QrCode, Building2 } from 'lucide-react';
-import { Card } from './ui/card';
-import { Label } from './ui/label';
+
+
 
 export type PaymentMethodType = 'va' | 'ewallet' | 'qris' | 'credit_card';
 
@@ -48,100 +47,33 @@ export function PaymentMethodSelection({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">
           Metode Pembayaran
         </h2>
-        <p className="text-sm text-gray-600">Pilih metode pembayaran yang Anda inginkan</p>
+        <p className="text-sm text-gray-500 mb-6">Pilih salah satu metode pembayaran di bawah ini</p>
       </div>
 
-      {/* Virtual Account */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Building2 className="h-4 w-4 text-gray-500" />
-          <h3 className="text-sm font-medium text-gray-700">Virtual Account</h3>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {paymentMethods.va.map((method) => (
+      <div className="pt-2">
+         <div className="bg-white border-2 border-primary rounded-xl p-6 text-center shadow-sm">
+            <h3 className="text-lg font-bold text-primary-hover mb-2">Transfer Bank (Verifikasi Instan)</h3>
+            <p className="text-sm text-gray-600 mb-4">Transfer ke rekening Bank Jago kami. Sistem akan memverifikasi pembayaran Anda secara otomatis dalam hitungan menit.</p>
             <button
-              key={method.id}
-              type="button"
-              onClick={() => onSelectMethod(method.id)}
-              className={`py-2 px-3 border-2 rounded-lg text-center text-sm font-medium transition-all ${
-                selectedMethod === method.id
-                  ? 'border-primary bg-primary-light text-primary-hover'
-                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-              }`}
-              disabled={disabled}
+               type="button"
+               onClick={() => onSelectMethod('MANUAL_JAGO')}
+               className={`w-full py-4 border-2 rounded-xl text-center font-bold text-lg transition-all shadow-sm ${
+                 selectedMethod === 'MANUAL_JAGO'
+                   ? 'border-primary bg-primary text-white shadow-lg scale-[1.02]'
+                   : 'border-primary bg-white text-primary hover:bg-primary-light hover:scale-[1.01]'
+               }`}
+               disabled={disabled}
             >
-              {method.id}
+               Bank Jago (Automatic Verification)
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* E-Wallet */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Wallet className="h-4 w-4 text-gray-500" />
-          <h3 className="text-sm font-medium text-gray-700">E-Wallet</h3>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {paymentMethods.ewallet.map((method) => (
-            <button
-              key={method.id}
-              type="button"
-              onClick={() => onSelectMethod(method.id)}
-              className={`py-2 px-3 border-2 rounded-lg text-center text-sm font-medium transition-all ${
-                selectedMethod === method.id
-                  ? 'border-primary bg-primary-light text-primary-hover'
-                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-              }`}
-              disabled={disabled}
-            >
-              {method.id}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Others (QRIS & Credit Card) */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <CreditCard className="h-4 w-4 text-gray-500" />
-          <h3 className="text-sm font-medium text-gray-700">Others</h3>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {paymentMethods.qris.map((method) => (
-            <button
-              key={method.id}
-              type="button"
-              onClick={() => onSelectMethod(method.id)}
-              className={`py-2 px-3 border-2 rounded-lg text-center text-sm font-medium transition-all ${
-                selectedMethod === method.id
-                  ? 'border-primary bg-primary-light text-primary-hover'
-                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-              }`}
-              disabled={disabled}
-            >
-              {method.name}
-            </button>
-          ))}
-          {paymentMethods.credit_card.map((method) => (
-            <button
-              key={method.id}
-              type="button"
-              onClick={() => onSelectMethod(method.id)}
-              className={`py-2 px-3 border-2 rounded-lg text-center text-sm font-medium transition-all ${
-                selectedMethod === method.id
-                  ? 'border-primary bg-primary-light text-primary-hover'
-                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-              }`}
-              disabled={disabled}
-            >
-              {method.name}
-            </button>
-          ))}
-        </div>
+            <div className="mt-6 flex items-center justify-center gap-4 opacity-90 transition-opacity hover:opacity-100">
+               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Supported by</span>
+               <img src="/assets/bank-jago-new.png" alt="Bank Jago" className="h-6" />
+            </div>
+         </div>
       </div>
     </div>
   );
