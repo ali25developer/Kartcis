@@ -76,7 +76,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
           <div className="hidden md:flex items-center gap-2">
             {isAuthenticated ? (
               <>
-                {user?.role === 'admin' && (
+                {(user?.role === 'admin' || user?.role === 'organizer') && (
                   <Button 
                     variant="ghost" 
                     onClick={() => {
@@ -86,7 +86,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                     className="text-primary hover:text-primary-hover hover:bg-primary-light"
                   >
                     <Shield className="h-5 w-5 mr-2" />
-                    Admin
+                    {user.role === 'organizer' ? 'EO Dashboard' : 'Admin'}
                   </Button>
                 )}
                 <Button variant="ghost" onClick={handleMyTicketsClick} className="text-gray-700">
@@ -128,7 +128,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                 <div className="px-4 py-2 text-sm text-gray-600">
                   Halo, <span className="font-medium text-gray-900">{user?.name}</span>
                 </div>
-                {user?.role === 'admin' && (
+                {(user?.role === 'admin' || user?.role === 'organizer') && (
                   <Button 
                     variant="ghost" 
                     onClick={() => {
@@ -138,7 +138,7 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
                     className="w-full justify-start text-primary hover:text-primary-hover hover:bg-primary-light"
                   >
                     <Shield className="h-5 w-5 mr-2" />
-                    Admin Dashboard
+                    {user.role === 'organizer' ? 'EO Dashboard' : 'Admin Dashboard'}
                   </Button>
                 )}
                 <Button 

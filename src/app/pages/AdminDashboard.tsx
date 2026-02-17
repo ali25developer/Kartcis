@@ -43,7 +43,8 @@ import { adminApi, type Transaction, type AdminStats, type TransactionTimelineIt
 import { AdminEvents } from '@/app/components/admin/AdminEvents';
 import { AdminCategories } from '@/app/components/admin/AdminCategories';
 import { AdminSettings } from '@/app/components/admin/AdminSettings';
-import { Settings } from 'lucide-react';
+import { AdminUsers } from '@/app/components/admin/AdminUsers';
+import { Settings, Users } from 'lucide-react';
 
 
 export function AdminDashboard() {
@@ -91,10 +92,10 @@ export function AdminDashboard() {
     confirmText: 'Ya, Lanjutkan'
   });
 
-  // Check if user is admin
+  // Check if user is admin or organizer
   useEffect(() => {
     if (isAuthenticated) {
-      if (!user || user.role !== 'admin') {
+      if (!user || (user.role !== 'admin' && user.role !== 'organizer')) {
         navigate('/');
       }
     }
@@ -120,7 +121,7 @@ export function AdminDashboard() {
 
   // Fetch transactions logic
   const fetchData = useCallback(async () => {
-    if (!isAuthenticated || !user || user.role !== 'admin') return;
+    if (!isAuthenticated || !user || (user.role !== 'admin' && user.role !== 'organizer')) return;
 
 
     setIsLoading(true);
@@ -146,15 +147,21 @@ export function AdminDashboard() {
 
   // Fetch admin stats
   const fetchStats = useCallback(async () => {
-    if (!isAuthenticated || !user || user.role !== 'admin') return;
+    if (!isAuthenticated || !user || (user.role !== 'admin' && user.role !== 'organizer')) return;
 
     try {
       const response = await adminApi.getStats();
       if (response.success && response.data) {
         setStats(response.data);
+      } else {
+        // Handle explicit failure (e.g. 403 Forbidden)
+        if (response.message) {
+            toast.error(response.message);
+        }
       }
     } catch (error: any) {
       console.error('Fetch stats error:', error);
+      toast.error('Gagal mengambil statistik dashboard');
     }
   }, [isAuthenticated, user]);
 
@@ -311,7 +318,7 @@ export function AdminDashboard() {
     );
   };
 
-  if (!user || user.role !== 'admin') {
+  if (!user || (user.role !== 'admin' && user.role !== 'organizer')) {
     return null;
   }
 
@@ -320,21 +327,23 @@ export function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">Kelola transaksi, event, dan kategori</p>
+            <h1 className="text-3xl font-bold text-gray-900">{user.role === 'admin' ? 'Admin Dashboard' : 'Organizer Dashboard'}</h1>
+            <p className="text-gray-600 mt-1">Kelola transaksi dan event</p>
           </div>
-          <Button 
-            onClick={handleTriggerScraping}
-            disabled={isScraping}
-            className="bg-primary hover:bg-primary-hover text-white shadow-md transition-all active:scale-95 flex items-center gap-2"
-          >
-            {isScraping ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            Cek Mutasi Sekarang
-          </Button>
+          {user.role === 'admin' && (
+            <Button 
+              onClick={handleTriggerScraping}
+              disabled={isScraping}
+              className="bg-primary hover:bg-primary-hover text-white shadow-md transition-all active:scale-95 flex items-center gap-2"
+            >
+              {isScraping ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Cek Mutasi Sekarang
+            </Button>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -347,14 +356,22 @@ export function AdminDashboard() {
               <Calendar className="h-4 w-4 mr-2" />
               Event
             </TabsTrigger>
-            <TabsTrigger value="categories" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
-              <Tags className="h-4 w-4 mr-2" />
-              Kategori
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
-              <Settings className="h-4 w-4 mr-2" />
-              Pengaturan
-            </TabsTrigger>
+            {user.role === 'admin' && (
+              <>
+                <TabsTrigger value="categories" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
+                  <Tags className="h-4 w-4 mr-2" />
+                  Kategori
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Pengaturan
+                </TabsTrigger>
+                <TabsTrigger value="users" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
+                  <Users className="h-4 w-4 mr-2" />
+                  Pengguna
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="overview">
@@ -499,7 +516,7 @@ export function AdminDashboard() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              {transaction.status === 'paid' && (
+                              {user?.role === 'admin' && transaction.status === 'paid' && (
                                 <Button
                                   variant="outline"
                                   size="icon"
@@ -516,60 +533,62 @@ export function AdminDashboard() {
                                 </Button>
                               )}
                               
-                              {editingStatusId === transaction.id ? (
-                                <div className="flex items-center gap-1">
-                                  <select
-                                    value={newStatus || transaction.status}
-                                    onChange={(e) => setNewStatus(e.target.value)}
-                                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-light0"
-                                  >
-                                    <option value="paid">Lunas</option>
-                                    <option value="pending">Menunggu Pembayaran</option>
-                                    <option value="expired">Kadaluarsa</option>
-                                    <option value="cancelled">Dibatalkan</option>
-                                  </select>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                    onClick={() => {
-                                      if (newStatus && newStatus !== transaction.status) {
-                                        handleChangeStatus(transaction, newStatus);
-                                      } else {
+                              {user?.role === 'admin' && (
+                                editingStatusId === transaction.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value={newStatus || transaction.status}
+                                      onChange={(e) => setNewStatus(e.target.value)}
+                                      className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-light0"
+                                    >
+                                      <option value="paid">Lunas</option>
+                                      <option value="pending">Menunggu Pembayaran</option>
+                                      <option value="expired">Kadaluarsa</option>
+                                      <option value="cancelled">Dibatalkan</option>
+                                    </select>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                      onClick={() => {
+                                        if (newStatus && newStatus !== transaction.status) {
+                                          handleChangeStatus(transaction, newStatus);
+                                        } else {
+                                          setEditingStatusId(null);
+                                        }
+                                      }}
+                                      title="Simpan"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      onClick={() => {
                                         setEditingStatusId(null);
-                                      }
-                                    }}
-                                    title="Simpan"
-                                  >
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => {
-                                      setEditingStatusId(null);
-                                      setNewStatus('');
-                                    }}
-                                    title="Batal"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                transaction.status !== 'paid' && transaction.status !== 'cancelled' && (
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 text-accent-orange-hover hover:text-orange-700 hover:bg-accent-orange-light"
-                                    onClick={() => {
-                                      setEditingStatusId(transaction.id);
-                                      setNewStatus(transaction.status);
-                                    }}
-                                    title="Edit status"
-                                  >
-                                    <Edit2 className="h-4 w-4" />
-                                  </Button>
+                                        setNewStatus('');
+                                      }}
+                                      title="Batal"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  transaction.status !== 'paid' && transaction.status !== 'cancelled' && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8 text-accent-orange-hover hover:text-orange-700 hover:bg-accent-orange-light"
+                                      onClick={() => {
+                                        setEditingStatusId(transaction.id);
+                                        setNewStatus(transaction.status);
+                                      }}
+                                      title="Edit status"
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                  )
                                 )
                               )}
                               
@@ -625,11 +644,15 @@ export function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="categories">
-            <AdminCategories activeTab={activeTab} />
+            {user.role === 'admin' ? <AdminCategories activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
           </TabsContent>
 
           <TabsContent value="settings">
-            <AdminSettings activeTab={activeTab} />
+            {user.role === 'admin' ? <AdminSettings activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
+          </TabsContent>
+
+          <TabsContent value="users">
+            {user.role === 'admin' ? <AdminUsers activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
           </TabsContent>
         </Tabs>
       </div>

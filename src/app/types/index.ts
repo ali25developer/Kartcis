@@ -193,7 +193,8 @@ export interface User {
   name: string;
   email: string;
   phone: string | null;
-  role?: 'user' | 'admin'; // Add role field
+  role?: 'user' | 'admin' | 'organizer'; // Add role field
+  custom_fee?: number | null; // Custom fee percentage override
   created_at: string;
   updated_at: string;
 }

@@ -6,7 +6,7 @@ import { Textarea } from '../ui/textarea';
 import { api } from '../../services/api';
 import { adminApi } from '../../services/adminApi';
 import { toast } from 'sonner';
-import { Save, Loader2, Facebook, Twitter, Instagram, Mail, Phone, MapPin, Settings } from 'lucide-react';
+import { Save, Loader2, Facebook, Twitter, Instagram, Mail, Phone, MapPin, Settings, Percent, Wallet } from 'lucide-react';
 
 export function AdminSettings({ activeTab }: { activeTab?: string }) {
   const [settings, setSettings] = useState({
@@ -15,7 +15,8 @@ export function AdminSettings({ activeTab }: { activeTab?: string }) {
     contact_address: '',
     facebook_url: '',
     twitter_url: '',
-    instagram_url: ''
+    instagram_url: '',
+    fee_percentage: '5.0'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -85,6 +86,32 @@ export function AdminSettings({ activeTab }: { activeTab?: string }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* System Configuration */}
+        <Card className="p-6 border-t-4 border-t-green-500 lg:col-span-2">
+          <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 border-b pb-2">
+             <Wallet className="h-5 w-5 text-green-600" />
+             Konfigurasi Bisnis
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Global Admin Fee (%)</label>
+              <div className="relative">
+                <Percent className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <Input 
+                  className="pl-10"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={settings.fee_percentage} 
+                  onChange={e => handleChange('fee_percentage', e.target.value)} 
+                  placeholder="5.0"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Biaya ini akan diterapkan untuk semua event, kecuali jika EO memiliki biaya khusus.</p>
+            </div>
+          </div>
+        </Card>
+
         {/* Contact Information */}
         <Card className="p-6 border-t-4 border-t-primary">
           <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 border-b pb-2">

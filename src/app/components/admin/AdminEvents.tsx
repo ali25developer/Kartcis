@@ -56,8 +56,10 @@ import { toast } from 'sonner';
 import { api } from '@/app/services/api';
 import { adminApi } from '@/app/services/adminApi';
 import type { Event, Category, PaginationMetadata, CustomField } from '@/app/types';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export function AdminEvents({ activeTab }: { activeTab?: string }) {
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -607,19 +609,21 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                     <h3>Pengaturan & Media</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="fee_percentage" className="text-gray-700 font-medium">Biaya Admin (%) <span className="text-red-500">*</span></Label>
-                        <Input
-                            type="number"
-                            id="fee_percentage"
-                            value={formData.fee_percentage}
-                            onChange={(e) => setFormData(prev => ({ ...prev, fee_percentage: e.target.value }))}
-                            min="0"
-                            step="0.1"
-                            required
-                        />
-                        <p className="text-[10px] text-gray-400 italic">Standar: 5.0%</p>
-                    </div>
+                    {user?.role === 'admin' && (
+                        <div className="space-y-2">
+                            <Label htmlFor="fee_percentage" className="text-gray-700 font-medium">Biaya Admin (%) <span className="text-red-500">*</span></Label>
+                            <Input
+                                type="number"
+                                id="fee_percentage"
+                                value={formData.fee_percentage}
+                                onChange={(e) => setFormData(prev => ({ ...prev, fee_percentage: e.target.value }))}
+                                min="0"
+                                step="0.1"
+                                required
+                            />
+                            <p className="text-[10px] text-gray-400 italic">Standar: 5.0%</p>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label htmlFor="status" className="text-gray-700 font-medium">Status Konten</Label>

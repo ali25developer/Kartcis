@@ -4,7 +4,8 @@ import type {
   PaginatedResponse, 
   Event, 
   Category, 
-  PaginationMetadata 
+  PaginationMetadata,
+  User
 } from '../types';
 
 // Transaction interface matching backend
@@ -84,6 +85,7 @@ export interface AdminStats {
 export interface AdminStatsResponse {
   success: boolean;
   data: AdminStats;
+  message?: string;
 }
 
 export interface TransactionTimelineItem {
@@ -387,6 +389,41 @@ export const adminApi = {
         return await response.json();
       } catch (error) {
         console.error('Error updating settings:', error);
+        throw error;
+      }
+    },
+  },
+
+  // Users CRUD
+  users: {
+    getAll: async (params?: { page?: number; limit?: number; search?: string; role?: string }): Promise<PaginatedResponse<User, 'users'>> => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.search) queryParams.append('search', params.search);
+        if (params?.role) queryParams.append('role', params.role);
+
+        const response = await fetch(`${API_BASE_URL}/admin/users?${queryParams.toString()}`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+    },
+
+    update: async (id: number | string, data: { role?: string; custom_fee?: number | string }) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error updating user:', error);
         throw error;
       }
     },
