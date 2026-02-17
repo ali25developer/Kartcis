@@ -13,7 +13,6 @@ import { HomePage } from "./pages/HomePage";
 import { EventDetailPage } from "./pages/EventDetailPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { PaymentPage } from "./pages/PaymentPage";
-import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { TermsPage } from "./pages/TermsPage";
 import { RefundPolicyPage } from "./pages/RefundPolicyPage";
@@ -205,7 +204,6 @@ function AppLayout() {
         <Route path="/event/:eventId" element={<EventDetailPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment/:orderId" element={<PaymentPage />} />
-        <Route path="/payment/success/:orderId" element={<PaymentSuccessPage />} />
         
         {/* Support & Legal Pages */}
         <Route path="/cara-pesan" element={<HowToOrderPage />} />

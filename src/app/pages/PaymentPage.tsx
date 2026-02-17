@@ -20,6 +20,11 @@ export function PaymentPage() {
       return;
     }
 
+    // Prevent running fetchOrder if orderId is 'success' (in case of route collision)
+    if (orderId === 'success') {
+        return; 
+    }
+
     const fetchOrder = async () => {
       try {
         // Since orderId in URL might be string order_number or numeric id
@@ -179,8 +184,15 @@ export function PaymentPage() {
             
             if (newStatus === 'paid') {
               toast.success("Pembayaran berhasil dikonfirmasi!");
+              
+              // Update local state to show success UI in-place instead of redirecting
+              setPendingOrder((prev: any) => ({ 
+                ...prev, 
+                status: newStatus 
+              }));
+
               pendingOrderStorage.remove(String(orderId));
-              navigate(`/payment/success/${orderId}`);
+              // navigate(`/payment/success/${orderId}`); // Don't redirect, stay here
             } else if (newStatus === 'cancelled' || newStatus === 'expired') {
               // Update local state to show cancelled/expired UI
               setPendingOrder((prev: any) => ({ 
@@ -211,7 +223,12 @@ export function PaymentPage() {
       if (response.success && response.data) {
         if (response.data.status === 'paid') {
           toast.success("Pembayaran berhasil dikonfirmasi!");
-          navigate(`/payment/success/${orderId}`);
+          // Update local state instead of redirecting
+          setPendingOrder((prev: any) => ({ 
+            ...prev, 
+            status: 'paid' 
+          }));
+          pendingOrderStorage.remove(String(orderId));
         } else {
           toast.info("Pembayaran belum diterima");
         }
