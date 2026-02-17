@@ -42,6 +42,9 @@ import { toast } from 'sonner';
 import { adminApi, type Transaction, type AdminStats, type TransactionTimelineItem } from '@/app/services/adminApi';
 import { AdminEvents } from '@/app/components/admin/AdminEvents';
 import { AdminCategories } from '@/app/components/admin/AdminCategories';
+import { AdminSettings } from '@/app/components/admin/AdminSettings';
+import { Settings } from 'lucide-react';
+
 
 export function AdminDashboard() {
   const navigate = useNavigate();
@@ -69,6 +72,7 @@ export function AdminDashboard() {
   const isMounted = useRef(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isScraping, setIsScraping] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Alert Dialog State
   const [alertConfig, setAlertConfig] = useState<{
@@ -155,9 +159,11 @@ export function AdminDashboard() {
   }, [isAuthenticated, user]);
 
   useEffect(() => {
-    fetchData();
-    fetchStats();
-  }, [fetchData, fetchStats]);
+    if (activeTab === 'overview') {
+      fetchData();
+      fetchStats();
+    }
+  }, [fetchData, fetchStats, activeTab]);
 
   // Timeline State
   const [timeline, setTimeline] = useState<TransactionTimelineItem[]>([]);
@@ -331,7 +337,7 @@ export function AdminDashboard() {
           </Button>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white p-1 border shadow-sm">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
               <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -344,6 +350,10 @@ export function AdminDashboard() {
             <TabsTrigger value="categories" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
               <Tags className="h-4 w-4 mr-2" />
               Kategori
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
+              <Settings className="h-4 w-4 mr-2" />
+              Pengaturan
             </TabsTrigger>
           </TabsList>
 
@@ -611,11 +621,15 @@ export function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="events">
-            <AdminEvents />
+            <AdminEvents activeTab={activeTab} />
           </TabsContent>
 
           <TabsContent value="categories">
-            <AdminCategories />
+            <AdminCategories activeTab={activeTab} />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <AdminSettings activeTab={activeTab} />
           </TabsContent>
         </Tabs>
       </div>

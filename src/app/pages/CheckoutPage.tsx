@@ -12,6 +12,13 @@ import { Label } from "@/app/components/ui/label";
 import { Card } from "@/app/components/ui/card";
 import { Separator } from "@/app/components/ui/separator";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/app/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
 import type { Event, CustomField } from "@/app/types";
@@ -509,21 +516,22 @@ export function CheckoutPage() {
                                       required={field.required}
                                     />
                                   ) : field.type === 'select' && field.options ? (
-                                    <select
-                                      id={`participant-${index}-custom-${field.name}`}
+                                    <Select
                                       value={participant.customFieldResponses[field.name] || ''}
-                                      onChange={(e) => handleCustomFieldChange(index, field.name, e.target.value)}
+                                      onValueChange={(value) => handleCustomFieldChange(index, field.name, value)}
                                       disabled={loading}
-                                      required={field.required}
-                                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
-                                      <option value="">Pilih {field.name}</option>
-                                      {field.options.map((option) => (
-                                        <option key={option} value={option}>
-                                          {option}
-                                        </option>
-                                      ))}
-                                    </select>
+                                      <SelectTrigger className="h-10 w-full border-gray-200">
+                                        <SelectValue placeholder={`Pilih ${field.name}`} />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {field.options.map((option) => (
+                                          <SelectItem key={option} value={option}>
+                                            {option}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
                                   ) : null}
                                 </div>
                               ))}

@@ -61,10 +61,9 @@ export function EventDetailPage() {
   }, [eventId, navigate]);
 
   const handleTicketQuantityChange = (ticketType: TicketType, delta: number) => {
-    // Check if event is available (not sold out or cancelled)
-    const isSoldOut = event?.status === 'sold_out';
-    const isCancelled = event?.status === 'cancelled';
-    if (isSoldOut || isCancelled) return;
+    // Check if event is available for purchase (must be published)
+    const isAvailable = event?.status === 'published';
+    if (!isAvailable) return;
     
     setSelectedTickets(prev => {
       const current = prev[ticketType.id] || 0;
@@ -174,10 +173,11 @@ export function EventDetailPage() {
     );
   }
 
-  // Check if event is available (not sold out and not cancelled)
-  const isSoldOut = event.status === 'sold_out';
+  // Availability check
+  const isSoldOut = event.status === 'sold_out' || (event.ticket_types && event.ticket_types.length > 0 && event.ticket_types.every(t => t.available === 0));
   const isCancelled = event.status === 'cancelled';
-  const isEventAvailable = !isSoldOut && !isCancelled;
+  const isCompleted = event.status === 'completed';
+  const isEventAvailable = event.status === 'published' && !isSoldOut;
   const totalQuantity = getTotalQuantity();
   const totalPrice = getTotalPrice();
 
@@ -210,13 +210,13 @@ export function EventDetailPage() {
               />
               
               {/* Status Badge Overlay */}
-              {(isSoldOut || isCancelled) && (
+              {(!isEventAvailable || isCompleted || isCancelled) && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                   <Badge 
                     variant="destructive"
                     className="text-2xl px-8 py-3 font-bold"
                   >
-                    {isSoldOut ? 'SOLD OUT' : 'DIBATALKAN'}
+                    {isCancelled ? 'DIBATALKAN' : isCompleted ? 'EVENT SELESAI' : isSoldOut ? 'SOLD OUT' : 'TIDAK TERSEDIA'}
                   </Badge>
                 </div>
               )}
@@ -279,8 +279,8 @@ export function EventDetailPage() {
               {/* Description */}
               <div>
                 <h2 className="text-3xl font-bold mb-4">Tentang Event</h2>
-                <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-                  {event.description}
+                <p className="text-gray-700 whitespace-pre-line leading-relaxed text-lg">
+                  {event.detailed_description || event.description}
                 </p>
               </div>
             </div>
@@ -309,12 +309,16 @@ export function EventDetailPage() {
                     <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-red-900">
-                        {event.status === 'sold_out' ? 'Tiket Habis' : 'Event Dibatalkan'}
+                        {isCancelled ? 'Event Dibatalkan' : isCompleted ? 'Event Selesai' : isSoldOut ? 'Tiket Habis' : 'Pesanan Belum Tersedia'}
                       </p>
                       <p className="text-sm text-red-700">
-                        {event.status === 'sold_out' 
+                        {isCancelled 
+                          ? 'Event ini telah dibatalkan oleh penyelenggara'
+                          : isCompleted 
+                          ? 'Event ini sudah selesai'
+                          : isSoldOut 
                           ? 'Semua tiket untuk event ini sudah habis terjual'
-                          : 'Event ini telah dibatalkan oleh penyelenggara'}
+                          : 'Maaf, pesanan tiket belum dibuka untuk umum.'}
                       </p>
                     </div>
                   </div>

@@ -1,9 +1,11 @@
-import { CheckCircle, Download, Mail, Ticket } from 'lucide-react';
+import { CheckCircle, Download, Mail, Ticket, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import type { PendingOrder } from '../types/pendingOrder';
+import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 
 interface PaymentSuccessProps {
   pendingOrder: PendingOrder;
@@ -12,6 +14,17 @@ interface PaymentSuccessProps {
 export function PaymentSuccess({ pendingOrder }: PaymentSuccessProps) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+
+  useEffect(() => {
+    if (pendingOrder?.orderId) {
+        QRCode.toDataURL(pendingOrder.orderId, { width: 200, margin: 1 }, (err, url) => {
+            if (!err) {
+                setQrCodeUrl(url);
+            }
+        });
+    }
+  }, [pendingOrder]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -62,6 +75,21 @@ export function PaymentSuccess({ pendingOrder }: PaymentSuccessProps) {
                 </div>
               </div>
             </Card>
+
+            {/* QR Code Section */}
+            <div className="flex flex-col items-center justify-center py-6 bg-white border-b border-gray-100">
+               <div className="bg-white p-4 rounded-xl border-4 border-gray-100 shadow-sm relative">
+                  {qrCodeUrl ? (
+                    <img src={qrCodeUrl} alt={`QR Code ${pendingOrder.orderId}`} className="w-[200px] h-[200px]" />
+                  ) : (
+                    <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-50">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                    </div>
+                  )}
+               </div>
+               <p className="mt-4 text-sm font-medium text-gray-500">Scan QR Code ini untuk Check-in</p>
+               <p className="text-xs text-gray-400 font-mono mt-1">{pendingOrder.orderId}</p>
+            </div>
 
             {/* Order Summary */}
             <div>

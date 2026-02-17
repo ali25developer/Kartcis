@@ -79,20 +79,25 @@ function AppLayout() {
       const active = pendingOrderStorage.getActive();
       if (active) {
         // If we have a pending order locally, verify its REAL status with the server
-        try {
-          const response = await api.orders.checkStatus(active.orderId);
-          if (response.success && response.data) {
-            const serverStatus = response.data.status;
-            if (serverStatus !== 'pending') {
-              // If it's no longer pending on the server, remove it locally
-              pendingOrderStorage.remove(active.orderId);
-              setPendingOrder(null);
-              setPendingOrderTimeLeft(0); // Also reset time left
-              return;
+        // Skip background check if we are already on the checkout or payment page to avoid duplication
+        const isPaymentPage = location.pathname.includes('/payment/') || location.pathname === '/checkout';
+        
+        if (!isPaymentPage) {
+          try {
+            const response = await api.orders.checkStatus(active.orderId);
+            if (response.success && response.data) {
+              const serverStatus = response.data.status;
+              if (serverStatus !== 'pending') {
+                // If it's no longer pending on the server, remove it locally
+                pendingOrderStorage.remove(active.orderId);
+                setPendingOrder(null);
+                setPendingOrderTimeLeft(0); // Also reset time left
+                return;
+              }
             }
+          } catch (error) {
+            console.error("Background status check failed:", error);
           }
-        } catch (error) {
-          console.error("Background status check failed:", error);
         }
 
         setPendingOrder((prev: any) => {

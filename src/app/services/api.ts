@@ -191,6 +191,20 @@ const api = {
       }
     },
   },
+
+  settings: {
+    get: async (): Promise<ApiResponse<Record<string, string>>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+        throw error;
+      }
+    },
+  },
 };
 
 // Legacy service adapter for backward compatibility

@@ -10,8 +10,15 @@ import {
   Tag,
   XCircle,
   PlusCircle,
-  Trash
+  Trash,
+  Info
 } from 'lucide-react';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/app/components/ui/tooltip';
 import { ImageUpload } from './ImageUpload';
 import { formatDate, formatISOToDate, formatTime, handleApi } from '@/app/utils/helpers';
 import { Button } from '@/app/components/ui/button';
@@ -50,7 +57,7 @@ import { api } from '@/app/services/api';
 import { adminApi } from '@/app/services/adminApi';
 import type { Event, Category, PaginationMetadata, CustomField } from '@/app/types';
 
-export function AdminEvents() {
+export function AdminEvents({ activeTab }: { activeTab?: string }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,7 +87,7 @@ export function AdminEvents() {
     status: 'draft',
     is_featured: false,
     custom_fields: [] as CustomField[],
-    ticket_types: [] as { id?: number; name: string; price: string; original_price?: string; quota: string; description: string }[]
+    ticket_types: [] as { id?: number; name: string; price: string; original_price?: string; quota: string; available?: string; sold?: string; description: string }[]
   };
 
   // Alert Dialog State
@@ -134,8 +141,10 @@ export function AdminEvents() {
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, [currentPage, debouncedSearch]);
+    if (activeTab === 'events') {
+      fetchEvents();
+    }
+  }, [currentPage, debouncedSearch, activeTab]);
 
   const fetchCategories = async () => {
     try {
@@ -220,7 +229,7 @@ export function AdminEvents() {
         variant: 'destructive',
         confirmText: 'Hapus',
         onConfirm: async () => {
-            const result = await handleApi(
+            await handleApi(
                 adminApi.events.delete(event.id),
                 {
                     showSuccess: true,
@@ -229,9 +238,7 @@ export function AdminEvents() {
                 }
             );
 
-            if (result) {
-                fetchEvents();
-            }
+            fetchEvents();
         }
     });
   };
@@ -250,7 +257,7 @@ export function AdminEvents() {
         variant: 'destructive',
         confirmText: 'Ya, Batalkan',
         onConfirm: async () => {
-            const result = await handleApi(
+            await handleApi(
                 adminApi.events.updateStatus(event.id, 'cancelled'),
                 {
                     showSuccess: true,
@@ -259,9 +266,7 @@ export function AdminEvents() {
                 }
             );
         
-            if (result) {
-                fetchEvents();
-            }
+            fetchEvents();
         }
     });
   };
@@ -295,6 +300,8 @@ export function AdminEvents() {
         price: t.price.toString(),
         original_price: t.originalPrice ? t.originalPrice.toString() : '',
         quota: t.quota.toString(),
+        available: t.available.toString(),
+        sold: t.sold?.toString() || '0',
         description: t.description || ''
       })) : []
     });
@@ -398,17 +405,20 @@ export function AdminEvents() {
                             variant={
                                 event.status === 'published' ? 'default' : 
                                 event.status === 'cancelled' ? 'destructive' : 
-                                event.status === 'draft' ? 'secondary' : 'outline'
+                                event.status === 'completed' ? 'outline' : 
+                                event.status === 'sold_out' ? 'destructive' : 'secondary'
                             }
                             className={
                                 event.status === 'published' ? 'bg-green-100 text-green-700 hover:bg-green-100' : 
-                                event.status === 'cancelled' ? 'bg-red-100 text-red-700 hover:bg-red-100' : 
+                                event.status === 'cancelled' || event.status === 'sold_out' ? 'bg-red-100 text-red-700 hover:bg-red-100 border-red-200' : 
+                                event.status === 'completed' ? 'bg-gray-100 text-gray-700 hover:bg-gray-100' :
                                 ''
                             }
                          >
                             {event.status === 'published' ? 'Aktif' : 
                              event.status === 'cancelled' ? 'Dibatalkan' : 
-                             event.status === 'draft' ? 'Draft' : 'Selsai'}
+                             event.status === 'completed' ? 'Selesai' : 
+                             event.status === 'sold_out' ? 'Tiket Habis' : 'Draft'}
                          </Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -623,7 +633,8 @@ export function AdminEvents() {
                             <SelectContent>
                                 <SelectItem value="draft">Simpan sebagai Draft</SelectItem>
                                 <SelectItem value="published">Publikasikan Sekarang</SelectItem>
-                                <SelectItem value="ended">Event Selesai</SelectItem>
+                                <SelectItem value="completed">Event Selesai</SelectItem>
+                                <SelectItem value="sold_out">Tiket Habis</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -640,7 +651,7 @@ export function AdminEvents() {
                             />
                             <Label htmlFor="is_featured" className="cursor-pointer font-bold text-amber-900 text-sm">Populer</Label>
                         </div>
-                        <p className="text-[10px] text-accent-orange-hover italic leading-tight">Event akan muncul di slide besar (Hero) halaman utama.</p>
+                        <p className="text-[10px] text-amber-700 italic leading-tight">Event akan muncul di slide besar (Hero) halaman utama.</p>
                     </div>
 
                     <div className="space-y-2 col-span-3">
@@ -716,7 +727,9 @@ export function AdminEvents() {
                                             const newFields = [...formData.custom_fields];
                                             newFields[index].type = val;
                                             if (val === 'text') delete newFields[index].options;
-                                            else if (!newFields[index].options) newFields[index].options = [];
+                                            else if (!newFields[index].options || newFields[index].options.length === 0) {
+                                                newFields[index].options = [''];
+                                            }
                                             setFormData(prev => ({ ...prev, custom_fields: newFields }));
                                         }}
                                     >
@@ -731,18 +744,60 @@ export function AdminEvents() {
                                 </div>
                                 
                                 {field.type === 'select' && (
-                                    <div className="col-span-2 space-y-2 bg-primary-light p-3 rounded-lg border border-sky-100">
-                                        <Label className="text-primary-hover">Daftar Pilihan (Pisahkan dengan koma)</Label>
-                                        <Input
-                                            placeholder="Contoh: S, M, L, XL"
-                                            value={field.options?.join(', ') || ''}
-                                            className="bg-white"
-                                            onChange={(e) => {
+                                    <div className="col-span-2 space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <div className="flex justify-between items-center">
+                                            <Label className="text-gray-700 font-bold text-xs uppercase tracking-wider">Daftar Pilihan (Dropdown)</Label>
+                                            <span className="text-[10px] text-gray-400 italic">* Input satu per satu pilihan</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {(field.options || []).map((opt, optIndex) => (
+                                                <div key={optIndex} className="flex gap-2">
+                                                    <Input
+                                                        placeholder={`Pilihan ${optIndex + 1} (Contoh: S / M / L)`}
+                                                        value={opt}
+                                                        onChange={(e) => {
+                                                            const newFields = [...formData.custom_fields];
+                                                            if (!newFields[index].options) newFields[index].options = [];
+                                                            newFields[index].options[optIndex] = e.target.value;
+                                                            setFormData(prev => ({ ...prev, custom_fields: newFields }));
+                                                        }}
+                                                        className="bg-white h-10 border-gray-200 focus:border-primary"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-10 w-10 text-red-400 hover:text-red-600 hover:bg-red-50"
+                                                        onClick={() => {
+                                                            const newFields = [...formData.custom_fields];
+                                                            newFields[index].options?.splice(optIndex, 1);
+                                                            // Keep at least one empty option if all are removed
+                                                            if (newFields[index].options?.length === 0) {
+                                                                newFields[index].options = [''];
+                                                            }
+                                                            setFormData(prev => ({ ...prev, custom_fields: newFields }));
+                                                        }}
+                                                    >
+                                                        <Trash className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full border-dashed border-gray-300 text-gray-500 hover:text-primary hover:border-primary bg-white h-9"
+                                            onClick={() => {
                                                 const newFields = [...formData.custom_fields];
-                                                newFields[index].options = e.target.value.split(',').map(s => s.trim());
+                                                if (!newFields[index].options) newFields[index].options = [];
+                                                newFields[index].options.push('');
                                                 setFormData(prev => ({ ...prev, custom_fields: newFields }));
                                             }}
-                                        />
+                                        >
+                                            <PlusCircle className="h-3.5 w-3.5 mr-2" />
+                                            Tambah Pilihan
+                                        </Button>
                                     </div>
                                 )}
 
@@ -789,7 +844,7 @@ export function AdminEvents() {
                         onClick={() => {
                             setFormData(prev => ({
                                 ...prev,
-                                ticket_types: [...prev.ticket_types, { name: '', price: '0', quota: '0', description: '' }]
+                                ticket_types: [...prev.ticket_types, { name: '', price: '0', quota: '0', available: '0', sold: '0', description: '' }]
                             }));
                         }}
                     >
@@ -816,9 +871,10 @@ export function AdminEvents() {
                             </Button>
 
                             <div className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                    <div className="md:col-span-4 space-y-2">
-                                        <Label className="text-xs font-bold text-sky-800 uppercase tracking-wider">Nama Kategori Tiket</Label>
+                                <div className="space-y-6">
+                                    {/* Row 1: Name */}
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Kategori Tiket</Label>
                                         <Input
                                             placeholder="VIP / Festival / Early Bird"
                                             value={ticket.name}
@@ -827,53 +883,88 @@ export function AdminEvents() {
                                                 newTickets[index].name = e.target.value;
                                                 setFormData(prev => ({ ...prev, ticket_types: newTickets }));
                                             }}
-                                            className="h-12 text-lg font-semibold bg-primary-light/20 border-sky-100 focus:border-primary-light0"
+                                            className="h-12 text-lg font-semibold bg-white border-gray-200 focus:border-primary"
                                             required
                                         />
                                     </div>
-                                    <div className="md:col-span-3 space-y-2">
-                                        <Label className="text-xs font-bold text-sky-800 uppercase tracking-wider">Harga Jual (Rp)</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={ticket.price}
-                                            onChange={(e) => {
-                                                const newTickets = [...formData.ticket_types];
-                                                newTickets[index].price = e.target.value;
-                                                setFormData(prev => ({ ...prev, ticket_types: newTickets }));
-                                            }}
-                                            className="h-12 border-green-200 focus:border-green-500 bg-green-50/10 text-lg font-medium"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="md:col-span-3 space-y-2">
-                                        <Label className="text-xs font-bold text-sky-800 uppercase tracking-wider">Harga Coret (Optional)</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="IDR 0"
-                                            value={ticket.original_price || ''}
-                                            onChange={(e) => {
-                                                const newTickets = [...formData.ticket_types];
-                                                newTickets[index].original_price = e.target.value;
-                                                setFormData(prev => ({ ...prev, ticket_types: newTickets }));
-                                            }}
-                                            className="h-12 opacity-80 border-gray-200"
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2 space-y-2">
-                                        <Label className="text-xs font-bold text-sky-800 uppercase tracking-wider">Kuota</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={ticket.quota}
-                                            onChange={(e) => {
-                                                const newTickets = [...formData.ticket_types];
-                                                newTickets[index].quota = e.target.value;
-                                                setFormData(prev => ({ ...prev, ticket_types: newTickets }));
-                                            }}
-                                            className="h-12 border-orange-200 focus:border-accent-orange bg-accent-orange-light/10 text-lg font-medium"
-                                            required
-                                        />
+
+                                    {/* Row 2: Grid for numbers */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Harga Jual (Rp)</Label>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                placeholder="0"
+                                                value={ticket.price}
+                                                onChange={(e) => {
+                                                    const newTickets = [...formData.ticket_types];
+                                                    newTickets[index].price = e.target.value;
+                                                    setFormData(prev => ({ ...prev, ticket_types: newTickets }));
+                                                }}
+                                                className="h-12 border-gray-200 focus:border-primary text-lg font-medium"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-1.5">
+                                                <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Harga Sebelum Diskon</Label>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" className="max-w-[200px] text-center">
+                                                            Muncul dengan efek coret (strikethrough) untuk menunjukkan promo.
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                placeholder="Opsional"
+                                                value={ticket.original_price || ''}
+                                                onChange={(e) => {
+                                                    const newTickets = [...formData.ticket_types];
+                                                    newTickets[index].original_price = e.target.value;
+                                                    setFormData(prev => ({ ...prev, ticket_types: newTickets }));
+                                                }}
+                                                className="h-12 border-gray-200 opacity-60 text-lg"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-1.5">
+                                                <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Kuota</Label>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" className="max-w-[200px] text-center">
+                                                            Total kapasitas tiket. Sisa & Terjual dihitung otomatis.
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                placeholder="0"
+                                                value={ticket.quota}
+                                                onChange={(e) => {
+                                                    const newTickets = [...formData.ticket_types];
+                                                    newTickets[index].quota = e.target.value;
+                                                    setFormData(prev => ({ ...prev, ticket_types: newTickets }));
+                                                }}
+                                                className="h-12 border-gray-200 focus:border-primary text-lg font-bold"
+                                                required
+                                            />
+                                            <div className="flex justify-between px-1">
+                                                <span className="text-[10px] text-gray-400 font-medium">Laku: {ticket.sold || 0}</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Sisa: {ticket.available || 0}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="space-y-2">

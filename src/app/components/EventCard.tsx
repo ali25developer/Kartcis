@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Clock, Users } from 'lucide-react';
+import { Calendar, MapPin, Users } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -46,12 +46,12 @@ export function EventCard({ event, onClick }: EventCardProps) {
     ? ((event.quota - totalAvailable) / event.quota) * 100
     : 0;
   
-  // Auto-detect sold out: either status is 'sold_out' OR totalAvailable is 0
+  // Status checks
   const isSoldOut = event.status === 'sold_out' || (event.ticket_types && event.ticket_types.length > 0 && totalAvailable === 0);
   const isCancelled = event.status === 'cancelled';
+  const isCompleted = event.status === 'completed';
   
   // Check if any ticket has discount (using originalPrice which is optional in TicketType)
-  const hasDiscount = event.ticket_types && Array.isArray(event.ticket_types) && event.ticket_types.some(t => t.originalPrice && t.originalPrice > t.price);
   const lowestTicket = event.ticket_types && Array.isArray(event.ticket_types) && event.ticket_types.length > 0 
     ? event.ticket_types.reduce((min, ticket) => 
         ticket.price < min.price ? ticket : min
@@ -67,23 +67,30 @@ export function EventCard({ event, onClick }: EventCardProps) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {/* Status Badges */}
-        {isSoldOut && (
+        {isSoldOut && !isCompleted && !isCancelled && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-            <Badge className="bg-red-600 border-0 text-base px-4 py-1.5">
+            <Badge className="bg-red-600 border-0 text-base px-4 py-1.5 font-bold">
               SOLD OUT
+            </Badge>
+          </div>
+        )}
+        {isCompleted && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <Badge className="bg-gray-700 border-0 text-base px-4 py-1.5 font-bold">
+              EVENT SELESAI
             </Badge>
           </div>
         )}
         {isCancelled && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-            <Badge className="bg-gray-900 border-0 text-base px-4 py-1.5">
+            <Badge className="bg-gray-900 border-0 text-base px-4 py-1.5 font-bold">
               DIBATALKAN
             </Badge>
           </div>
         )}
         
-        {event.is_featured && !isSoldOut && !isCancelled && (
-          <Badge className="absolute top-3 left-3 bg-accent-orange border-0 text-sm px-2.5 py-0.5">
+        {event.is_featured && event.status === 'published' && !isSoldOut && (
+          <Badge className="absolute top-3 left-3 bg-accent-orange border-0 text-gray-900 shadow-md font-bold text-xs px-2.5 py-0.5">
             Populer
           </Badge>
         )}
@@ -119,7 +126,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
 
         {soldOutPercentage > 80 && !isSoldOut && !isCancelled && (
           <div className="mb-3">
-            <Badge variant="outline" className="text-sm text-accent-orange-hover border-amber-200 bg-amber-50">
+            <Badge className="bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide">
               Hampir Habis
             </Badge>
           </div>

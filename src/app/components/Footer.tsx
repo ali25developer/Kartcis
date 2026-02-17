@@ -1,7 +1,35 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 export function Footer() {
+  const [settings, setSettings] = useState({
+    contact_email: 'support@kartcis.id',
+    contact_phone: '(+62) 8312-7246-830',
+    contact_address: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+    facebook_url: 'https://facebook.com/alirohmansyah25',
+    twitter_url: 'https://twitter.com/alirohmansyah25',
+    instagram_url: 'https://instagram.com/alirohmansyah25'
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await api.settings.get();
+        if (response && response.data) {
+          setSettings(prev => ({
+            ...prev,
+            ...response.data
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load settings', error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   return (
     <footer className="bg-white border-t mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -17,15 +45,21 @@ export function Footer() {
               Platform pembelian tiket event terpercaya. Temukan dan beli tiket konser, workshop, dan event seru lainnya dengan mudah dan aman.
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="https://twitter.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="https://instagram.com/alirohmansyah25" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
-                <Instagram className="h-5 w-5" />
-              </a>
+              {settings.facebook_url && (
+                <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
+                  <Facebook className="h-5 w-5" />
+                </a>
+              )}
+              {settings.twitter_url && (
+                <a href={settings.twitter_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
+                  <Twitter className="h-5 w-5" />
+                </a>
+              )}
+              {settings.instagram_url && (
+                <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -92,15 +126,15 @@ export function Footer() {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3 text-gray-500">
                 <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <span>Lorem ipsum, dolor sit amet consectetur adipisicing elit.</span>
+                <span>{settings.contact_address}</span>
               </li>
               <li className="flex items-center gap-3 text-gray-500">
                 <Phone className="h-5 w-5 text-primary flex-shrink-0" />
-                <span>(+62) 8312-7246-830</span>
+                <span>{settings.contact_phone}</span>
               </li>
               <li className="flex items-center gap-3 text-gray-500">
                 <Mail className="h-5 w-5 text-primary flex-shrink-0" />
-                <span>support@kartcis.id</span>
+                <span>{settings.contact_email}</span>
               </li>
             </ul>
           </div>

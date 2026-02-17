@@ -160,6 +160,48 @@ export function PaymentPage() {
     fetchOrder();
   }, [orderId, navigate]);
 
+  // Polling for status updates (Auto Refresh)
+  useEffect(() => {
+    // Only poll if we have an order and it is pending
+    if (!pendingOrder || pendingOrder.status !== 'pending' || !orderId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await api.orders.checkStatus(orderId);
+        
+        if (response.success && response.data) {
+          const latestOrder = response.data;
+          const newStatus = latestOrder.status;
+
+          // If status changed from pending
+          if (newStatus !== 'pending') {
+            clearInterval(pollInterval);
+            
+            if (newStatus === 'paid') {
+              toast.success("Pembayaran berhasil dikonfirmasi!");
+              pendingOrderStorage.remove(String(orderId));
+              navigate(`/payment/success/${orderId}`);
+            } else if (newStatus === 'cancelled' || newStatus === 'expired') {
+              // Update local state to show cancelled/expired UI
+              setPendingOrder((prev: any) => ({ 
+                ...prev, 
+                status: newStatus 
+              }));
+              
+              pendingOrderStorage.remove(String(orderId));
+              toast.info(`Pesanan ${newStatus === 'cancelled' ? 'dibatalkan' : 'telah kadaluarsa'}`);
+            }
+          }
+        }
+      } catch (error) {
+        // Silent error for polling to avoid annoying user
+        console.error('Error polling status:', error);
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [pendingOrder?.status, orderId, navigate]);
+
 
 
   const handleCheckStatus = async () => {

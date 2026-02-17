@@ -1,3 +1,5 @@
+import { TicketCard } from "@/app/components/TicketCard";
+import type { Ticket as DomainTicket } from "@/app/components/MyTickets";
 import { Copy, CheckCircle2, Clock, QrCode, XCircle, AlertCircle, Building2 } from 'lucide-react';
 import { 
   AlertDialog, 
@@ -13,9 +15,12 @@ import {
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { PendingOrder } from '@/app/types/pendingOrder';
+import QRCode from 'qrcode';
+import { createPortal } from 'react-dom';
+
 
 interface PaymentDetailPageProps {
   pendingOrder: PendingOrder;
@@ -33,6 +38,8 @@ export function PaymentDetailPage({
 }: Omit<PaymentDetailPageProps, 'onPaymentSuccess'>) {
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [selectedTicketForQR, setSelectedTicketForQR] = useState<DomainTicket | null>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const status = (pendingOrder.status || 'pending').toLowerCase();
 
@@ -82,6 +89,20 @@ export function PaymentDetailPage({
     return () => clearInterval(timer);
   }, [pendingOrder.expiryTime, status]);
 
+  // Generate QR code when modal opens
+  useEffect(() => {
+    if (selectedTicketForQR && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, selectedTicketForQR.ticketCode, { 
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#b31356', // Match theme primary color
+          light: '#ffffff'
+        }
+      });
+    }
+  }, [selectedTicketForQR]);
+
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -96,6 +117,22 @@ export function PaymentDetailPage({
       minimumFractionDigits: 0,
     }).format(price);
   };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return 'Tanggal tidak valid';
+      return date.toLocaleDateString('id-ID', { 
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Tanggal tidak valid';
+    }
+  };
+
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -185,315 +222,355 @@ export function PaymentDetailPage({
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
-             {/* Payment Instructions - Only for pending */}
-             {status === 'pending' && (
-                <Card className="bg-white p-6 shadow-sm">
-                  {/* Timer */}
-                  <div className="p-4 bg-accent-orange-light border border-orange-200 rounded-lg mb-6">
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-accent-orange-hover" />
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-700 mb-1">Selesaikan pembayaran dalam</p>
-                        <p className="text-2xl font-bold text-accent-orange-hover">{formatTime(timeLeft)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                   {/* Payment Details */}
-                   {pendingOrder.paymentUrl ? (
-                     <div className="text-center space-y-4">
-                         <div className="bg-primary-light rounded-lg p-6 border border-sky-100">
-                           <h3 className="text-lg font-semibold text-sky-900 mb-2">Lanjut ke Pembayaran</h3>
-                           <p className="text-sm text-primary-hover mb-6">
-                             Klik tombol di bawah untuk menyelesaikan pembayaran melalui {pendingOrder.paymentMethod || 'E-Wallet/Link'}.
-                           </p>
-                           <Button 
-                             size="lg"
-                             className="w-full sm:w-auto bg-primary hover:bg-primary-hover min-w-[200px]"
-                             onClick={() => window.open(pendingOrder.paymentUrl!, '_blank')}
-                           >
-                             Bayar Sekarang
-                           </Button>
-                         </div>
-                         <p className="text-xs text-gray-500 mt-2">
-                           Halaman pembayaran akan terbuka di tab baru.
-                         </p>
-                     </div>
-                   ) : paymentType === 'qris' ? (
-                      <div className="text-center">
-                         <label className="text-sm font-medium text-gray-700 mb-2 block">
-                           Scan QR Code
-                         </label>
-                         <div className="bg-white border-2 border-gray-300 rounded-lg p-6 inline-block mb-4">
-                             <QrCode className="h-32 w-32 text-gray-800 mx-auto" />
-                             <p className="text-xs text-gray-400 mt-2">QRIS Code</p>
-                         </div>
-                         <p className="text-2xl font-bold text-gray-900 mb-2">{formatPrice(pendingOrder.amount)}</p>
-                      </div>
-                   ) : paymentMethod === 'MANUAL_JAGO' ? (
-                      <div className="space-y-6">
-                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-6">
-                               <h4 className="text-slate-900 font-bold flex items-center gap-2">
-                                  <Building2 className="h-5 w-5 text-primary" /> Informasi Rekening Tujuan
-                               </h4>
-                               <img src="/assets/bank-jago-new.png" alt="Bank Jago" className="h-6 opacity-80" />
-                            </div>
-                            
-                            <div className="space-y-5">
-                               <div className="group relative">
-                                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
-                                     Nomor Rekening Bank Jago
-                                  </label>
-                                  <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-4 transition-all focus-within:ring-2 focus-within:ring-primary/20">
-                                     <span className="font-mono text-2xl font-bold text-slate-800 tracking-wider">
-                                        {vaNumber || '1010101020'}
-                                     </span>
-                                     <div className="ml-auto h-8 w-[1px] bg-slate-100" />
-                                     <Button 
-                                       variant="ghost" 
-                                       size="sm"
-                                       className="text-primary font-bold hover:bg-primary-light"
-                                       onClick={() => copyToClipboard(vaNumber || '1010101020')}
-                                     >
-                                       <Copy className="h-4 w-4 mr-2" /> SALIN
-                                     </Button>
-                                  </div>
-                                  {/* <p className="text-xs text-slate-500 mt-2 font-medium px-1 flex items-center gap-1.5">
-                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                    a/n {pendingOrder.accountName || 'KARTCIS ID / ALI ROHMANSYAH'}
-                                  </p> */}
-                               </div>
-
-                               <div className="relative pt-2">
-                                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
-                                     Jumlah yang Harus Ditransfer
-                                  </label>
-                                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
-                                     <div className="flex items-baseline gap-1">
-                                       <span className="text-slate-500 font-semibold text-lg">Rp</span>
-                                       <span className="text-3xl font-black text-slate-900 tracking-tight">
-                                          {Math.floor(pendingOrder.amount / 1000).toLocaleString('id-ID')}
-                                          <span className="text-slate-900">.</span>
-                                          <span className="text-primary underline decoration-primary/40 underline-offset-8">
-                                            {(pendingOrder.amount % 1000).toString().padStart(3, '0')}
-                                          </span>
-                                       </span>
-                                     </div>
-                                     <Button 
-                                       variant="ghost" 
-                                       size="sm"
-                                       className="text-primary font-bold hover:bg-primary-light"
-                                       onClick={() => copyToClipboard(String(pendingOrder.amount))}
-                                     >
-                                       <Copy className="h-4 w-4 mr-2" /> SALIN
-                                     </Button>
-                                  </div>
-                                  
-                                  <div className="mt-4 flex items-start gap-3 bg-amber-50/80 border border-amber-200/50 p-4 rounded-xl">
-                                    <div className="bg-amber-100 p-1.5 rounded-full">
-                                      <AlertCircle className="h-4 w-4 text-amber-600" />
-                                    </div>
-                                    <p className="text-xs leading-relaxed text-amber-900 font-medium">
-                                       <span className="font-bold underline">Wajib diperhatikan:</span> Pastikan nominal transfer **tepat hingga 3 digit terakhir** agar sistem kami dapat memverifikasi pembayaran Anda secara otomatis.
-                                    </p>
-                                  </div>
-                               </div>
-                            </div>
-                         </div>
-                         
-                         {pendingOrder.paymentInstructions && (
-                            <div className="border-l-4 border-slate-200 pl-4 py-1">
-                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Panduan Pembayaran</p>
-                               <p className="text-sm text-slate-600 leading-relaxed italic">
-                                  "{pendingOrder.paymentInstructions}"
-                               </p>
-                            </div>
-                         )}
-                      </div>
-                   ) : (
-                      <div className="space-y-4">
-                         <div>
-                            <label className="text-sm font-medium text-gray-700 mb-1 block">
-                               {paymentType === 'ewallet' ? 'Nomor E-Wallet' : 'Nomor Virtual Account'}
-                            </label>
-                            <div className="flex gap-2">
-                               <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md font-mono text-xl font-bold text-gray-900 tracking-wider">
-                                  {vaNumber || '-'}
-                               </div>
-                               <Button variant="outline" size="icon" onClick={() => copyToClipboard(vaNumber || '')}>
-                                 <Copy className="h-4 w-4" />
-                               </Button>
-                            </div>
-                         </div>
-                         <div>
-                            <label className="text-sm font-medium text-gray-700 mb-1 block">
-                               Total Transfer
-                            </label>
-                            <div className="flex gap-2">
-                               <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md text-xl font-bold text-gray-900">
-                                  {formatPrice(pendingOrder.amount)}
-                               </div>
-                               <Button variant="outline" size="icon" onClick={() => copyToClipboard(String(pendingOrder.amount))}>
-                                 <Copy className="h-4 w-4" />
-                               </Button>
-                            </div>
-                         </div>
-                      </div>
-                   )}
-
-                  {/* Actions */}
-                  <div className="mt-8 space-y-3">
-                    <Button
-                        onClick={checkPaymentStatus}
-                        className="w-full bg-primary hover:bg-primary-hover"
-                        disabled={isCheckingStatus}
-                    >
-                        {isCheckingStatus ? 'Memeriksa...' : 'Cek Status Pembayaran'}
-                    </Button>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className="w-full border-gray-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
-                        >
-                            Batalkan Pesanan
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Batalkan Pesanan?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Apakah Anda yakin ingin membatalkan pembayaran ini? Tiket Anda mungkin akan dilepas dan harus dipesan ulang jika pesanan dibatalkan.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Kembali</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={onCancel}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            Ya, Batalkan
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </Card>
-             )}
-
-             {/* Order Items & Tickets */}
-             <Card className="bg-white p-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-4 text-lg">Detail Tiket</h3>
-                
-                {tickets.length > 0 ? (
-                   <div className="space-y-4">
-                      {tickets.map((ticket, idx) => (
-                         <div key={idx} className="border rounded-lg p-4 bg-gray-50">
-                            <div className="flex justify-between items-start mb-2">
-                               <div>
-                                  <p className="font-bold text-gray-900">{ticket.ticket_type?.name || 'Tiket'}</p>
-                                  <p className="text-sm text-gray-600">{ticket.ticket_code}</p>
-                               </div>
-                               {/* Use 'attendee_name' from ticket, or fallback to customer info if single/same */}
-                               <div className="text-right">
-                                  <p className="text-sm font-medium">{ticket.attendee_name || pendingOrder.customerInfo?.name}</p>
-                               </div>
-                            </div>
-                            
-                            {/* Custom Fields */}
-                            {ticket.custom_field_responses && (
-                               <div className="mt-3 pt-3 border-t border-gray-200">
-                                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Informasi Tambahan</p>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                     {Object.entries(JSON.parse(ticket.custom_field_responses || '{}')).map(([key, value]) => (
-                                        <div key={key}>
-                                           <span className="text-gray-500">{key}:</span> <span className="font-medium text-gray-900">{String(value)}</span>
-                                        </div>
-                                     ))}
-                                  </div>
-                               </div>
-                            )}
-                         </div>
-                      ))}
+        <div className="space-y-6">
+          {/* Top Info Section: Combined Info & Payment */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="bg-white p-6 shadow-sm border-0">
+               <h3 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
+                 <Building2 className="h-5 w-5 text-primary" />
+                 Info Pembeli
+               </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                   <div className="flex flex-col">
+                      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Nama</p>
+                      <p className="font-bold text-slate-800 break-words text-base">{pendingOrder.customerInfo?.name}</p>
                    </div>
-                ) : (
-                   // Fallback to order items if no tickets (e.g. pending order before tickets generated? usually tickets generated at checkout but maybe separate)
-                   // But since checkout creates tickets, they should be there.
-                   // If fetchTickets failed, fallback to summary.
-                   <div className="space-y-3">
-                     {pendingOrder.orderDetails?.items?.map((item, index) => (
-                        <div key={index} className="flex justify-between items-start py-3 border-b last:border-0 border-dashed">
-                          <div>
-                            <p className="font-medium text-gray-900">{item.eventTitle}</p>
-                            <p className="text-sm text-gray-600">{item.ticketType} × {item.quantity}</p>
-                          </div>
-                          <p className="font-semibold text-gray-900">{formatPrice(item.price * item.quantity)}</p>
-                        </div>
-                      ))}
+                   <div className="flex flex-col">
+                      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Email</p>
+                      <p className="font-bold text-slate-800 break-words text-base">{pendingOrder.customerInfo?.email}</p>
                    </div>
-                )}
-             </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-             <Card className="bg-white p-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-4 text-lg">Info Pembeli</h3>
-                 <div className="space-y-4 text-sm">
-                    <div className="flex flex-col">
-                       <p className="text-gray-500 text-xs mb-0.5">Nama</p>
-                       <p className="font-medium text-gray-900 break-words">{pendingOrder.customerInfo?.name}</p>
-                    </div>
-                    <div className="flex flex-col">
-                       <p className="text-gray-500 text-xs mb-0.5">Email</p>
-                       <p className="font-medium text-gray-900 break-words">{pendingOrder.customerInfo?.email}</p>
-                    </div>
-                    <div className="flex flex-col">
-                       <p className="text-gray-500 text-xs mb-0.5">Telepon</p>
-                       <p className="font-medium text-gray-900 break-words">{pendingOrder.customerInfo?.phone}</p>
-                    </div>
-                 </div>
-             </Card>
-             
-             {/* Payment Info */}
-             <Card className="bg-white p-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-4 text-lg">Rincian Pembayaran</h3>
-                 <div className="space-y-3 text-sm">
-                    <div className="flex justify-between gap-4">
-                       <span className="text-gray-500 flex-shrink-0">Metode</span>
-                       <span className="font-medium text-gray-900 uppercase text-right break-words">{paymentMethod}</span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                       <span className="text-gray-500 flex-shrink-0">Harga Tiket</span>
-                       <span className="font-medium text-gray-900 text-right">
-                          {formatPrice(pendingOrder.totalAmount - (pendingOrder.adminFee || 0))}
-                       </span>
-                    </div>
-                    {pendingOrder.adminFee && pendingOrder.adminFee > 0 && (
-                       <div className="flex justify-between gap-4">
-                          <span className="text-gray-500 flex-shrink-0">Biaya Layanan</span>
-                          <span className="font-medium text-gray-900 text-right">{formatPrice(pendingOrder.adminFee)}</span>
-                       </div>
-                    )}
-                    {status === 'pending' && vaNumber && (
-                      <div className="flex justify-between gap-4">
-                         <span className="text-gray-500 flex-shrink-0">No. VA</span>
-                         <span className="font-medium text-gray-900 text-right break-all">{vaNumber}</span>
-                      </div>
-                    )}
-                   <div className="border-t pt-3 flex justify-between items-center mt-2">
-                      <span className="font-bold text-gray-900">Total</span>
-                      <span className="font-bold text-xl text-primary">{formatPrice(pendingOrder.amount)}</span>
+                   <div className="flex flex-col sm:col-span-2">
+                      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Telepon</p>
+                      <p className="font-bold text-slate-800 break-words text-base">{pendingOrder.customerInfo?.phone}</p>
                    </div>
                 </div>
-             </Card>
+            </Card>
+            
+            <Card className="bg-white p-6 shadow-sm border-0">
+               <h3 className="font-bold text-gray-900 mb-4 text-lg">Rincian Pembayaran</h3>
+                <div className="space-y-3 text-sm">
+                   <div className="flex justify-between gap-4">
+                      <span className="text-gray-500 font-medium">Metode</span>
+                      <span className="font-bold text-slate-800 uppercase text-right">{paymentMethod}</span>
+                   </div>
+                   <div className="flex justify-between gap-4">
+                      <span className="text-gray-500 font-medium">Total Tagihan</span>
+                      <div className="text-right">
+                        <span className="font-black text-xl text-primary">{formatPrice(pendingOrder.amount)}</span>
+                      </div>
+                   </div>
+                </div>
+            </Card>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="md:col-span-3 space-y-6">
+               {/* Payment Instructions - Only for pending */}
+               {status === 'pending' && (
+                  <Card className="bg-white p-6 shadow-sm">
+                    {/* Timer */}
+                    <div className="p-4 bg-accent-orange-light border border-orange-200 rounded-lg mb-6">
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-accent-orange-hover" />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-700 mb-1">Selesaikan pembayaran dalam</p>
+                          <p className="text-2xl font-bold text-accent-orange-hover">{formatTime(timeLeft)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                     {/* Payment Details */}
+                     {pendingOrder.paymentUrl ? (
+                       <div className="text-center space-y-4">
+                           <div className="bg-primary-light rounded-lg p-6 border border-sky-100">
+                             <h3 className="text-lg font-semibold text-sky-900 mb-2">Lanjut ke Pembayaran</h3>
+                             <p className="text-sm text-primary-hover mb-6">
+                               Klik tombol di bawah untuk menyelesaikan pembayaran melalui {pendingOrder.paymentMethod || 'E-Wallet/Link'}.
+                             </p>
+                             <Button 
+                               size="lg"
+                               className="w-full sm:w-auto bg-primary hover:bg-primary-hover min-w-[200px]"
+                               onClick={() => window.open(pendingOrder.paymentUrl!, '_blank')}
+                             >
+                               Bayar Sekarang
+                             </Button>
+                           </div>
+                           <p className="text-xs text-gray-500 mt-2">
+                             Halaman pembayaran akan terbuka di tab baru.
+                           </p>
+                       </div>
+                     ) : paymentType === 'qris' ? (
+                        <div className="text-center">
+                           <label className="text-sm font-medium text-gray-700 mb-2 block">
+                             Scan QR Code
+                           </label>
+                           <div className="bg-white border-2 border-gray-300 rounded-lg p-6 inline-block mb-4">
+                               <QrCode className="h-32 w-32 text-gray-800 mx-auto" />
+                               <p className="text-xs text-gray-400 mt-2">QRIS Code</p>
+                           </div>
+                           <p className="text-2xl font-bold text-gray-900 mb-2">{formatPrice(pendingOrder.amount)}</p>
+                        </div>
+                     ) : paymentMethod === 'MANUAL_JAGO' ? (
+                        <div className="space-y-6">
+                           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm">
+                              <div className="flex items-center justify-between mb-6">
+                                 <h4 className="text-slate-900 font-bold flex items-center gap-2">
+                                    <Building2 className="h-5 w-5 text-primary" /> Informasi Rekening Tujuan
+                                 </h4>
+                                 <img src="/assets/bank-jago-new.png" alt="Bank Jago" className="h-6 opacity-80" />
+                              </div>
+                              
+                              <div className="space-y-5">
+                                 <div className="group relative">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
+                                       Nomor Rekening Bank Jago
+                                    </label>
+                                    <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-4 transition-all focus-within:ring-2 focus-within:ring-primary/20">
+                                       <span className="font-mono text-2xl font-bold text-slate-800 tracking-wider">
+                                          {vaNumber || '1010101020'}
+                                       </span>
+                                       <div className="ml-auto h-8 w-[1px] bg-slate-100" />
+                                       <Button 
+                                         variant="ghost" 
+                                         size="sm"
+                                         className="text-primary font-bold hover:bg-primary-light"
+                                         onClick={() => copyToClipboard(vaNumber || '1010101020')}
+                                       >
+                                         <Copy className="h-4 w-4 mr-2" /> SALIN
+                                       </Button>
+                                    </div>
+                                 </div>
+
+                                 <div className="relative pt-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
+                                       Jumlah yang Harus Ditransfer
+                                    </label>
+                                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
+                                       <div className="flex items-baseline gap-1">
+                                         <span className="text-slate-500 font-semibold text-lg">Rp</span>
+                                         <span className="text-3xl font-black text-slate-900 tracking-tight">
+                                            {Math.floor(pendingOrder.amount / 1000).toLocaleString('id-ID')}
+                                            <span className="text-slate-900">.</span>
+                                            <span className="text-primary underline decoration-primary/40 underline-offset-8">
+                                              {(pendingOrder.amount % 1000).toString().padStart(3, '0')}
+                                            </span>
+                                         </span>
+                                       </div>
+                                       <Button 
+                                         variant="ghost" 
+                                         size="sm"
+                                         className="text-primary font-bold hover:bg-primary-light"
+                                         onClick={() => copyToClipboard(String(pendingOrder.amount))}
+                                       >
+                                         <Copy className="h-4 w-4 mr-2" /> SALIN
+                                       </Button>
+                                    </div>
+                                    
+                                    <div className="mt-4 flex items-start gap-3 bg-amber-50/80 border border-amber-200/50 p-4 rounded-xl">
+                                      <div className="bg-amber-100 p-1.5 rounded-full">
+                                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                                      </div>
+                                      <p className="text-xs leading-relaxed text-amber-900 font-medium">
+                                         <span className="font-bold underline">Wajib diperhatikan:</span> Pastikan nominal transfer **tepat hingga 3 digit terakhir** agar sistem kami dapat memverifikasi pembayaran Anda secara otomatis.
+                                      </p>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                           
+                           {pendingOrder.paymentInstructions && (
+                              <div className="border-l-4 border-slate-200 pl-4 py-1">
+                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Panduan Pembayaran</p>
+                                 <p className="text-sm text-slate-600 leading-relaxed italic">
+                                    "{pendingOrder.paymentInstructions}"
+                                 </p>
+                              </div>
+                           )}
+                        </div>
+                     ) : (
+                        <div className="space-y-4">
+                           <div>
+                              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                 {paymentType === 'ewallet' ? 'Nomor E-Wallet' : 'Nomor Virtual Account'}
+                              </label>
+                              <div className="flex gap-2">
+                                 <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md font-mono text-xl font-bold text-gray-900 tracking-wider">
+                                    {vaNumber || '-'}
+                                 </div>
+                                 <Button variant="outline" size="icon" onClick={() => copyToClipboard(vaNumber || '')}>
+                                   <Copy className="h-4 w-4" />
+                                 </Button>
+                              </div>
+                           </div>
+                           <div>
+                              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                 Total Transfer
+                              </label>
+                              <div className="flex gap-2">
+                                 <div className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-md text-xl font-bold text-gray-900">
+                                    {formatPrice(pendingOrder.amount)}
+                                 </div>
+                                 <Button variant="outline" size="icon" onClick={() => copyToClipboard(String(pendingOrder.amount))}>
+                                   <Copy className="h-4 w-4" />
+                                 </Button>
+                              </div>
+                           </div>
+                        </div>
+                     )}
+
+                    {/* Actions */}
+                    <div className="mt-8 space-y-3">
+                      <Button
+                          onClick={checkPaymentStatus}
+                          className="w-full bg-primary hover:bg-primary-hover"
+                          disabled={isCheckingStatus}
+                      >
+                          {isCheckingStatus ? 'Memeriksa...' : 'Cek Status Pembayaran'}
+                      </Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                              variant="outline"
+                              className="w-full border-gray-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+                          >
+                              Batalkan Pesanan
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Batalkan Pesanan?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Apakah Anda yakin ingin membatalkan pembayaran ini? Tiket Anda mungkin akan dilepas dan harus dipesan ulang jika pesanan dibatalkan.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Kembali</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={onCancel}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              Ya, Batalkan
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </Card>
+               )}
+
+               {/* Order Items & Tickets */}
+                <Card className="bg-white shadow-sm overflow-hidden border-0">
+                  <div className="p-6 border-b bg-gray-50/50">
+                    <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                      <QrCode className="h-5 w-5 text-primary" />
+                      Detail Tiket
+                    </h3>
+                  </div>
+                  
+                  <div className="p-6 space-y-6">
+                    {tickets.length > 0 ? (
+                    <div className="space-y-6">
+                      {tickets.map((ticket, idx) => {
+                        const eventInfo = ticket.event || pendingOrder.items[0] || (pendingOrder as any).orderDetails?.items?.[0];
+                        
+                        // Map to Ticket interface expected by TicketCard
+                        const domainTicket: DomainTicket = {
+                          id: ticket.id?.toString() || idx.toString(),
+                          eventId: eventInfo?.event_id?.toString() || '',
+                          eventTitle: eventInfo?.eventTitle || eventInfo?.title || 'Unknown Event',
+                          eventDate: eventInfo?.eventDate || eventInfo?.event_date || '',
+                          eventTime: eventInfo?.eventTime || eventInfo?.event_time || '',
+                          venue: eventInfo?.venue || eventInfo?.location || '',
+                          city: eventInfo?.city || '',
+                          ticketType: ticket.ticket_type?.name || 'Tiket',
+                          quantity: 1,
+                          price: ticket.ticket_type?.price || 0,
+                          eventImage: eventInfo?.eventImage || eventInfo?.image || '',
+                          orderDate: String(pendingOrder.createdAt || ''),
+                          ticketCode: ticket.ticket_code,
+                          eventStatus: 'active'
+                        };
+
+                        return (
+                          <TicketCard 
+                            key={idx}
+                            ticket={domainTicket}
+                            formatPrice={formatPrice}
+                            formatDate={formatDate}
+                            isUpcoming={status === 'paid'}
+                            onShowQR={() => setSelectedTicketForQR(domainTicket)}
+                          />
+                        );
+                      })}
+                    </div>
+                    ) : (
+                     // Fallback to order items if no tickets (e.g. pending order before tickets generated? usually tickets generated at checkout but maybe separate)
+                     // But since checkout creates tickets, they should be there.
+                     // If fetchTickets failed, fallback to summary.
+                     <div className="space-y-3">
+                       {pendingOrder.orderDetails?.items?.map((item, index) => (
+                          <div key={index} className="flex justify-between items-start py-3 border-b last:border-0 border-dashed">
+                            <div>
+                              <p className="font-medium text-gray-900">{item.eventTitle}</p>
+                              <p className="text-sm text-gray-600">{item.ticketType} × {item.quantity}</p>
+                            </div>
+                            <p className="font-semibold text-gray-900">{formatPrice(item.price * item.quantity)}</p>
+                          </div>
+                        ))}
+                     </div>
+                  )}
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* QR Code Modal Portal */}
+      {selectedTicketForQR && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setSelectedTicketForQR(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ticket Notches for Modal */}
+            <div className="absolute top-1/2 -mt-4 -left-4 w-8 h-8 rounded-full bg-black/70" />
+            <div className="absolute top-1/2 -mt-4 -right-4 w-8 h-8 rounded-full bg-black/70" />
+
+            <div className="text-center">
+              <div className="mb-4">
+                <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold uppercase tracking-widest px-3 py-1">
+                  E-Ticket Resmi
+                </Badge>
+              </div>
+              
+              <h3 className="text-lg font-bold text-slate-900 mb-1 leading-tight">{selectedTicketForQR.eventTitle}</h3>
+              <p className="text-xs text-slate-500 mb-6">{selectedTicketForQR.ticketType}</p>
+              
+              <div className="bg-slate-50 p-6 rounded-2xl mb-6 border border-slate-100 flex items-center justify-center shadow-inner">
+                <canvas ref={qrCanvasRef} className="max-w-full h-auto" />
+              </div>
+              
+              <div className="space-y-1 mb-6">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Kode Tiket</p>
+                <p className="text-xl font-mono font-black text-primary tracking-tighter">{selectedTicketForQR.ticketCode}</p>
+              </div>
+              
+              <Button 
+                onClick={() => setSelectedTicketForQR(null)}
+                className="w-full bg-primary hover:bg-primary-hover text-white font-bold h-12 rounded-xl border-0 shadow-lg shadow-primary/20 transition-all active:scale-95"
+              >
+                Tutup
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

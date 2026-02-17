@@ -375,5 +375,42 @@ export const adminApi = {
       }
     },
   },
+
+  settings: {
+    update: async (data: Record<string, string>): Promise<ApiResponse<null>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/settings`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error updating settings:', error);
+        throw error;
+      }
+    },
+  },
+
+  // User Activities
+  getUserActivities: async (userId: string | number): Promise<ApiResponse<ActivityLog[]>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/activity`, {
+        headers: getHeaders(),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user activities:', error);
+      throw error;
+    }
+  },
 };
+
+export interface ActivityLog {
+  id: number;
+  action: string;
+  details: string;
+  created_at: string;
+  ip_address: string;
+}
 

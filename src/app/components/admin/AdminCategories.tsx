@@ -44,7 +44,7 @@ import {
 import { ImageUpload } from '@/app/components/admin/ImageUpload';
 import { Switch } from '@/app/components/ui/switch';
 
-export function AdminCategories() {
+export function AdminCategories({ activeTab }: { activeTab?: string }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,8 +114,10 @@ export function AdminCategories() {
   };
 
   useEffect(() => {
-    fetchCategories();
-  }, [currentPage, debouncedSearch]);
+    if (activeTab === 'categories') {
+      fetchCategories();
+    }
+  }, [currentPage, debouncedSearch, activeTab]);
 
   // Handle Create/Update
   const handleSubmit = async (e: React.FormEvent) => {

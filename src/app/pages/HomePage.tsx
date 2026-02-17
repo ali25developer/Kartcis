@@ -8,11 +8,14 @@ import { EventCard } from "@/app/components/EventCard";
 import { SponsorSection } from "@/app/components/SponsorSection";
 import type { Event } from "@/app/types";
 import api from "@/app/services/api";
+import { useEvents } from "@/app/contexts/EventsContext";
 
 export function HomePage() {
   const navigate = useNavigate();
   const location = useLocation(); // Keep track of location state
   const searchInputRef = useRef<HTMLInputElement>(null); // Ref for input focus
+  
+  const { categories: contextCategories, featuredEvents: contextFeaturedEvents, loading: contextLoading } = useEvents();
   
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<string[]>(['Semua']);
@@ -131,30 +134,27 @@ export function HomePage() {
     };
   }, [loading, loadingMore, hasMore]);
 
-  // Load categories and featured once
+  // Sync categories and featured from context
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const [categoriesRes, featuredRes] = await Promise.all([
-          api.categories.getAll({ limit: 100 }),
-          api.events.getFeatured()
-        ]);
+    if (contextCategories.length > 0) {
+      setCategories(['Semua', ...contextCategories.map(c => c.name)]);
+    }
+  }, [contextCategories]);
 
-        if (categoriesRes.success && categoriesRes.data) {
-          const categoryNames = ['Semua', ...categoriesRes.data.categories.map((c: any) => c.name)];
-          setCategories(categoryNames);
-        }
-
-        if (featuredRes.success && featuredRes.data) {
-          setFeaturedEvents(featuredRes.data);
-        }
-      } catch (error) {
-        console.error('Error loading initial data:', error);
-      }
-    };
-
-    fetchInitialData();
-  }, []);
+  useEffect(() => {
+    if (contextFeaturedEvents.length > 0) {
+      setFeaturedEvents(contextFeaturedEvents);
+    } else if (!contextLoading) {
+      // If context failed or is empty, try direct fetch as fallback for featured
+      const fetchFeatured = async () => {
+        try {
+          const res = await api.events.getFeatured();
+          if (res.success && res.data) setFeaturedEvents(res.data);
+        } catch (e) { console.error(e); }
+      };
+      fetchFeatured();
+    }
+  }, [contextFeaturedEvents, contextLoading]);
 
   // Detect mobile screen
   useEffect(() => {
