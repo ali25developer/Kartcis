@@ -52,7 +52,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
@@ -76,6 +76,14 @@ function AppLayout() {
   useEffect(() => {
     const checkPendingOrder = async () => {
       const active = pendingOrderStorage.getActive();
+      
+      // If user is logged in, ensure the pending order belongs to them
+      if (active && isAuthenticated && user && active.customerInfo?.email !== user.email) {
+        setPendingOrder(null);
+        setPendingOrderTimeLeft(0);
+        return;
+      }
+
       if (active) {
         // If we have a pending order locally, verify its REAL status with the server
         // Skip background check if we are already on the checkout or payment page to avoid duplication
@@ -129,7 +137,7 @@ function AppLayout() {
       window.removeEventListener('pending-orders-changed', checkPendingOrder);
       clearInterval(interval);
     };
-  }, [location.pathname]);
+  }, [location.pathname, isAuthenticated, user?.email]);
 
   // Countdown timer for pending order
   useEffect(() => {

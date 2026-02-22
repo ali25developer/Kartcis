@@ -684,7 +684,7 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                         onClick={() => {
                             setFormData(prev => ({
                                 ...prev,
-                                custom_fields: [...prev.custom_fields, { name: '', type: 'text', required: true }]
+                                custom_fields: [...prev.custom_fields, { name: '', type: 'text', required: true, description: '', attachment_url: '' }]
                             }));
                         }}
                     >
@@ -805,7 +805,34 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                                     </div>
                                 )}
 
-                                <div className="flex items-center gap-2 mt-2">
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-gray-500 uppercase">Instruksi / Dekripsi (Opsional)</Label>
+                                    <Textarea
+                                        placeholder="Contoh: Pilih ukuran sesuai lebar dada..."
+                                        value={field.description || ''}
+                                        onChange={(e) => {
+                                            const newFields = [...formData.custom_fields];
+                                            newFields[index].description = e.target.value;
+                                            setFormData(prev => ({ ...prev, custom_fields: newFields }));
+                                        }}
+                                        className="h-20"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-gray-500 uppercase">Gambar Petunjuk (Opsional)</Label>
+                                    <ImageUpload
+                                        value={field.attachment_url || ''}
+                                        onChange={(url) => {
+                                            const newFields = [...formData.custom_fields];
+                                            newFields[index].attachment_url = url;
+                                            setFormData(prev => ({ ...prev, custom_fields: newFields }));
+                                        }}
+                                        placeholder="Contoh: Gambar Size Chart"
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-2 col-span-2">
                                     <input
                                         type="checkbox"
                                         id={`req-${index}`}

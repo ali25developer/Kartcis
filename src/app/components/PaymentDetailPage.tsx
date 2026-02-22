@@ -253,8 +253,14 @@ export function PaymentDetailPage({
                       <span className="text-gray-500 font-medium">Metode</span>
                       <span className="font-bold text-slate-800 uppercase text-right">{paymentMethod}</span>
                    </div>
-                   <div className="flex justify-between gap-4">
-                      <span className="text-gray-500 font-medium">Total Tagihan</span>
+                   {pendingOrder.voucherCode && (
+                     <div className="flex justify-between gap-4 text-green-600">
+                        <span className="font-medium">Potongan Voucher ({pendingOrder.voucherCode})</span>
+                        <span className="font-bold text-right">-{formatPrice(pendingOrder.discountAmount || 0)}</span>
+                     </div>
+                   )}
+                   <div className="flex justify-between gap-4 pt-2 border-t border-slate-100">
+                      <span className="text-gray-500 font-medium my-auto">Total Tagihan</span>
                       <div className="text-right">
                         <span className="font-black text-xl text-primary">{formatPrice(pendingOrder.amount)}</span>
                       </div>
@@ -489,7 +495,7 @@ export function PaymentDetailPage({
                           eventImage: eventInfo?.eventImage || eventInfo?.image || '',
                           orderDate: String(pendingOrder.createdAt || ''),
                           ticketCode: ticket.ticket_code,
-                          eventStatus: 'active'
+                          eventStatus: status === 'pending' ? 'pending' : 'active'
                         };
 
                         return (

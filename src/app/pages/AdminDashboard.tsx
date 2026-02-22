@@ -44,7 +44,8 @@ import { AdminEvents } from '@/app/components/admin/AdminEvents';
 import { AdminCategories } from '@/app/components/admin/AdminCategories';
 import { AdminSettings } from '@/app/components/admin/AdminSettings';
 import { AdminUsers } from '@/app/components/admin/AdminUsers';
-import { Settings, Users } from 'lucide-react';
+import { AdminVouchers } from '@/app/components/admin/AdminVouchers';
+import { Settings, Users, BadgePercent } from 'lucide-react';
 
 
 export function AdminDashboard() {
@@ -362,6 +363,10 @@ export function AdminDashboard() {
                   <Tags className="h-4 w-4 mr-2" />
                   Kategori
                 </TabsTrigger>
+                <TabsTrigger value="vouchers" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
+                  <BadgePercent className="h-4 w-4 mr-2" />
+                  Voucher
+                </TabsTrigger>
                 <TabsTrigger value="settings" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
                   <Settings className="h-4 w-4 mr-2" />
                   Pengaturan
@@ -647,6 +652,10 @@ export function AdminDashboard() {
             {user.role === 'admin' ? <AdminCategories activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
           </TabsContent>
 
+          <TabsContent value="vouchers">
+            {user.role === 'admin' ? <AdminVouchers activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
+          </TabsContent>
+
           <TabsContent value="settings">
             {user.role === 'admin' ? <AdminSettings activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
           </TabsContent>
@@ -712,12 +721,18 @@ export function AdminDashboard() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium text-gray-900">{formatPrice(selectedTransaction.total_amount - (selectedTransaction.admin_fee || 0))}</span>
+                    <span className="font-medium text-gray-900">{formatPrice((selectedTransaction.total_amount - (selectedTransaction.admin_fee || 0)) + (selectedTransaction.discount_amount || 0))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Biaya Admin:</span>
                     <span className="font-medium text-gray-900">{formatPrice(selectedTransaction.admin_fee || 0)}</span>
                   </div>
+                  {selectedTransaction.voucher_code && (
+                     <div className="flex justify-between text-green-600">
+                        <span>Voucher ({selectedTransaction.voucher_code}):</span>
+                        <span className="font-medium">-{formatPrice(selectedTransaction.discount_amount || 0)}</span>
+                     </div>
+                  )}
                   <div className="flex justify-between pt-2 border-t">
                     <span className="text-gray-600 font-semibold">Total Pembayaran:</span>
                     <span className="font-bold text-primary text-xl">{formatPrice(selectedTransaction.total_amount)}</span>

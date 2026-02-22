@@ -20,7 +20,7 @@ export interface Ticket {
   orderDate: string;
   ticketCode: string;
   customFieldResponses?: string; // JSON string of custom field responses
-  eventStatus?: 'active' | 'cancelled'; // Status of the event
+  eventStatus?: 'active' | 'cancelled' | 'pending'; // Status of the event
   cancelReason?: string; // Reason if event is cancelled
 }
 
@@ -75,11 +75,14 @@ export function MyTickets({ isOpen, onClose, tickets, onEventClick }: MyTicketsP
   return (
     <div
       className="fixed inset-0 z-50 bg-black/50 overflow-y-auto"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget || (e.target as Element).className.includes('min-h-screen')) {
+          onClose();
+        }
+      }}
     >
       <div className="min-h-screen py-8 px-4">
         <div
-          onClick={(e) => e.stopPropagation()}
           className="max-w-4xl mx-auto bg-white rounded-lg overflow-hidden"
         >
           <div className="flex items-center justify-between p-6 border-b">
@@ -372,11 +375,14 @@ function TicketCard({
       {showQRModal && (
         <div 
           className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4"
-          onClick={() => setShowQRModal(false)}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowQRModal(false);
+            }
+          }}
         >
           <div 
             className="bg-white rounded-lg p-6 max-w-sm w-full"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">QR Code Tiket</h3>

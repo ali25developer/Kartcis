@@ -100,6 +100,8 @@ export function PaymentPage() {
              amount: order.total_amount,
              totalAmount: order.total_amount,
              adminFee: order.admin_fee,
+             discountAmount: order.discount_amount,
+             voucherCode: order.voucher_code,
              // Fix expires_at parsing: Ensure it stays consistent by anchoring to created_at if missing
              expiryTime: (() => {
                if (order.expires_at) {

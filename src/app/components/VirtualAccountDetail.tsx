@@ -132,11 +132,14 @@ export function VirtualAccountDetail({
   return (
     <div
       className="fixed inset-0 z-50 bg-black/50 overflow-y-auto"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget || (e.target as Element).className.includes('min-h-screen')) {
+          onClose();
+        }
+      }}
     >
       <div className="min-h-screen py-8 px-4">
         <div
-          onClick={(e) => e.stopPropagation()}
           className="max-w-2xl mx-auto bg-white rounded-lg overflow-hidden"
         >
           <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-600 to-blue-700">

@@ -171,6 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     localStorage.removeItem('auth_token');
     localStorage.removeItem('token_expiry');
+    localStorage.removeItem('masup_pending_orders');
+    localStorage.removeItem('kartcis_purchased_tickets');
     setUser(null);
     window.location.href = '/';
   };

@@ -23,6 +23,7 @@ export function TicketCard({
   onShowQR
 }: TicketCardProps) {
   const isCancelled = ticket.eventStatus === 'cancelled';
+  const isPending = ticket.eventStatus === 'pending';
 
   const handleDownloadTicket = async () => {
     try {
@@ -118,6 +119,8 @@ export function TicketCard({
                 <div className="flex flex-wrap gap-2 items-center">
                   {isCancelled ? (
                     <Badge variant="destructive" className="bg-gray-900 text-white border-0 text-[10px] uppercase font-bold px-2 py-0">Dibatalkan</Badge>
+                  ) : isPending ? (
+                    <Badge className="bg-yellow-500 text-white border-0 text-[10px] uppercase font-bold px-2 py-0">Menunggu Pembayaran</Badge>
                   ) : (
                     <Badge className={`text-[10px] uppercase font-bold px-2 py-0 border-0 ${isUpcoming ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white'}`}>
                       {isUpcoming ? 'Akan Datang' : 'Selesai'}
@@ -192,7 +195,16 @@ export function TicketCard({
         </div>
 
         {/* Action Buttons Section */}
-        {isUpcoming && !isCancelled ? (
+        {isPending ? (
+          <div className="flex md:flex-col items-center justify-center gap-2 p-6 md:w-52 bg-slate-50/10 opacity-70">
+             <div className="w-12 h-12 rounded-full border border-yellow-200 flex items-center justify-center bg-yellow-50 shadow-sm">
+                <Clock className="h-6 w-6 text-yellow-500" />
+             </div>
+             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center mt-2">
+                Belum Dibayar
+             </p>
+          </div>
+        ) : isUpcoming && !isCancelled ? (
           <div className="flex md:flex-col justify-center gap-4 p-6 border-t md:border-t-0 border-slate-100 md:w-52 bg-slate-50/30">
             <Button 
                onClick={onShowQR}
@@ -216,7 +228,7 @@ export function TicketCard({
              <div className="w-12 h-12 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm">
                 <QrCode className="h-6 w-6 text-slate-300" />
              </div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">
                 {isCancelled ? 'Dibatalkan' : 'Selesai'}
              </p>
           </div>

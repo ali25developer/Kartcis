@@ -4,7 +4,9 @@ import {
   ArrowLeft,
   Loader2,
   Copy,
-  Users
+  Users,
+  BadgePercent,
+  Info
 } from 'lucide-react';
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -20,6 +22,23 @@ import {
   SelectValue 
 } from "@/app/components/ui/select";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/app/components/ui/dialog";
 import { useAuth } from "@/app/contexts/AuthContext";
 import type { Event, CustomField } from "@/app/types";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
@@ -54,6 +73,11 @@ export function CheckoutPage() {
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [primaryContactIndex, setPrimaryContactIndex] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('MANUAL_JAGO');
+  const [showGuestConfirmation, setShowGuestConfirmation] = useState(false);
+  
+  const [voucherCode, setVoucherCode] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount_amount: number; type: string } | null>(null);
+  const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
   
   // Refs for auto-scroll on validation error
   const participantRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -252,8 +276,64 @@ export function CheckoutPage() {
     return (getTotalPrice() * percentage) / 100;
   };
 
+  const getDiscountAmount = () => {
+    return appliedVoucher ? appliedVoucher.discount_amount : 0;
+  };
+
   const getTotalAmount = () => {
-    return getTotalPrice() + getAdminFee();
+    return Math.max(0, getTotalPrice() + getAdminFee() - getDiscountAmount());
+  };
+
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) {
+      toast.error("Masukkan kode voucher terlebih dahulu");
+      return;
+    }
+    
+    setIsApplyingVoucher(true);
+    try {
+      const firstTicketId = Object.keys(selectedTickets)[0];
+      const response = await api.vouchers.validate(voucherCode, event.id, firstTicketId);
+      if (response.success && response.data) {
+        let discount = 0;
+        const data = response.data;
+        if (data.discount_type === 'percent') {
+          discount = (getTotalPrice() * data.discount_value) / 100;
+          if (data.max_discount && discount > data.max_discount) {
+            discount = data.max_discount;
+          }
+        } else {
+          discount = data.discount_value || data.discount_amount || 0;
+        }
+
+        const finalDiscount = data.discount_amount !== undefined ? data.discount_amount : discount;
+
+        if (finalDiscount <= 0) {
+            toast.error("Voucher tidak memberikan potongan");
+            return;
+        }
+
+        setAppliedVoucher({
+          code: voucherCode.toUpperCase(),
+          discount_amount: finalDiscount,
+          type: data.discount_type
+        });
+        toast.success("Voucher berhasil diterapkan!");
+      } else {
+        toast.error(response.message || "Kode Voucher tidak valid!");
+        setAppliedVoucher(null);
+      }
+    } catch (error) {
+      toast.error("Gagal memvalidasi voucher");
+    } finally {
+      setIsApplyingVoucher(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherCode("");
+    setAppliedVoucher(null);
+    toast.info("Voucher dilepas");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -298,6 +378,15 @@ export function CheckoutPage() {
       }
     }
 
+    if (!user) {
+      setShowGuestConfirmation(true);
+      return;
+    }
+
+    processCheckout();
+  };
+
+  const processCheckout = async () => {
     setLoading(true);
 
     try {
@@ -342,6 +431,7 @@ export function CheckoutPage() {
       const payload = {
         items,
         payment_method: paymentMethod,
+        voucher_code: appliedVoucher?.code || "",
         customer_info: {
           name: participants[primaryContactIndex].data.fullName,
           email: participants[primaryContactIndex].data.email,
@@ -501,38 +591,91 @@ export function CheckoutPage() {
 
                               {/* Custom Fields */}
                               {customFields.length > 0 && customFields.map((field) => (
-                                <div key={field.name} className="space-y-2 col-span-1 md:col-span-2">
-                                  <Label htmlFor={`participant-${index}-custom-${field.name}`}>
-                                    {field.name} {field.required && <span className="text-red-500">*</span>}
-                                  </Label>
-                                  {field.type === 'text' ? (
-                                    <Input
-                                      id={`participant-${index}-custom-${field.name}`}
-                                      type="text"
-                                      placeholder={`Masukkan ${field.name.toLowerCase()}`}
-                                      value={participant.customFieldResponses[field.name] || ''}
-                                      onChange={(e) => handleCustomFieldChange(index, field.name, e.target.value)}
-                                      disabled={loading}
-                                      required={field.required}
-                                    />
-                                  ) : field.type === 'select' && field.options ? (
-                                    <Select
-                                      value={participant.customFieldResponses[field.name] || ''}
-                                      onValueChange={(value) => handleCustomFieldChange(index, field.name, value)}
-                                      disabled={loading}
-                                    >
-                                      <SelectTrigger className="h-10 w-full border-gray-200">
-                                        <SelectValue placeholder={`Pilih ${field.name}`} />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {field.options.map((option) => (
-                                          <SelectItem key={option} value={option}>
-                                            {option}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  ) : null}
+                                <div key={field.name} className="space-y-3 col-span-1 md:col-span-2 bg-white/50 p-4 rounded-xl border border-gray-100 shadow-sm">
+                                  <div className="flex flex-col gap-1">
+                                    <Label htmlFor={`participant-${index}-custom-${field.name}`} className="text-gray-900 font-bold text-sm">
+                                      {field.name} {field.required && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    
+                                    {field.description && (
+                                      <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                                        {field.description}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {field.attachment_url && (
+                                    <div className="flex flex-col gap-2">
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <div className="relative group cursor-zoom-in w-fit">
+                                            <div className="overflow-hidden rounded-lg border-2 border-primary/20 shadow-sm group-hover:border-primary transition-all">
+                                              <img 
+                                                src={field.attachment_url} 
+                                                alt={`Petunjuk ${field.name}`} 
+                                                className="h-24 md:h-32 w-auto object-cover bg-white group-hover:scale-105 transition-transform duration-300" 
+                                              />
+                                            </div>
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 flex items-center justify-center transition-colors">
+                                              <Info className="text-white opacity-0 group-hover:opacity-100 h-6 w-6" />
+                                            </div>
+                                          </div>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none">
+                                          <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl">
+                                            <DialogHeader className="p-4 border-b bg-gray-50/80 backdrop-blur-sm">
+                                              <DialogTitle className="flex items-center gap-2 text-gray-900">
+                                                <Info className="h-5 w-5 text-primary" />
+                                                Petunjuk: {field.name}
+                                              </DialogTitle>
+                                            </DialogHeader>
+                                            <div className="p-2 flex items-center justify-center bg-gray-100/50 min-h-[300px]">
+                                              <img 
+                                                src={field.attachment_url} 
+                                                alt={`Petunjuk ${field.name} Full`} 
+                                                className="max-w-full max-h-[80vh] object-contain rounded-lg" 
+                                              />
+                                            </div>
+                                            <div className="p-4 bg-gray-50 border-t text-xs text-center text-gray-400 font-medium">
+                                              Gambar Petunjuk untuk Field {field.name}
+                                            </div>
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    </div>
+                                  )}
+
+                                  <div className="mt-1">
+                                    {field.type === 'text' ? (
+                                      <Input
+                                        id={`participant-${index}-custom-${field.name}`}
+                                        type="text"
+                                        placeholder={`Masukkan ${field.name.toLowerCase()}`}
+                                        value={participant.customFieldResponses[field.name] || ''}
+                                        onChange={(e) => handleCustomFieldChange(index, field.name, e.target.value)}
+                                        disabled={loading}
+                                        required={field.required}
+                                        className="h-10 border-gray-200 focus:border-primary bg-white"
+                                      />
+                                    ) : field.type === 'select' && field.options ? (
+                                      <Select
+                                        value={participant.customFieldResponses[field.name] || ''}
+                                        onValueChange={(value) => handleCustomFieldChange(index, field.name, value)}
+                                        disabled={loading}
+                                      >
+                                        <SelectTrigger className="h-10 w-full border-gray-200 bg-white">
+                                          <SelectValue placeholder={`Pilih ${field.name}`} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {field.options.map((option) => (
+                                            <SelectItem key={option} value={option}>
+                                              {option}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    ) : null}
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -610,7 +753,7 @@ export function CheckoutPage() {
                 })}
               </div>
               
-              <div className="space-y-2 mb-4">
+               <div className="space-y-2 mb-4">
                  <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">Subtotal Tiket</span>
                     <span className="font-medium text-gray-900">{formatCurrency(totalPrice)}</span>
@@ -619,6 +762,50 @@ export function CheckoutPage() {
                     <span className="text-gray-600">Biaya Layanan ({event.fee_percentage || 5}%)</span>
                     <span className="font-medium text-gray-900">{formatCurrency(adminFee)}</span>
                  </div>
+                 {appliedVoucher && (
+                   <div className="flex justify-between items-center text-sm text-green-600 font-medium">
+                      <span>Voucher ({appliedVoucher.code})</span>
+                      <span>-{formatCurrency(appliedVoucher.discount_amount)}</span>
+                   </div>
+                 )}
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Voucher Input Section */}
+              <div className="mb-4">
+                <Label className="text-sm font-semibold mb-2 block">Kode Voucher</Label>
+                {!appliedVoucher ? (
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Masukkan kode promo" 
+                      value={voucherCode} 
+                      onChange={(e) => setVoucherCode(e.target.value)}
+                      className="uppercase"
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={handleApplyVoucher}
+                      disabled={isApplyingVoucher || !voucherCode.trim()}
+                      className="border-primary text-primary hover:bg-primary-light"
+                    >
+                      {isApplyingVoucher ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Terapkan'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <BadgePercent className="h-5 w-5" />
+                      <div>
+                         <p className="font-bold text-sm tracking-wide">{appliedVoucher.code}</p>
+                         <p className="text-xs">Voucher berhasil dipakai</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleRemoveVoucher} className="text-green-700 hover:text-green-800 hover:bg-green-100 h-8">
+                      Hapus
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <Separator className="my-4" />
@@ -637,6 +824,24 @@ export function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showGuestConfirmation} onOpenChange={setShowGuestConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lanjutkan Tanpa Login?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda saat ini belum login. Tiket akan dikirimkan ke email <strong>{participants[primaryContactIndex]?.data?.email}</strong>. 
+              Pastikan email tersebut aktif dan penulisan tidak salah.
+              <br /><br />
+              Atau, Anda bisa kembali ke halaman sebelumnya untuk <strong>Login</strong> agar tiket tersimpan di dashboard akun Anda.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Periksa Kembali</AlertDialogCancel>
+            <AlertDialogAction onClick={processCheckout}>Lanjutkan Beli Tiket</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

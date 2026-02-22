@@ -205,6 +205,23 @@ const api = {
       }
     },
   },
+
+  vouchers: {
+    validate: async (code: string, eventId: number | string, ticketTypeId?: number | string): Promise<ApiResponse<any>> => {
+      try {
+        let url = `${API_BASE_URL}/vouchers/validate?code=${code}&event_id=${eventId}`;
+        if (ticketTypeId) {
+          url += `&ticket_type_id=${ticketTypeId}`;
+        }
+        const response = await fetch(url, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        return { success: false, message: 'Network error' };
+      }
+    },
+  },
 };
 
 // Legacy service adapter for backward compatibility

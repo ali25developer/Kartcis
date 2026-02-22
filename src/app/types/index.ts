@@ -15,6 +15,24 @@ export interface PaginatedResponse<T, K extends string> {
   message?: string;
 }
 
+export interface Voucher {
+  id: number;
+  code: string;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  max_discount_amount: number | null;
+  max_uses: number;
+  used_count: number;
+  event_id: number | null;
+  event?: Pick<Event, 'id' | 'title'>;
+  ticket_type_id?: number | null;
+  ticket_type?: Pick<TicketType, 'id' | 'name'>;
+  expires_at: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -28,6 +46,8 @@ export interface CustomField {
   type: 'text' | 'select';
   options?: string[];
   required: boolean;
+  description?: string;
+  attachment_url?: string;
 }
 
 // Database schema types (match dengan backend)
@@ -140,6 +160,8 @@ export interface Order {
   customer_phone: string;
   total_amount: number;
   admin_fee: number; // Added admin fee
+  discount_amount?: number; // Voucher discount
+  voucher_code?: string; // Appied voucher
   status: 'pending' | 'paid' | 'cancelled' | 'expired';
   payment_method: string;
   payment_url: string | null;
@@ -211,6 +233,7 @@ export interface CheckoutRequest {
     }[];
   }[];
   payment_method: string;
+  voucher_code?: string;
   customer_info: {
     name: string;
     email: string;

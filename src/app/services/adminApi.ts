@@ -18,6 +18,8 @@ export interface Transaction {
   customer_phone: string;
   total_amount: number;
   admin_fee: number;
+  discount_amount?: number;
+  voucher_code?: string;
   status: 'pending' | 'paid' | 'expired' | 'cancelled';
   payment_method: string;
   created_at: string;
@@ -440,6 +442,94 @@ export const adminApi = {
       console.error('Error fetching user activities:', error);
       throw error;
     }
+  },
+
+  // Vouchers CRUD
+  vouchers: {
+    getAll: async (params?: { page?: number; limit?: number; search?: string; event_id?: number | string }): Promise<PaginatedResponse<any, 'vouchers'>> => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.search) queryParams.append('search', params.search);
+        if (params?.event_id) queryParams.append('event_id', params.event_id.toString());
+
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers?${queryParams.toString()}`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching admin vouchers:', error);
+        throw error;
+      }
+    },
+
+    getById: async (id: number | string): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/${id}`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching voucher:', error);
+        throw error;
+      }
+    },
+
+    create: async (data: any): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error creating voucher:', error);
+        throw error;
+      }
+    },
+
+    update: async (id: number | string, data: any): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/${id}`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error updating voucher:', error);
+        throw error;
+      }
+    },
+
+    updateStatus: async (id: number | string, is_active: boolean): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/${id}/status`, {
+          method: 'PATCH',
+          headers: getHeaders(),
+          body: JSON.stringify({ is_active }),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error updating voucher status:', error);
+        throw error;
+      }
+    },
+
+    delete: async (id: number | string): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error deleting voucher:', error);
+        throw error;
+      }
+    },
   },
 };
 

@@ -10,6 +10,8 @@ export interface PendingOrder {
   amount: number;
   totalAmount: number; // Alias for amount (for compatibility)
   adminFee?: number; // Admin fee
+  discountAmount?: number; // Voucher discount
+  voucherCode?: string; // Applied voucher
   expiryTime: number; // timestamp
   paymentUrl?: string | null; // e-wallet/payment link
   uniqueCode?: number; // for manual transfer
