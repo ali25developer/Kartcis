@@ -115,11 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginWithGoogle = async () => {
-    // For Google Login, usually we redirect to backend endpoint
-    // window.location.href = `${API_BASE_URL}/auth/google`;
-    
-    // For now, let's keep it as TODO since it requires full oauth flow
-    toast.info('Fitur Google Login memerlukan konfigurasi Backend yang aktif.');
+    // Redirect user to backend Google Auth endpoint
+    const { API_BASE_URL } = await import('../config');
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   const register = async (name: string, phone: string, email: string, password: string) => {

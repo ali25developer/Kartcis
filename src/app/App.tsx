@@ -22,6 +22,7 @@ import { MyTicketsPage } from "./pages/MyTicketsPage";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { OauthCallbackPage } from "./pages/OauthCallbackPage";
 import { pendingOrderStorage } from "./utils/pendingOrderStorage";
 import api from "./services/api";
 import type { HelpModalType } from "./types/index";
@@ -222,6 +223,7 @@ function AppLayout() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/refund-policy" element={<RefundPolicyPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/oauth/callback" element={<OauthCallbackPage />} />
         
         <Route 
           path="/my-tickets" 
