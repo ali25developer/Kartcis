@@ -748,6 +748,59 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                                     </Select>
                                 </div>
                                 
+                                <div className="space-y-2 col-span-1 md:col-span-2">
+                                    <Label className="text-xs text-gray-500 uppercase">Visibilitas per Tiket (Opsional)</Label>
+                                    <div className="flex flex-wrap gap-3 mt-1">
+                                        {formData.ticket_types.filter(t => t.name.trim() !== '').map((ticket, tIndex) => {
+                                            const ticketId = ticket.id ? ticket.id : -tIndex; // Use real ID if exists or fallback
+                                            const isChecked = !field.ticket_type_ids || field.ticket_type_ids.length === 0 || field.ticket_type_ids.includes(ticketId);
+                                            return (
+                                                <div key={`ticket-${tIndex}`} className="flex items-center space-x-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`customField-${index}-ticket-${ticketId}`}
+                                                        checked={isChecked}
+                                                        onChange={(e) => {
+                                                            const newFields = [...formData.custom_fields];
+                                                            
+                                                            // If currently all selected (empty or undefined array) and we are unchecking one
+                                                            // We must explicitly list all other valid tickets
+                                                            if (isChecked && (!newFields[index].ticket_type_ids || newFields[index].ticket_type_ids?.length === 0)) {
+                                                                newFields[index].ticket_type_ids = formData.ticket_types
+                                                                    .map((t, i) => t.id ? t.id : -i)
+                                                                    .filter(id => id !== ticketId);
+                                                            } 
+                                                            // Standard logic when we have an explicit array
+                                                            else {
+                                                                let currentIds = newFields[index].ticket_type_ids || [];
+                                                                if (e.target.checked) {
+                                                                    currentIds = [...currentIds, ticketId];
+                                                                } else {
+                                                                    currentIds = currentIds.filter(id => id !== ticketId);
+                                                                }
+                                                                // If all are selected, just clean it to empty mapping to 'All'
+                                                                if (currentIds.length === formData.ticket_types.length) {
+                                                                    newFields[index].ticket_type_ids = [];
+                                                                } else {
+                                                                    newFields[index].ticket_type_ids = currentIds;
+                                                                }
+                                                            }
+                                                            
+                                                            setFormData(prev => ({ ...prev, custom_fields: newFields }));
+                                                        }}
+                                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                    />
+                                                    <Label htmlFor={`customField-${index}-ticket-${ticketId}`} className="text-sm cursor-pointer">{ticket.name}</Label>
+                                                </div>
+                                            )
+                                        })}
+                                        {formData.ticket_types.filter(t => t.name.trim() !== '').length === 0 && (
+                                            <span className="text-xs text-gray-400 italic">Tambahkan jenis tiket terlebih dahulu</span>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-gray-400">Jika tercentang semua/kosong, field ini akan muncul untuk semua jenis tiket pembeli.</p>
+                                </div>
+                                
                                 {field.type === 'select' && (
                                     <div className="col-span-2 space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
                                         <div className="flex justify-between items-center">

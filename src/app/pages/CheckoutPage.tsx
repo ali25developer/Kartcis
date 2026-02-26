@@ -43,7 +43,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import type { Event, CustomField } from "@/app/types";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
 import { PaymentMethodSelection } from "@/app/components/PaymentMethodSelection";
-import api from "@/app/services/api";
+import api, { uploadCustomFieldFile } from "@/app/services/api";
 import { pendingOrderStorage } from "@/app/utils/pendingOrderStorage";
 
 interface CheckoutState {
@@ -251,21 +251,9 @@ export function CheckoutPage() {
     setUploadProgress(prev => ({...prev, [`${index}-${fieldName}`]: true}));
     
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const data = await response.json();
-      if (data.success && data.data?.url) {
-        handleCustomFieldChange(index, fieldName, data.data.url);
-        toast.success(`Berhasil mengunggah ${fieldName}`);
-      } else {
-        throw new Error(data.message || 'Gagal mengunggah file');
-      }
+      const url = await uploadCustomFieldFile(file);
+      handleCustomFieldChange(index, fieldName, url);
+      toast.success(`Berhasil mengunggah ${fieldName}`);
     } catch (error: any) {
        toast.error(error.message || 'Terjadi kesalahan saat mengunggah file');
     } finally {
@@ -397,8 +385,11 @@ export function CheckoutPage() {
           return;
         }
         
+        const participantTicketId = Number(participant.ticketId);
+        const applicableFields = customFields.filter(f => !f.ticket_type_ids || f.ticket_type_ids.length === 0 || f.ticket_type_ids.includes(participantTicketId));
+
         // Validate custom fields
-        for (const field of customFields) {
+        for (const field of applicableFields) {
           if (field.required) {
             const value = participant.customFieldResponses[field.name];
             if (!value || !value.trim()) {
@@ -622,8 +613,8 @@ export function CheckoutPage() {
                                 />
                               </div>
 
-                              {/* Custom Fields */}
-                              {customFields.length > 0 && customFields.map((field) => (
+                                {/* Custom Fields */}
+                              {customFields.filter(f => !f.ticket_type_ids || f.ticket_type_ids.length === 0 || f.ticket_type_ids.includes(Number(participant.ticketId))).length > 0 && customFields.filter(f => !f.ticket_type_ids || f.ticket_type_ids.length === 0 || f.ticket_type_ids.includes(Number(participant.ticketId))).map((field) => (
                                 <div key={field.name} className="space-y-3 col-span-1 md:col-span-2 bg-white/50 p-4 rounded-xl border border-gray-100 shadow-sm">
                                   <div className="flex flex-col gap-1">
                                     <Label htmlFor={`participant-${index}-custom-${field.name}`} className="text-gray-900 font-bold text-sm">

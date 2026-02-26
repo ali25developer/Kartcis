@@ -248,5 +248,22 @@ export const eventService = {
   },
 };
 
+export const uploadCustomFieldFile = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  const response = await fetch(`${API_BASE_URL}/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  const data = await response.json();
+  if (data.success && data.data?.url) {
+    return data.data.url;
+  } else {
+    throw new Error(data.message || 'Upload gagal');
+  }
+};
+
 export { api };
 export default api;

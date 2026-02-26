@@ -48,6 +48,7 @@ export interface CustomField {
   required: boolean;
   description?: string;
   attachment_url?: string;
+  ticket_type_ids?: number[]; // Array of ticket type IDs this field applies to. If empty/undefined, applies to all.
 }
 
 // Database schema types (match dengan backend)
