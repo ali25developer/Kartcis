@@ -74,6 +74,7 @@ export function CheckoutPage() {
   const [primaryContactIndex, setPrimaryContactIndex] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('MANUAL_JAGO');
   const [showGuestConfirmation, setShowGuestConfirmation] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, boolean>>({});
   
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount_amount: number; type: string } | null>(null);
@@ -246,6 +247,32 @@ export function CheckoutPage() {
     });
   };
 
+  const handleFileUpload = async (index: number, fieldName: string, file: File) => {
+    setUploadProgress(prev => ({...prev, [`${index}-${fieldName}`]: true}));
+    
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await response.json();
+      if (data.success && data.data?.url) {
+        handleCustomFieldChange(index, fieldName, data.data.url);
+        toast.success(`Berhasil mengunggah ${fieldName}`);
+      } else {
+        throw new Error(data.message || 'Gagal mengunggah file');
+      }
+    } catch (error: any) {
+       toast.error(error.message || 'Terjadi kesalahan saat mengunggah file');
+    } finally {
+       setUploadProgress(prev => ({...prev, [`${index}-${fieldName}`]: false}));
+    }
+  };
+
   const applyToAll = () => {
     const firstParticipantData = participants[0]?.data;
     if (!firstParticipantData || !firstParticipantData.fullName) {
@@ -339,6 +366,12 @@ export function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const isAnyUploading = Object.values(uploadProgress).some(progress => progress);
+    if (isAnyUploading) {
+      toast.error('Mohon tunggu hingga semua file selesai diunggah.');
+      return;
+    }
+
     // For multiple tickets, validate participant data
     if (!isSingleTicket) {
       // First, validate basic required fields
@@ -653,7 +686,7 @@ export function CheckoutPage() {
                                         placeholder={`Masukkan ${field.name.toLowerCase()}`}
                                         value={participant.customFieldResponses[field.name] || ''}
                                         onChange={(e) => handleCustomFieldChange(index, field.name, e.target.value)}
-                                        disabled={loading}
+                                        disabled={loading || uploadProgress[`${index}-${field.name}`]}
                                         required={field.required}
                                         className="h-10 border-gray-200 focus:border-primary bg-white"
                                       />
@@ -674,6 +707,39 @@ export function CheckoutPage() {
                                           ))}
                                         </SelectContent>
                                       </Select>
+                                    ) : field.type === 'file' ? (
+                                      <div className="space-y-2">
+                                        <Input
+                                          id={`participant-${index}-custom-${field.name}`}
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              handleFileUpload(index, field.name, file);
+                                            }
+                                          }}
+                                          disabled={loading || uploadProgress[`${index}-${field.name}`]}
+                                          required={field.required && !participant.customFieldResponses[field.name]}
+                                          className="h-10 border-gray-200 focus:border-primary bg-white file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-hover"
+                                        />
+                                        {uploadProgress[`${index}-${field.name}`] && (
+                                          <div className="flex items-center gap-2 text-sm text-primary">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Sedang mengunggah...
+                                          </div>
+                                        )}
+                                        {participant.customFieldResponses[field.name] && !uploadProgress[`${index}-${field.name}`] && (
+                                          <a 
+                                            href={participant.customFieldResponses[field.name]} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-sm text-blue-600 hover:text-blue-800 underline inline-block font-medium"
+                                          >
+                                            Lihat Gambar Terupload
+                                          </a>
+                                        )}
+                                      </div>
                                     ) : null}
                                   </div>
                                 </div>
@@ -699,7 +765,7 @@ export function CheckoutPage() {
                     type="submit" 
                     className="w-full bg-primary hover:bg-primary-hover"
                     size="lg"
-                    disabled={loading}
+                    disabled={loading || Object.values(uploadProgress).some(Boolean)}
                   >
                     {loading ? (
                       <>

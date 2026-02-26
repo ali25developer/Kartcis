@@ -727,10 +727,10 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                                     <Label className="text-xs text-gray-500 uppercase">Tipe Input</Label>
                                     <Select
                                         value={field.type}
-                                        onValueChange={(val: 'text' | 'select') => {
+                                        onValueChange={(val: 'text' | 'select' | 'file') => {
                                             const newFields = [...formData.custom_fields];
                                             newFields[index].type = val;
-                                            if (val === 'text') delete newFields[index].options;
+                                            if (val !== 'select') delete newFields[index].options;
                                             else if (!newFields[index].options || newFields[index].options.length === 0) {
                                                 newFields[index].options = [''];
                                             }
@@ -743,6 +743,7 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                                         <SelectContent>
                                             <SelectItem value="text">Teks Bebas</SelectItem>
                                             <SelectItem value="select">Pilihan Ganda (Dropdown)</SelectItem>
+                                            <SelectItem value="file">File / Gambar</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

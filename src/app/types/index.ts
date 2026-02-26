@@ -43,7 +43,7 @@ export interface ApiResponse<T> {
 // Custom Fields for events
 export interface CustomField {
   name: string;
-  type: 'text' | 'select';
+  type: 'text' | 'select' | 'file';
   options?: string[];
   required: boolean;
   description?: string;
