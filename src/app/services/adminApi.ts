@@ -531,6 +531,65 @@ export const adminApi = {
       }
     },
   },
+
+  // Flash Sales CRUD
+  flashSales: {
+    getAll: async (params?: { event_id?: number | string }): Promise<ApiResponse<any>> => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (params?.event_id) queryParams.append('event_id', params.event_id.toString());
+
+        const response = await fetch(`${API_BASE_URL}/admin/flash-sales?${queryParams.toString()}`, {
+          headers: getHeaders(), // In Checkout we will use public if backend allows or just admin headers if available (but user mentioned Checkout may fetch this endpoint directly, we'll see)
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching flash sales:', error);
+        throw error;
+      }
+    },
+
+    create: async (data: any): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/flash-sales`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error creating flash sale:', error);
+        throw error;
+      }
+    },
+
+    update: async (id: number | string, data: any): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/flash-sales/${id}`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error updating flash sale:', error);
+        throw error;
+      }
+    },
+
+    delete: async (id: number | string): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/flash-sales/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error deleting flash sale:', error);
+        throw error;
+      }
+    },
+  },
 };
 
 export interface ActivityLog {

@@ -33,6 +33,23 @@ export interface Voucher {
   updated_at: string;
 }
 
+export interface FlashSale {
+  id: number;
+  event_id: number;
+  ticket_type_id: number;
+  flash_price: number;
+  quota: number;
+  sold: number;
+  start_time: string; // HH:mm
+  end_time: string; // HH:mm
+  days_of_week: string; // All, 1,2,3
+  is_active: boolean;
+  event?: Pick<Event, 'id' | 'title'>;
+  ticket_type?: Pick<TicketType, 'id' | 'name' | 'price'>;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

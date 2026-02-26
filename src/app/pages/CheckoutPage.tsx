@@ -6,7 +6,9 @@ import {
   Copy,
   Users,
   BadgePercent,
-  Info
+  Info,
+  Upload,
+  Timer
 } from 'lucide-react';
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -40,7 +42,8 @@ import {
   DialogTrigger,
 } from "@/app/components/ui/dialog";
 import { useAuth } from "@/app/contexts/AuthContext";
-import type { Event, CustomField } from "@/app/types";
+import type { Event, CustomField, FlashSale } from "@/app/types";
+import { API_BASE_URL } from "@/app/config";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
 import { PaymentMethodSelection } from "@/app/components/PaymentMethodSelection";
 import api, { uploadCustomFieldFile } from "@/app/services/api";
@@ -76,6 +79,9 @@ export function CheckoutPage() {
   const [showGuestConfirmation, setShowGuestConfirmation] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, boolean>>({});
   
+  const [flashSales, setFlashSales] = useState<FlashSale[]>([]);
+  const [currentTimeTick, setCurrentTimeTick] = useState<Date>(new Date());
+
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount_amount: number; type: string } | null>(null);
   const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
@@ -205,6 +211,48 @@ export function CheckoutPage() {
     );
   }
 
+  useEffect(() => {
+    if (!checkoutData?.event?.id) return;
+    
+    const fetchFlashSales = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/flash-sales?event_id=${checkoutData.event.id}`);
+        if (res.ok) {
+           const data = await res.json();
+           if (data.success && data.data) {
+             setFlashSales(data.data);
+           }
+        }
+      } catch (e) {
+        console.error('Error fetching flash sales:', e);
+      }
+    };
+    fetchFlashSales();
+
+    const timer = setInterval(() => setCurrentTimeTick(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, [checkoutData?.event?.id]);
+
+  const getActiveFlashSale = (ticketId: number) => {
+    const currentHour = String(currentTimeTick.getHours()).padStart(2, '0');
+    const currentMin = String(currentTimeTick.getMinutes()).padStart(2, '0');
+    const currentTime = `${currentHour}:${currentMin}`;
+    
+    let currentDay = currentTimeTick.getDay();
+    if (currentDay === 0) currentDay = 7;
+
+    return flashSales.find(fs => {
+       if (!fs.is_active || fs.ticket_type_id !== ticketId) return false;
+       if (fs.sold >= fs.quota) return false;
+       if (currentTime < fs.start_time || currentTime >= fs.end_time) return false;
+       if (fs.days_of_week && fs.days_of_week.toLowerCase() !== 'all') {
+           const days = fs.days_of_week.split(',').map(d => parseInt(d.trim()));
+           if (!days.includes(currentDay)) return false;
+       }
+       return true;
+    });
+  };
+
   const getTotalQuantity = () => {
     return Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
   };
@@ -214,8 +262,10 @@ export function CheckoutPage() {
       const ticket = event.ticket_types?.find(t => String(t.id) === ticketId);
       if (!ticket) return sum;
       
-      // Use ticket price directly (already discounted if applicable)
-      return sum + (ticket.price * quantity);
+      const activeFS = getActiveFlashSale(ticket.id);
+      const price = activeFS ? activeFS.flash_price : ticket.price;
+      
+      return sum + (price * quantity);
     }, 0);
   };
 
@@ -691,45 +741,93 @@ export function CheckoutPage() {
                                           <SelectValue placeholder={`Pilih ${field.name}`} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          {field.options.map((option) => (
-                                            <SelectItem key={option} value={option}>
+                                          {field.options.map((option, optIdx) => (
+                                            <SelectItem key={`${option}-${optIdx}`} value={option}>
                                               {option}
                                             </SelectItem>
                                           ))}
                                         </SelectContent>
                                       </Select>
                                     ) : field.type === 'file' ? (
-                                      <div className="space-y-2">
-                                        <Input
-                                          id={`participant-${index}-custom-${field.name}`}
-                                          type="file"
-                                          accept="image/*"
-                                          onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                              handleFileUpload(index, field.name, file);
-                                            }
-                                          }}
-                                          disabled={loading || uploadProgress[`${index}-${field.name}`]}
-                                          required={field.required && !participant.customFieldResponses[field.name]}
-                                          className="h-10 border-gray-200 focus:border-primary bg-white file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-hover"
-                                        />
-                                        {uploadProgress[`${index}-${field.name}`] && (
-                                          <div className="flex items-center gap-2 text-sm text-primary">
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Sedang mengunggah...
+                                      <div className="space-y-3">
+                                        <div className={`relative group w-full max-w-sm ${participant.customFieldResponses[field.name] && !uploadProgress[`${index}-${field.name}`] ? 'hidden' : 'block'}`}>
+                                          <Input
+                                            id={`participant-${index}-custom-${field.name}`}
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                handleFileUpload(index, field.name, file);
+                                              }
+                                            }}
+                                            disabled={loading || uploadProgress[`${index}-${field.name}`]}
+                                            required={field.required && !participant.customFieldResponses[field.name]}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                          />
+                                          <div className={`p-4 flex items-center gap-4 bg-gray-50 border-2 border-dashed rounded-xl transition-all ${
+                                            uploadProgress[`${index}-${field.name}`] ? 'border-primary bg-primary/5' : 'border-gray-300 group-hover:border-primary group-hover:bg-primary-light/10'
+                                          }`}>
+                                            <div className="flex-shrink-0">
+                                              <div className={`flex items-center justify-center w-12 h-12 rounded-full ${
+                                                uploadProgress[`${index}-${field.name}`] ? 'bg-primary text-white' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors'
+                                              }`}>
+                                                {uploadProgress[`${index}-${field.name}`] ? (
+                                                  <Loader2 className="h-6 w-6 animate-spin" />
+                                                ) : (
+                                                  <Upload className="h-5 w-5" />
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="text-sm font-bold text-gray-700">
+                                                {uploadProgress[`${index}-${field.name}`] ? 'Sedang Mengunggah...' : 'Pilih Bukti Gambar'}
+                                              </span>
+                                              <span className="text-xs text-gray-500 font-medium whitespace-nowrap overflow-hidden text-ellipsis">Format: JPG, PNG, WEBP</span>
+                                            </div>
                                           </div>
-                                        )}
-                                        {participant.customFieldResponses[field.name] && !uploadProgress[`${index}-${field.name}`] && (
-                                          <a 
-                                            href={participant.customFieldResponses[field.name]} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="text-sm text-blue-600 hover:text-blue-800 underline inline-block font-medium"
-                                          >
-                                            Lihat Gambar Terupload
-                                          </a>
-                                        )}
+                                        </div>
+
+                                        {participant.customFieldResponses[field.name] && !uploadProgress[`${index}-${field.name}`] ? (
+                                          <div className="relative border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 w-full max-w-sm group">
+                                            <img 
+                                              src={participant.customFieldResponses[field.name]} 
+                                              alt="Preview Upload" 
+                                              className="w-full h-48 object-cover object-center" 
+                                            />
+                                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8 flex justify-between items-center transition-opacity">
+                                              <a 
+                                                href={participant.customFieldResponses[field.name]} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="text-xs text-white hover:text-primary-light underline font-medium truncate max-w-[70%]"
+                                              >
+                                                Lihat File Full Size
+                                              </a>
+                                            </div>
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                              <Label 
+                                                htmlFor={`participant-${index}-custom-${field.name}-replace`}
+                                                className="text-sm font-semibold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-lg border border-white/50"
+                                              >
+                                                Ganti Gambar
+                                              </Label>
+                                              <Input
+                                                id={`participant-${index}-custom-${field.name}-replace`}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                  const file = e.target.files?.[0];
+                                                  if (file) {
+                                                    handleFileUpload(index, field.name, file);
+                                                  }
+                                                }}
+                                                disabled={loading || uploadProgress[`${index}-${field.name}`]}
+                                                className="hidden"
+                                              />
+                                            </div>
+                                          </div>
+                                        ) : null}
                                       </div>
                                     ) : null}
                                   </div>
@@ -795,14 +893,26 @@ export function CheckoutPage() {
                 {Object.entries(selectedTickets).map(([ticketId, quantity]) => {
                   const ticket = event.ticket_types?.find((t: any) => String(t.id) === ticketId);
                   if (!ticket) return null;
-                  const price = ticket.price;
+                  
+                  const activeFS = getActiveFlashSale(ticket.id);
+                  const price = activeFS ? activeFS.flash_price : ticket.price;
 
                   return (
-                    <div key={ticketId} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                      <span className="text-gray-600 text-sm">
-                        {ticket.name} × {quantity}
-                      </span>
-                      <span className="font-semibold text-primary-hover">
+                    <div key={ticketId} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <div className="flex flex-col text-sm">
+                         <span className="text-gray-800 font-medium">
+                           {ticket.name}
+                         </span>
+                         <span className="text-gray-500 text-xs">
+                           {quantity} tiket × {formatCurrency(price)}
+                         </span>
+                         {activeFS && (
+                           <span className="text-accent-orange font-bold flex items-center gap-1 mt-0.5 text-xs">
+                             <Timer className="h-3 w-3" /> Flash Sale
+                           </span>
+                         )}
+                      </div>
+                      <span className="font-semibold text-primary">
                         {formatCurrency(price * quantity)}
                       </span>
                     </div>

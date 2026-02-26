@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Users, Tag, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Tag, AlertCircle, Loader2, Timer } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card } from "@/app/components/ui/card";
 import { Separator } from "@/app/components/ui/separator";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
-import type { Event, TicketType } from "@/app/types";
+import { API_BASE_URL } from "@/app/config";
+import type { Event, TicketType, FlashSale } from "@/app/types";
 import api from "@/app/services/api";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
 import { pendingOrderStorage } from "@/app/utils/pendingOrderStorage";
@@ -32,6 +33,9 @@ export function EventDetailPage() {
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [showPendingAlert, setShowPendingAlert] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  
+  const [flashSales, setFlashSales] = useState<FlashSale[]>([]);
+  const [currentTimeTick, setCurrentTimeTick] = useState<Date>(new Date());
 
   useEffect(() => {
     if (!eventId) {
@@ -57,8 +61,46 @@ export function EventDetailPage() {
       }
     };
 
+    const fetchFlashSales = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/flash-sales?event_id=${eventId}`);
+        if (res.ok) {
+           const data = await res.json();
+           if (data.success && data.data) {
+             setFlashSales(data.data);
+           }
+        }
+      } catch (e) {
+        console.error('Error fetching flash sales:', e);
+      }
+    };
+
     fetchEvent();
+    fetchFlashSales();
+
+    const timer = setInterval(() => setCurrentTimeTick(new Date()), 60000);
+    return () => clearInterval(timer);
   }, [eventId, navigate]);
+
+  const getActiveFlashSale = (ticketId: number) => {
+    const currentHour = String(currentTimeTick.getHours()).padStart(2, '0');
+    const currentMin = String(currentTimeTick.getMinutes()).padStart(2, '0');
+    const currentTime = `${currentHour}:${currentMin}`;
+    
+    let currentDay = currentTimeTick.getDay();
+    if (currentDay === 0) currentDay = 7;
+
+    return flashSales.find(fs => {
+       if (!fs.is_active || fs.ticket_type_id !== ticketId) return false;
+       if (fs.sold >= fs.quota) return false;
+       if (currentTime < fs.start_time || currentTime > fs.end_time) return false;
+       if (fs.days_of_week && fs.days_of_week.toLowerCase() !== 'all') {
+           const days = fs.days_of_week.split(',').map(d => parseInt(d.trim()));
+           if (!days.includes(currentDay)) return false;
+       }
+       return true;
+    });
+  };
 
   const handleTicketQuantityChange = (ticketType: TicketType, delta: number) => {
     // Check if event is available for purchase (must be published)
@@ -92,8 +134,8 @@ export function EventDetailPage() {
       const ticket = event.ticket_types?.find(t => String(t.id) === ticketId);
       if (!ticket) return sum;
       
-      // Use original price if exists (no discount), otherwise use regular price
-      const price = ticket.price;
+      const activeFS = getActiveFlashSale(ticket.id);
+      const price = activeFS ? activeFS.flash_price : ticket.price;
       
       return sum + (price * quantity);
     }, 0);
@@ -328,67 +370,82 @@ export function EventDetailPage() {
               <div className="space-y-4 mb-6">
                 {event.ticket_types?.map((ticket) => {
                   const quantity = selectedTickets[ticket.id] || 0;
-                  
-                  // Only show discount if originalPrice is explicitly set and greater than current price
-                  const hasDiscount = Boolean(ticket.originalPrice && Number(ticket.originalPrice) > ticket.price);
-                  const discountPercent = hasDiscount 
-                    ? Math.round(((Number(ticket.originalPrice) - ticket.price) / Number(ticket.originalPrice)) * 100)
+                  const activeFS = getActiveFlashSale(ticket.id);
+                  const displayPrice = activeFS ? activeFS.flash_price : ticket.price;
+                  const originalForDisplay = activeFS ? ticket.price : (ticket.originalPrice ? Number(ticket.originalPrice) : ticket.price);
+                  const hasDiscount = activeFS || (originalForDisplay > displayPrice);
+                  const discountPercent = hasDiscount && originalForDisplay > 0
+                    ? Math.round(((originalForDisplay - displayPrice) / originalForDisplay) * 100)
                     : 0;
 
                   return (
-                    <div key={ticket.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{ticket.name}</h3>
-                          {ticket.description && (
-                            <p className="text-sm text-gray-600 mt-1">{ticket.description}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-3">
-                        <div>
-                          {hasDiscount && (
-                            <p className="text-sm text-gray-500 line-through">
-                              {formatCurrency(ticket.originalPrice!)}
-                            </p>
-                          )}
-                          <p className="text-2xl font-bold text-primary">
-                            {formatCurrency(ticket.price)}
-                          </p>
-                          {hasDiscount && (
-                            <Badge variant="destructive" className="text-xs mt-1">
-                              DISKON {discountPercent}%
-                            </Badge>
-                          )}
-                        </div>
-
-                        {isEventAvailable && (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleTicketQuantityChange(ticket, -1)}
-                              disabled={quantity === 0}
-                            >
-                              -
-                            </Button>
-                            <span className="w-8 text-center font-semibold">{quantity}</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleTicketQuantityChange(ticket, 1)}
-                              disabled={quantity >= ticket.available}
-                            >
-                              +
-                            </Button>
+                    <div key={ticket.id} className={`border rounded-xl transition-all ${activeFS ? 'border-accent-orange/50 shadow-sm overflow-hidden' : ''}`}>
+                      {activeFS && (
+                        <div className="bg-gradient-to-r from-accent-orange/20 to-accent-orange/5 text-accent-orange-hover p-2 px-3 border-b border-accent-orange/10 flex items-center justify-between text-xs font-bold leading-none">
+                          <div className="flex items-center gap-1.5 uppercase">
+                            <Timer className="h-4 w-4 animate-pulse" />
+                            Flash Sale Berakhir Jam {activeFS.end_time}
                           </div>
-                        )}
-                      </div>
+                          <span>Sisa Promo: {activeFS.quota - activeFS.sold}</span>
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">{ticket.name}</h3>
+                            {ticket.description && (
+                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">{ticket.description}</p>
+                            )}
+                          </div>
+                        </div>
 
-                      <p className="text-xs text-gray-500 mt-2">
-                        Tersedia: {ticket.available} tiket
-                      </p>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex flex-col">
+                            {hasDiscount && (
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 bg-red-100 text-red-700 hover:bg-red-100 border-0">
+                                  {discountPercent}% OFF
+                                </Badge>
+                                <p className="text-xs font-medium text-gray-400 line-through">
+                                  {formatCurrency(originalForDisplay)}
+                                </p>
+                              </div>
+                            )}
+                            <p className="text-2xl font-bold text-primary">
+                              {formatCurrency(displayPrice)}
+                            </p>
+                          </div>
+
+                          {isEventAvailable && (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleTicketQuantityChange(ticket, -1)}
+                                disabled={quantity === 0}
+                                className="h-8 w-8 p-0 rounded-full bg-white text-gray-600 shadow-sm border-gray-200"
+                              >
+                                -
+                              </Button>
+                              <span className="w-6 text-center font-bold text-gray-900">{quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleTicketQuantityChange(ticket, 1)}
+                                disabled={quantity >= ticket.available || (activeFS && quantity >= (activeFS.quota - activeFS.sold))}
+                                className="h-8 w-8 p-0 rounded-full bg-white text-primary shadow-sm border-primary/20 hover:bg-primary/5 hover:border-primary"
+                              >
+                                +
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-gray-500 mt-3 font-medium flex items-center gap-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                          Tersedia: {ticket.available} tiket
+                        </p>
+                      </div>
                     </div>
                   );
                 })}

@@ -45,7 +45,8 @@ import { AdminCategories } from '@/app/components/admin/AdminCategories';
 import { AdminSettings } from '@/app/components/admin/AdminSettings';
 import { AdminUsers } from '@/app/components/admin/AdminUsers';
 import { AdminVouchers } from '@/app/components/admin/AdminVouchers';
-import { Settings, Users, BadgePercent } from 'lucide-react';
+import { AdminFlashSales } from '@/app/components/admin/AdminFlashSales';
+import { Settings, Users, BadgePercent, Timer } from 'lucide-react';
 
 
 export function AdminDashboard() {
@@ -367,6 +368,10 @@ export function AdminDashboard() {
                   <BadgePercent className="h-4 w-4 mr-2" />
                   Voucher
                 </TabsTrigger>
+                <TabsTrigger value="flash-sales" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
+                  <Timer className="h-4 w-4 mr-2" />
+                  Flash Sale
+                </TabsTrigger>
                 <TabsTrigger value="settings" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
                   <Settings className="h-4 w-4 mr-2" />
                   Pengaturan
@@ -654,6 +659,10 @@ export function AdminDashboard() {
 
           <TabsContent value="vouchers">
             {user.role === 'admin' ? <AdminVouchers activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
+          </TabsContent>
+
+          <TabsContent value="flash-sales">
+            {user.role === 'admin' ? <AdminFlashSales activeTab={activeTab} /> : <div className="p-8 text-center text-gray-500">Akses Ditolak</div>}
           </TabsContent>
 
           <TabsContent value="settings">
