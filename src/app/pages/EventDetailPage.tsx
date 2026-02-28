@@ -7,7 +7,6 @@ import { Card } from "@/app/components/ui/card";
 import { Separator } from "@/app/components/ui/separator";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { API_BASE_URL } from "@/app/config";
 import type { Event, TicketType, FlashSale } from "@/app/types";
 import api from "@/app/services/api";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
@@ -61,14 +60,11 @@ export function EventDetailPage() {
       }
     };
 
-    const fetchFlashSales = async () => {
+    const fetchFlashSalesData = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/flash-sales?event_id=${eventId}`);
-        if (res.ok) {
-           const data = await res.json();
-           if (data.success && data.data) {
-             setFlashSales(data.data);
-           }
+        const response = await api.flashSales.getAll({ event_id: eventId });
+        if (response.success && response.data) {
+          setFlashSales(response.data);
         }
       } catch (e) {
         console.error('Error fetching flash sales:', e);
@@ -76,9 +72,9 @@ export function EventDetailPage() {
     };
 
     fetchEvent();
-    fetchFlashSales();
+    fetchFlashSalesData();
 
-    const timer = setInterval(() => setCurrentTimeTick(new Date()), 60000);
+    const timer = setInterval(() => setCurrentTimeTick(new Date()), 1000);
     return () => clearInterval(timer);
   }, [eventId, navigate]);
 
@@ -87,19 +83,38 @@ export function EventDetailPage() {
     const currentMin = String(currentTimeTick.getMinutes()).padStart(2, '0');
     const currentTime = `${currentHour}:${currentMin}`;
     
-    let currentDay = currentTimeTick.getDay();
-    if (currentDay === 0) currentDay = 7;
+    const year = currentTimeTick.getFullYear();
+    const month = String(currentTimeTick.getMonth() + 1).padStart(2, '0');
+    const day = String(currentTimeTick.getDate()).padStart(2, '0');
+    const currentDate = `${year}-${month}-${day}`;
 
     return flashSales.find(fs => {
        if (!fs.is_active || fs.ticket_type_id !== ticketId) return false;
        if (fs.sold >= fs.quota) return false;
+       
+       // Check date
+       if (!fs.flash_date || fs.flash_date.split('T')[0] !== currentDate) return false;
+       
+       // Check time
        if (currentTime < fs.start_time || currentTime > fs.end_time) return false;
-       if (fs.days_of_week && fs.days_of_week.toLowerCase() !== 'all') {
-           const days = fs.days_of_week.split(',').map(d => parseInt(d.trim()));
-           if (!days.includes(currentDay)) return false;
-       }
+       
        return true;
     });
+  };
+
+  const getCountdown = (endTimeStr: string) => {
+    const [hours, minutes] = endTimeStr.split(':').map(Number);
+    const end = new Date(currentTimeTick);
+    end.setHours(hours, minutes, 0, 0);
+    
+    const diff = end.getTime() - currentTimeTick.getTime();
+    if (diff <= 0) return "Berakhir";
+    
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    
+    return `${h > 0 ? h + 'j ' : ''}${m}m ${s}s`;
   };
 
   const handleTicketQuantityChange = (ticketType: TicketType, delta: number) => {
@@ -379,14 +394,16 @@ export function EventDetailPage() {
                     : 0;
 
                   return (
-                    <div key={ticket.id} className={`border rounded-xl transition-all ${activeFS ? 'border-accent-orange/50 shadow-sm overflow-hidden' : ''}`}>
+                    <div key={ticket.id} className={`border rounded-xl transition-all ${activeFS ? 'border-red-200 bg-red-50/30' : ''}`}>
                       {activeFS && (
-                        <div className="bg-gradient-to-r from-accent-orange/20 to-accent-orange/5 text-accent-orange-hover p-2 px-3 border-b border-accent-orange/10 flex items-center justify-between text-xs font-bold leading-none">
-                          <div className="flex items-center gap-1.5 uppercase">
-                            <Timer className="h-4 w-4 animate-pulse" />
-                            Flash Sale Berakhir Jam {activeFS.end_time}
+                        <div className="bg-red-50 text-red-600 p-2.5 px-4 border-b border-red-100 flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <Timer className="h-4 w-4" />
+                            Flash Sale: {getCountdown(activeFS.end_time)}
                           </div>
-                          <span>Sisa Promo: {activeFS.quota - activeFS.sold}</span>
+                          <div className="text-red-500/80 text-xs">
+                             Sisa {activeFS.quota - activeFS.sold} tiket
+                          </div>
                         </div>
                       )}
                       <div className="p-4">
@@ -440,11 +457,6 @@ export function EventDetailPage() {
                             </div>
                           )}
                         </div>
-
-                        <p className="text-xs text-gray-500 mt-3 font-medium flex items-center gap-1">
-                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                          Tersedia: {ticket.available} tiket
-                        </p>
                       </div>
                     </div>
                   );

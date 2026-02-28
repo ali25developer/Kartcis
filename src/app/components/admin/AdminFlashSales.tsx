@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  Plus, Search, Edit2, Trash2, Loader2 
+  Plus, Search, Edit2, Trash2, Loader2, Calendar, Clock
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card } from '@/app/components/ui/card';
@@ -40,7 +40,6 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/app/components/ui/utils";
 import { Switch } from '@/app/components/ui/switch';
 import { Label } from '@/app/components/ui/label';
-import { Checkbox } from '@/app/components/ui/checkbox';
 import { toast } from 'sonner';
 import { adminApi } from '@/app/services/adminApi';
 import type { FlashSale } from '@/app/types';
@@ -49,15 +48,7 @@ interface AdminFlashSalesProps {
   activeTab: string;
 }
 
-const DAYS_OPTIONS = [
-  { value: '1', label: 'Senin' },
-  { value: '2', label: 'Selasa' },
-  { value: '3', label: 'Rabu' },
-  { value: '4', label: 'Kamis' },
-  { value: '5', label: 'Jumat' },
-  { value: '6', label: 'Sabtu' },
-  { value: '7', label: 'Minggu' },
-];
+
 
 export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
   const [flashSales, setFlashSales] = useState<FlashSale[]>([]);
@@ -75,9 +66,9 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
     ticket_type_id: '',
     flash_price: '',
     quota: '',
+    flash_date: new Date().toISOString().split('T')[0],
     start_time: '10:00',
     end_time: '14:00',
-    days_of_week: 'All',
     is_active: true
   });
   
@@ -91,31 +82,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
   const [openEventCombobox, setOpenEventCombobox] = useState(false);
   const [openTicketCombobox, setOpenTicketCombobox] = useState(false);
 
-  const handleDayChange = (dayValue: string, checked: boolean) => {
-    let currentDays = formData.days_of_week.toLowerCase() === 'all' 
-      ? ['1','2','3','4','5','6','7'] 
-      : formData.days_of_week ? formData.days_of_week.split(',').map(d => d.trim()) : [];
-      
-    if (checked) {
-       if (!currentDays.includes(dayValue)) currentDays.push(dayValue);
-    } else {
-       currentDays = currentDays.filter(d => d !== dayValue);
-    }
-    
-    currentDays.sort();
-    
-    let newDaysStr = currentDays.join(',');
-    if (currentDays.length === 7 || currentDays.length === 0) {
-       newDaysStr = 'All'; // default to All if empty or fully checked
-    }
-    
-    setFormData({...formData, days_of_week: newDaysStr});
-  };
 
-  const isDayChecked = (dayValue: string) => {
-    if (formData.days_of_week.toLowerCase() === 'all') return true;
-    return formData.days_of_week.split(',').map(d => d.trim()).includes(dayValue);
-  };
 
   const fetchFlashSales = useCallback(async () => {
     setIsLoading(true);
@@ -160,9 +127,9 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       ticket_type_id: '',
       flash_price: '',
       quota: '',
+      flash_date: new Date().toISOString().split('T')[0],
       start_time: '10:00',
       end_time: '14:00',
-      days_of_week: 'All',
       is_active: true
     });
     setIsModalOpen(true);
@@ -175,9 +142,9 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       ticket_type_id: flashSale.ticket_type_id.toString(),
       flash_price: flashSale.flash_price.toString(),
       quota: flashSale.quota.toString(),
+      flash_date: flashSale.flash_date ? flashSale.flash_date.split('T')[0] : '',
       start_time: flashSale.start_time,
       end_time: flashSale.end_time,
-      days_of_week: flashSale.days_of_week || 'All',
       is_active: flashSale.is_active
     });
     setIsModalOpen(true);
@@ -185,7 +152,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.event_id || !formData.ticket_type_id || !formData.flash_price || !formData.quota || !formData.start_time || !formData.end_time) {
+    if (!formData.event_id || !formData.ticket_type_id || !formData.flash_price || !formData.quota || !formData.flash_date || !formData.start_time || !formData.end_time) {
         toast.error("Mohon isi field yang wajib");
         return;
     }
@@ -197,9 +164,9 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
         ticket_type_id: Number(formData.ticket_type_id),
         flash_price: Number(formData.flash_price),
         quota: Number(formData.quota),
+        flash_date: formData.flash_date,
         start_time: formData.start_time,
         end_time: formData.end_time,
-        days_of_week: formData.days_of_week,
         is_active: formData.is_active
       };
 
@@ -303,7 +270,8 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event & Tiket</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Harga Flash Sale</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Waktu Valid</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal Promo</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jam Promo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kuota / Terjual</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aksi</th>
@@ -337,9 +305,17 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
                           {formatCurrency(fs.flash_price)}
                        </div>
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                       <div className="text-sm font-medium flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 text-primary" />
+                           {fs.flash_date ? fs.flash_date.split('T')[0] : '-'}
+                       </div>
+                    </td>
                     <td className="px-4 py-3">
-                       <div className="text-sm font-medium">Jam: {fs.start_time} - {fs.end_time}</div>
-                       <div className="text-[10px] text-gray-500 mt-1 uppercase">Hari: {fs.days_of_week}</div>
+                       <div className="text-sm font-medium flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-primary" />
+                          {fs.start_time} - {fs.end_time}
+                       </div>
                     </td>
                     <td className="px-4 py-3">
                        <div className="text-sm font-medium"><span className="text-red-600">{fs.sold || 0}</span> / {fs.quota}</div>
@@ -523,22 +499,14 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
                </div>
             </div>
 
-            <div className="space-y-3">
-              <Label>Hari Berlaku *</Label>
-              <div className="flex flex-wrap gap-4 mt-2">
-                {DAYS_OPTIONS.map(day => (
-                  <div key={day.value} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`day-${day.value}`}
-                      checked={isDayChecked(day.value)}
-                      onCheckedChange={(checked) => handleDayChange(day.value, checked as boolean)}
-                    />
-                    <Label htmlFor={`day-${day.value}`} className="font-normal cursor-pointer text-sm">
-                      {day.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-2">
+              <Label>Tanggal Flash Sale *</Label>
+              <Input 
+                type="date"
+                value={formData.flash_date}
+                onChange={e => setFormData({...formData, flash_date: e.target.value})}
+                required
+              />
             </div>
 
             <div className="flex items-center space-x-2 pt-2">

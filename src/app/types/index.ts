@@ -40,9 +40,9 @@ export interface FlashSale {
   flash_price: number;
   quota: number;
   sold: number;
+  flash_date: string; // YYYY-MM-DD
   start_time: string; // HH:mm
   end_time: string; // HH:mm
-  days_of_week: string; // All, 1,2,3
   is_active: boolean;
   event?: Pick<Event, 'id' | 'title'>;
   ticket_type?: Pick<TicketType, 'id' | 'name' | 'price'>;

@@ -43,10 +43,9 @@ import {
 } from "@/app/components/ui/dialog";
 import { useAuth } from "@/app/contexts/AuthContext";
 import type { Event, CustomField, FlashSale } from "@/app/types";
-import { API_BASE_URL } from "@/app/config";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
 import { PaymentMethodSelection } from "@/app/components/PaymentMethodSelection";
-import api, { uploadCustomFieldFile } from "@/app/services/api";
+import api, { uploadCustomFieldFile, formatAssetUrl } from "@/app/services/api";
 import { pendingOrderStorage } from "@/app/utils/pendingOrderStorage";
 
 interface CheckoutState {
@@ -182,6 +181,25 @@ export function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount
 
+  useEffect(() => {
+    if (!checkoutData?.event?.id) return;
+    
+    const fetchFlashSalesData = async () => {
+      try {
+        const response = await api.flashSales.getAll({ event_id: checkoutData.event.id });
+        if (response.success && response.data) {
+          setFlashSales(response.data);
+        }
+      } catch (e) {
+        console.error('Error fetching flash sales:', e);
+      }
+    };
+    fetchFlashSalesData();
+
+    const timer = setInterval(() => setCurrentTimeTick(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, [checkoutData?.event?.id]);
+
   // Parse custom fields from event
   useEffect(() => {
     if (!checkoutData?.event?.custom_fields) return;
@@ -211,47 +229,33 @@ export function CheckoutPage() {
     );
   }
 
-  useEffect(() => {
-    if (!checkoutData?.event?.id) return;
-    
-    const fetchFlashSales = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/admin/flash-sales?event_id=${checkoutData.event.id}`);
-        if (res.ok) {
-           const data = await res.json();
-           if (data.success && data.data) {
-             setFlashSales(data.data);
-           }
-        }
-      } catch (e) {
-        console.error('Error fetching flash sales:', e);
-      }
-    };
-    fetchFlashSales();
 
-    const timer = setInterval(() => setCurrentTimeTick(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, [checkoutData?.event?.id]);
 
   const getActiveFlashSale = (ticketId: number) => {
     const currentHour = String(currentTimeTick.getHours()).padStart(2, '0');
     const currentMin = String(currentTimeTick.getMinutes()).padStart(2, '0');
     const currentTime = `${currentHour}:${currentMin}`;
     
-    let currentDay = currentTimeTick.getDay();
-    if (currentDay === 0) currentDay = 7;
+    // Get local date in YYYY-MM-DD
+    const year = currentTimeTick.getFullYear();
+    const month = String(currentTimeTick.getMonth() + 1).padStart(2, '0');
+    const day = String(currentTimeTick.getDate()).padStart(2, '0');
+    const currentDate = `${year}-${month}-${day}`;
 
     return flashSales.find(fs => {
        if (!fs.is_active || fs.ticket_type_id !== ticketId) return false;
        if (fs.sold >= fs.quota) return false;
+       
+       // Date check
+       if (!fs.flash_date || fs.flash_date.split('T')[0] !== currentDate) return false;
+       
+       // Time check
        if (currentTime < fs.start_time || currentTime >= fs.end_time) return false;
-       if (fs.days_of_week && fs.days_of_week.toLowerCase() !== 'all') {
-           const days = fs.days_of_week.split(',').map(d => parseInt(d.trim()));
-           if (!days.includes(currentDay)) return false;
-       }
+       
        return true;
     });
   };
+
 
   const getTotalQuantity = () => {
     return Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
@@ -471,6 +475,9 @@ export function CheckoutPage() {
         const ticketId = Number(p.ticketId);
         if (!itemsMap.has(ticketId)) {
            const ticket = event.ticket_types?.find(t => t.id === ticketId);
+           const activeFS = getActiveFlashSale(ticketId);
+           const price = activeFS ? activeFS.flash_price : (ticket?.price || 0);
+
            itemsMap.set(ticketId, {
              ticket_type_id: ticketId,
              quantity: 0,
@@ -484,7 +491,7 @@ export function CheckoutPage() {
              event_time: event.time || '00:00:00',
              event_image: event.image || '',
              ticket_type_name: ticket?.name || '',
-             ticket_price: ticket?.price || 0,
+             ticket_price: price,
            });
         }
         
@@ -664,90 +671,92 @@ export function CheckoutPage() {
                               </div>
 
                                 {/* Custom Fields */}
-                              {customFields.filter(f => !f.ticket_type_ids || f.ticket_type_ids.length === 0 || f.ticket_type_ids.includes(Number(participant.ticketId))).length > 0 && customFields.filter(f => !f.ticket_type_ids || f.ticket_type_ids.length === 0 || f.ticket_type_ids.includes(Number(participant.ticketId))).map((field) => (
-                                <div key={field.name} className="space-y-3 col-span-1 md:col-span-2 bg-white/50 p-4 rounded-xl border border-gray-100 shadow-sm">
-                                  <div className="flex flex-col gap-1">
-                                    <Label htmlFor={`participant-${index}-custom-${field.name}`} className="text-gray-900 font-bold text-sm">
-                                      {field.name} {field.required && <span className="text-red-500">*</span>}
-                                    </Label>
-                                    
-                                    {field.description && (
-                                      <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                                        {field.description}
-                                      </p>
-                                    )}
-                                  </div>
-
-                                  {field.attachment_url && (
-                                    <div className="flex flex-col gap-2">
-                                      <Dialog>
-                                        <DialogTrigger asChild>
-                                          <div className="relative group cursor-zoom-in w-fit">
-                                            <div className="overflow-hidden rounded-lg border-2 border-primary/20 shadow-sm group-hover:border-primary transition-all">
-                                              <img 
-                                                src={field.attachment_url} 
-                                                alt={`Petunjuk ${field.name}`} 
-                                                className="h-24 md:h-32 w-auto object-cover bg-white group-hover:scale-105 transition-transform duration-300" 
-                                              />
-                                            </div>
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 flex items-center justify-center transition-colors">
-                                              <Info className="text-white opacity-0 group-hover:opacity-100 h-6 w-6" />
-                                            </div>
-                                          </div>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none">
-                                          <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl">
-                                            <DialogHeader className="p-4 border-b bg-gray-50/80 backdrop-blur-sm">
-                                              <DialogTitle className="flex items-center gap-2 text-gray-900">
-                                                <Info className="h-5 w-5 text-primary" />
-                                                Petunjuk: {field.name}
-                                              </DialogTitle>
-                                            </DialogHeader>
-                                            <div className="p-2 flex items-center justify-center bg-gray-100/50 min-h-[300px]">
-                                              <img 
-                                                src={field.attachment_url} 
-                                                alt={`Petunjuk ${field.name} Full`} 
-                                                className="max-w-full max-h-[80vh] object-contain rounded-lg" 
-                                              />
-                                            </div>
-                                            <div className="p-4 bg-gray-50 border-t text-xs text-center text-gray-400 font-medium">
-                                              Gambar Petunjuk untuk Field {field.name}
-                                            </div>
-                                          </div>
-                                        </DialogContent>
-                                      </Dialog>
+                                  {customFields
+                                    .filter(f => !f.ticket_type_ids || f.ticket_type_ids.length === 0 || f.ticket_type_ids.includes(Number(participant.ticketId)))
+                                    .map((field, fieldIdx) => (
+                                  <div key={`field-${index}-${fieldIdx}`} className="space-y-3 col-span-1 md:col-span-2 bg-white/50 p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div className="flex flex-col gap-1">
+                                      <Label htmlFor={`participant-${index}-custom-${field.name}`} className="text-gray-900 font-bold text-sm">
+                                        {field.name} {field.required && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      
+                                      {field.description && (
+                                        <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                                          {field.description}
+                                        </p>
+                                      )}
                                     </div>
-                                  )}
 
-                                  <div className="mt-1">
-                                    {field.type === 'text' ? (
-                                      <Input
-                                        id={`participant-${index}-custom-${field.name}`}
-                                        type="text"
-                                        placeholder={`Masukkan ${field.name.toLowerCase()}`}
-                                        value={participant.customFieldResponses[field.name] || ''}
-                                        onChange={(e) => handleCustomFieldChange(index, field.name, e.target.value)}
-                                        disabled={loading || uploadProgress[`${index}-${field.name}`]}
-                                        required={field.required}
-                                        className="h-10 border-gray-200 focus:border-primary bg-white"
-                                      />
-                                    ) : field.type === 'select' && field.options ? (
-                                      <Select
-                                        value={participant.customFieldResponses[field.name] || ''}
-                                        onValueChange={(value) => handleCustomFieldChange(index, field.name, value)}
-                                        disabled={loading}
-                                      >
-                                        <SelectTrigger className="h-10 w-full border-gray-200 bg-white">
-                                          <SelectValue placeholder={`Pilih ${field.name}`} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {field.options.map((option, optIdx) => (
-                                            <SelectItem key={`${option}-${optIdx}`} value={option}>
-                                              {option}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                    {field.attachment_url && (
+                                      <div className="flex flex-col gap-2">
+                                        <Dialog>
+                                          <DialogTrigger asChild>
+                                            <div className="relative group cursor-zoom-in w-fit">
+                                              <div className="overflow-hidden rounded-lg border-2 border-primary/20 shadow-sm group-hover:border-primary transition-all">
+                                                <img 
+                                                  src={formatAssetUrl(field.attachment_url)} 
+                                                  alt={`Petunjuk ${field.name}`} 
+                                                  className="h-24 md:h-32 w-auto object-cover bg-white group-hover:scale-105 transition-transform duration-300" 
+                                                />
+                                              </div>
+                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 flex items-center justify-center transition-colors">
+                                                <Info className="text-white opacity-0 group-hover:opacity-100 h-6 w-6" />
+                                              </div>
+                                            </div>
+                                          </DialogTrigger>
+                                          <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none">
+                                            <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl">
+                                              <DialogHeader className="p-4 border-b bg-gray-50/80 backdrop-blur-sm">
+                                                <DialogTitle className="flex items-center gap-2 text-gray-900">
+                                                  <Info className="h-5 w-5 text-primary" />
+                                                  Petunjuk: {field.name}
+                                                </DialogTitle>
+                                              </DialogHeader>
+                                              <div className="p-2 flex items-center justify-center bg-gray-100/50 min-h-[300px]">
+                                                <img 
+                                                  src={formatAssetUrl(field.attachment_url)} 
+                                                  alt={`Petunjuk ${field.name} Full`} 
+                                                  className="max-w-full max-h-[80vh] object-contain rounded-lg" 
+                                                />
+                                              </div>
+                                              <div className="p-4 bg-gray-50 border-t text-xs text-center text-gray-400 font-medium">
+                                                Gambar Petunjuk untuk Field {field.name}
+                                              </div>
+                                            </div>
+                                          </DialogContent>
+                                        </Dialog>
+                                      </div>
+                                    )}
+
+                                    <div className="mt-1">
+                                      {field.type === 'text' ? (
+                                        <Input
+                                          id={`participant-${index}-custom-${field.name}`}
+                                          type="text"
+                                          placeholder={`Masukkan ${field.name.toLowerCase()}`}
+                                          value={participant.customFieldResponses[field.name] || ''}
+                                          onChange={(e) => handleCustomFieldChange(index, field.name, e.target.value)}
+                                          disabled={loading || uploadProgress[`${index}-${field.name}`]}
+                                          required={field.required}
+                                          className="h-10 border-gray-200 focus:border-primary bg-white"
+                                        />
+                                      ) : field.type === 'select' && field.options ? (
+                                        <Select
+                                          value={participant.customFieldResponses[field.name] || ''}
+                                          onValueChange={(value) => handleCustomFieldChange(index, field.name, value)}
+                                          disabled={loading}
+                                        >
+                                          <SelectTrigger className="h-10 w-full border-gray-200 bg-white">
+                                            <SelectValue placeholder={`Pilih ${field.name}`} />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {Array.from(new Set(field.options)).map((option, optIdx) => (
+                                              <SelectItem key={`opt-${index}-${fieldIdx}-${optIdx}`} value={option}>
+                                                {option}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
                                     ) : field.type === 'file' ? (
                                       <div className="space-y-3">
                                         <div className={`relative group w-full max-w-sm ${participant.customFieldResponses[field.name] && !uploadProgress[`${index}-${field.name}`] ? 'hidden' : 'block'}`}>
@@ -791,13 +800,13 @@ export function CheckoutPage() {
                                         {participant.customFieldResponses[field.name] && !uploadProgress[`${index}-${field.name}`] ? (
                                           <div className="relative border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 w-full max-w-sm group">
                                             <img 
-                                              src={participant.customFieldResponses[field.name]} 
+                                              src={formatAssetUrl(participant.customFieldResponses[field.name])} 
                                               alt="Preview Upload" 
                                               className="w-full h-48 object-cover object-center" 
                                             />
                                             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8 flex justify-between items-center transition-opacity">
                                               <a 
-                                                href={participant.customFieldResponses[field.name]} 
+                                                href={formatAssetUrl(participant.customFieldResponses[field.name])} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer" 
                                                 className="text-xs text-white hover:text-primary-light underline font-medium truncate max-w-[70%]"
@@ -876,7 +885,7 @@ export function CheckoutPage() {
 
               <div className="mb-4">
                 <img 
-                  src={event.image || ''} 
+                  src={formatAssetUrl(event.image || '')} 
                   alt={event.title}
                   className="w-full h-32 object-cover rounded-lg mb-3"
                 />
@@ -907,9 +916,9 @@ export function CheckoutPage() {
                            {quantity} tiket × {formatCurrency(price)}
                          </span>
                          {activeFS && (
-                           <span className="text-accent-orange font-bold flex items-center gap-1 mt-0.5 text-xs">
-                             <Timer className="h-3 w-3" /> Flash Sale
-                           </span>
+                           <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-[11px] font-medium">
+                             <Timer className="h-3 w-3" /> Flash Sale (Sisa {activeFS.quota - activeFS.sold})
+                           </div>
                          )}
                       </div>
                       <span className="font-semibold text-primary">

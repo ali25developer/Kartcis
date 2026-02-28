@@ -1,4 +1,5 @@
 import { API_BASE_URL, getHeaders } from '../config';
+const RAW_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.kartcis.id';
 import type {
   ApiResponse,
   PaginatedResponse,
@@ -222,6 +223,23 @@ const api = {
       }
     },
   },
+
+  flashSales: {
+    getAll: async (params?: { event_id?: number | string }): Promise<ApiResponse<any>> => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (params?.event_id) queryParams.append('event_id', params.event_id.toString());
+
+        const response = await fetch(`${API_BASE_URL}/flash-sales?${queryParams.toString()}`, {
+          headers: getHeaders(),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching flash sales:', error);
+        throw error;
+      }
+    },
+  },
 };
 
 // Legacy service adapter for backward compatibility
@@ -248,6 +266,37 @@ export const eventService = {
   },
 };
 
+export const formatAssetUrl = (url?: string): string => {
+  if (!url) return '';
+  
+  let path = url;
+  
+  // If it's a full URL that contains our API base, extract the relative part
+  // This handles cases where backend returns http://.../api/v1/uploads/...
+  if (path.includes('/api/v1/')) {
+    path = path.split('/api/v1/')[1];
+  } else if (path.startsWith('http')) {
+    // It's a full URL but not from our API v1 (e.g. external or already normalized)
+    // We should still check if it's from our RAW_BASE_URL and fix /api/v1 if present
+    if (path.includes(RAW_BASE_URL) && path.includes('/api/v1/')) {
+       path = path.replace(`${RAW_BASE_URL}/api/v1`, '');
+    } else {
+       return path;
+    }
+  }
+  
+  // Ensure starts with /
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  
+  // Final check: don't double the prefix
+  const finalUrl = `${RAW_BASE_URL}${path}`;
+  
+  // Extreme fallback for /api/v1/uploads specifically which often causes 404
+  return finalUrl.replace('/api/v1/uploads/', '/uploads/');
+};
+
 export const uploadCustomFieldFile = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('image', file);
@@ -259,7 +308,7 @@ export const uploadCustomFieldFile = async (file: File): Promise<string> => {
   
   const data = await response.json();
   if (data.success && data.data?.url) {
-    return data.data.url;
+    return formatAssetUrl(data.data.url);
   } else {
     throw new Error(data.message || 'Upload gagal');
   }
