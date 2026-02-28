@@ -64,6 +64,12 @@ export function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // Dashboard Filters
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [eventsList, setEventsList] = useState<{id: number, title: string}[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -152,7 +158,12 @@ export function AdminDashboard() {
     if (!isAuthenticated || !user || (user.role !== 'admin' && user.role !== 'organizer')) return;
 
     try {
-      const response = await adminApi.getStats();
+      const filters: any = {};
+      if (selectedEventId && selectedEventId !== 'all') filters.event_id = selectedEventId;
+      if (startDate) filters.start_date = startDate;
+      if (endDate) filters.end_date = endDate;
+
+      const response = await adminApi.getStats(filters);
       if (response.success && response.data) {
         setStats(response.data);
       } else {
@@ -165,7 +176,24 @@ export function AdminDashboard() {
       console.error('Fetch stats error:', error);
       toast.error('Gagal mengambil statistik dashboard');
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, selectedEventId, startDate, endDate]);
+
+  // Load events for dropdown
+  useEffect(() => {
+    if (activeTab === 'overview' && user?.role === 'admin') {
+      const loadEvents = async () => {
+        try {
+          const res = await adminApi.events.getAll({ limit: 100 });
+          if (res.success && res.data) {
+            setEventsList(res.data.events.map(e => ({ id: e.id, title: e.title })));
+          }
+        } catch (e) {
+          console.error('Failed to load events for filter', e);
+        }
+      };
+      loadEvents();
+    }
+  }, [activeTab, user]);
 
   useEffect(() => {
     if (activeTab === 'overview') {
@@ -424,6 +452,48 @@ export function AdminDashboard() {
 
             {/* Filters */}
             <Card className="p-4 mb-6">
+              {/* Dashboard Stats Filters */}
+              {user.role === 'admin' && (
+                <div className="flex flex-col md:flex-row gap-4 mb-4 pb-4 border-b">
+                  <div className="flex items-center gap-2">
+                     <span className="text-sm text-gray-600 font-semibold whitespace-nowrap">Filter Statistik:</span>
+                  </div>
+                  <Select
+                    value={selectedEventId}
+                    onValueChange={(value) => setSelectedEventId(value)}
+                  >
+                    <SelectTrigger className="w-full md:w-[250px]">
+                      <SelectValue placeholder="Semua Event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Event</SelectItem>
+                      {eventsList.map(ev => (
+                        <SelectItem key={ev.id} value={ev.id.toString()}>{ev.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="flex items-center gap-2 w-full md:w-auto">
+                    <Input 
+                      type="date" 
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      placeholder="Tgl Mulai"
+                      className="w-full min-w-[150px] md:w-auto"
+                    />
+                    <span className="text-gray-500">-</span>
+                    <Input 
+                      type="date" 
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      placeholder="Tgl Akhir"
+                      className="w-full min-w-[150px] md:w-auto"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Transactions Filters */}
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />

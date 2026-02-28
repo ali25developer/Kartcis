@@ -124,9 +124,16 @@ export const adminApi = {
   },
 
   // GET /api/v1/admin/stats
-  getStats: async (): Promise<AdminStatsResponse> => {
+  getStats: async (filters?: { event_id?: number | string, start_date?: string, end_date?: string }): Promise<AdminStatsResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+      const queryParams = new URLSearchParams();
+      if (filters?.event_id) queryParams.append('event_id', filters.event_id.toString());
+      if (filters?.start_date) queryParams.append('start_date', filters.start_date);
+      if (filters?.end_date) queryParams.append('end_date', filters.end_date);
+
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+      const response = await fetch(`${API_BASE_URL}/admin/stats${queryString}`, {
         headers: getHeaders(),
       });
       return await response.json();
