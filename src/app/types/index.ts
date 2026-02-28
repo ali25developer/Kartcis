@@ -219,6 +219,7 @@ export interface Ticket {
   attendee_name: string;
   attendee_email: string;
   attendee_phone: string;
+  purchased_price: number;
   custom_field_responses?: string; // JSON string of custom field responses
   status: 'active' | 'used' | 'cancelled';
   check_in_at: string | null;

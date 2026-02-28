@@ -37,7 +37,7 @@ export function MyTicketsPage() {
                     city: t.event?.city || '',
                     ticketType: t.ticket_type?.name || 'Standard',
                     quantity: 1,
-                    price: t.ticket_type?.price || 0,
+                    price: t.purchased_price || t.ticket_type?.price || 0,
                     eventImage: t.event?.image || '',
                     orderDate: t.created_at,
                     ticketCode: t.ticket_code,

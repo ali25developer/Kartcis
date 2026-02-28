@@ -491,7 +491,7 @@ export function PaymentDetailPage({
                           city: eventInfo?.city || '',
                           ticketType: ticket.ticket_type?.name || 'Tiket',
                           quantity: 1,
-                          price: ticket.ticket_type?.price || 0,
+                          price: ticket.purchased_price || ticket.ticket_type?.price || 0,
                           eventImage: eventInfo?.eventImage || eventInfo?.image || '',
                           orderDate: String(pendingOrder.createdAt || ''),
                           ticketCode: ticket.ticket_code,

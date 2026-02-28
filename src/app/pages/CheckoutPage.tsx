@@ -191,7 +191,7 @@ export function CheckoutPage() {
           setFlashSales(response.data);
         }
       } catch (e) {
-        console.error('Error fetching flash sales:', e);
+        console.error('Error fetching rebutan tiket:', e);
       }
     };
     fetchFlashSalesData();
@@ -254,6 +254,21 @@ export function CheckoutPage() {
        
        return true;
     });
+  };
+
+  const getCountdown = (endTime: string) => {
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    const end = new Date(currentTimeTick);
+    end.setHours(endHour, endMin, 0, 0);
+
+    const diff = end.getTime() - currentTimeTick.getTime();
+    if (diff <= 0) return '00:00:00';
+
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
 
@@ -916,14 +931,22 @@ export function CheckoutPage() {
                            {quantity} tiket × {formatCurrency(price)}
                          </span>
                          {activeFS && (
-                           <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-[11px] font-medium">
-                             <Timer className="h-3 w-3" /> Flash Sale (Sisa {activeFS.quota - activeFS.sold})
+                           <div className="flex items-center gap-1 mt-1 text-red-600 text-[10px] font-medium leading-none">
+                             <Timer className="h-2.5 w-2.5" /> 
+                             Rebutan Tiket ({getCountdown(activeFS.end_time)})
                            </div>
                          )}
                       </div>
-                      <span className="font-semibold text-primary">
-                        {formatCurrency(price * quantity)}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        {activeFS && (
+                          <span className="text-xs text-gray-400 line-through mb-0.5">
+                            {formatCurrency(ticket.price * quantity)}
+                          </span>
+                        )}
+                        <span className="font-semibold text-primary">
+                          {formatCurrency(price * quantity)}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}

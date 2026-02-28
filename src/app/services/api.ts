@@ -235,7 +235,7 @@ const api = {
         });
         return await response.json();
       } catch (error) {
-        console.error('Error fetching flash sales:', error);
+        console.error('Error fetching rebutan tiket:', error);
         throw error;
       }
     },

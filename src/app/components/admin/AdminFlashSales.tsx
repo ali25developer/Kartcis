@@ -178,11 +178,11 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       }
 
       if (response.success) {
-        toast.success(`Flash Sale berhasil ${editingId ? 'diperbarui' : 'dibuat'}`);
+        toast.success(`Rebutan Tiket berhasil ${editingId ? 'diperbarui' : 'dibuat'}`);
         setIsModalOpen(false);
         fetchFlashSales();
       } else {
-        toast.error(response.message || "Gagal menyimpan flash sale");
+        toast.error(response.message || "Gagal menyimpan rebutan tiket");
       }
     } catch (error) {
       toast.error("Terjadi kesalahan sistem");
@@ -197,10 +197,10 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
     try {
       const response = await adminApi.flashSales.delete(deletingId);
       if (response.success) {
-        toast.success("Flash Sale berhasil dihapus");
+        toast.success("Rebutan Tiket berhasil dihapus");
         fetchFlashSales();
       } else {
-        toast.error(response.message || "Gagal menghapus flash sale");
+        toast.error(response.message || "Gagal menghapus rebutan tiket");
       }
     } catch (error) {
       toast.error("Terjadi kesalahan sistem");
@@ -216,10 +216,10 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       // Create a partial update. 
       const response = await adminApi.flashSales.update(id, { is_active: !currentStatus });
       if (response.success) {
-        toast.success("Status flash sale berhasil diubah");
+        toast.success("Status rebutan tiket berhasil diubah");
         setFlashSales(prev => prev.map(fs => fs.id === id ? { ...fs, is_active: !currentStatus } : fs));
       } else {
-        toast.error(response.message || "Gagal mengubah status flash sale");
+        toast.error(response.message || "Gagal mengubah status rebutan tiket");
       }
     } catch (error) {
       toast.error("Terjadi kesalahan sistem");
@@ -239,7 +239,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Manajemen Flash Sale</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Manajemen Rebutan Tiket</h2>
           <p className="text-gray-500">Kelola diskon batas waktu untuk tiket tertentu</p>
         </div>
         <Button 
@@ -247,7 +247,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
           onClick={openCreateModal}
         >
           <Plus className="h-4 w-4" />
-          Tambah Flash Sale
+          Tambah Rebutan Tiket
         </Button>
       </div>
 
@@ -269,7 +269,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event & Tiket</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Harga Flash Sale</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Harga Rebutan Tiket</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal Promo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jam Promo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kuota / Terjual</th>
@@ -287,7 +287,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
               ) : filteredData.length === 0 ? (
                 <tr>
                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
-                      Tidak ada data flash sale aktif
+                      Tidak ada data rebutan tiket aktif
                    </td>
                 </tr>
               ) : (
@@ -297,10 +297,14 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
                       <div className="font-bold text-gray-900">{fs.event?.title || 'Unknown Event'}</div>
                       <div className="text-xs text-sky-600">
                         Tiket: {fs.ticket_type?.name || 'Unknown'} 
-                        {fs.ticket_type && <span className="text-gray-400 ml-1 line-through">({formatCurrency(fs.ticket_type.price)})</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3">
+                       {fs.ticket_type && (
+                          <div className="text-xs text-gray-400 line-through mb-0.5">
+                            {formatCurrency(fs.ticket_type.price)}
+                          </div>
+                       )}
                        <div className="font-medium text-green-600">
                           {formatCurrency(fs.flash_price)}
                        </div>
@@ -352,7 +356,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit Flash Sale" : "Buat Flash Sale Baru"}</DialogTitle>
+            <DialogTitle>{editingId ? "Edit Rebutan Tiket" : "Buat Rebutan Tiket Baru"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
             
@@ -457,7 +461,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
-                 <Label>Harga Flash Sale (Rp) <span className="text-red-500">*</span></Label>
+                 <Label>Harga Rebutan Tiket (Rp) <span className="text-red-500">*</span></Label>
                  <Input 
                    type="number"
                    placeholder="Cth: 140000" 
@@ -500,7 +504,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Tanggal Flash Sale <span className="text-red-500">*</span></Label>
+              <Label>Tanggal Rebutan Tiket <span className="text-red-500">*</span></Label>
               <Input 
                 type="date"
                 value={formData.flash_date}
@@ -515,7 +519,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
                  checked={formData.is_active} 
                  onCheckedChange={checked => setFormData({...formData, is_active: checked})}
                />
-               <Label htmlFor="is_active_flash" className="cursor-pointer">Aktifkan Flash Sale</Label>
+               <Label htmlFor="is_active_flash" className="cursor-pointer">Aktifkan Rebutan Tiket</Label>
             </div>
 
             <DialogFooter>
@@ -533,9 +537,9 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Flash Sale</AlertDialogTitle>
+            <AlertDialogTitle>Hapus Rebutan Tiket</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus flash sale ini? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus rebutan tiket ini? Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

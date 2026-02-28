@@ -370,7 +370,7 @@ export function AdminDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="flash-sales" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
                   <Timer className="h-4 w-4 mr-2" />
-                  Flash Sale
+                  Rebutan Tiket
                 </TabsTrigger>
                 <TabsTrigger value="settings" className="data-[state=active]:bg-primary-light data-[state=active]:text-primary-hover">
                   <Settings className="h-4 w-4 mr-2" />

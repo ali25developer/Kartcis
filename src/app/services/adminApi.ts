@@ -532,7 +532,7 @@ export const adminApi = {
     },
   },
 
-  // Flash Sales CRUD
+  // Rebutan Tiket CRUD
   flashSales: {
     getAll: async (params?: { event_id?: number | string }): Promise<ApiResponse<any>> => {
       try {
@@ -544,7 +544,7 @@ export const adminApi = {
         });
         return await response.json();
       } catch (error) {
-        console.error('Error fetching flash sales:', error);
+        console.error('Error fetching rebutan tiket:', error);
         throw error;
       }
     },
@@ -558,7 +558,7 @@ export const adminApi = {
         });
         return await response.json();
       } catch (error) {
-        console.error('Error creating flash sale:', error);
+        console.error('Error creating rebutan tiket:', error);
         throw error;
       }
     },
@@ -572,7 +572,7 @@ export const adminApi = {
         });
         return await response.json();
       } catch (error) {
-        console.error('Error updating flash sale:', error);
+        console.error('Error updating rebutan tiket:', error);
         throw error;
       }
     },
@@ -585,7 +585,7 @@ export const adminApi = {
         });
         return await response.json();
       } catch (error) {
-        console.error('Error deleting flash sale:', error);
+        console.error('Error deleting rebutan tiket:', error);
         throw error;
       }
     },

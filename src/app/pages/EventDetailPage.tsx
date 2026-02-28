@@ -67,7 +67,7 @@ export function EventDetailPage() {
           setFlashSales(response.data);
         }
       } catch (e) {
-        console.error('Error fetching flash sales:', e);
+        console.error('Error fetching rebutan tiket:', e);
       }
     };
 
@@ -96,7 +96,7 @@ export function EventDetailPage() {
        if (!fs.flash_date || fs.flash_date.split('T')[0] !== currentDate) return false;
        
        // Check time
-       if (currentTime < fs.start_time || currentTime > fs.end_time) return false;
+       if (currentTime < fs.start_time || currentTime >= fs.end_time) return false;
        
        return true;
     });
@@ -124,7 +124,12 @@ export function EventDetailPage() {
     
     setSelectedTickets(prev => {
       const current = prev[ticketType.id] || 0;
-      const newQuantity = Math.max(0, Math.min(ticketType.available, current + delta));
+      const activeFS = getActiveFlashSale(ticketType.id);
+      const maxAvailable = activeFS 
+        ? Math.min(ticketType.available, (activeFS.quota - activeFS.sold))
+        : ticketType.available;
+
+      const newQuantity = Math.max(0, Math.min(maxAvailable, current + delta));
       
       if (newQuantity === 0) {
         const { [ticketType.id]: _, ...rest } = prev;
@@ -399,10 +404,7 @@ export function EventDetailPage() {
                         <div className="bg-red-50 text-red-600 p-2.5 px-4 border-b border-red-100 flex items-center justify-between text-sm">
                           <div className="flex items-center gap-1.5 font-medium">
                             <Timer className="h-4 w-4" />
-                            Flash Sale: {getCountdown(activeFS.end_time)}
-                          </div>
-                          <div className="text-red-500/80 text-xs">
-                             Sisa {activeFS.quota - activeFS.sold} tiket
+                            Rebutan Tiket Berakhir: <span className="font-mono">{getCountdown(activeFS.end_time)}</span>
                           </div>
                         </div>
                       )}
