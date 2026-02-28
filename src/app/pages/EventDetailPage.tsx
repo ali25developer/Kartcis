@@ -401,10 +401,13 @@ export function EventDetailPage() {
                   return (
                     <div key={ticket.id} className={`border rounded-xl transition-all ${activeFS ? 'border-red-200 bg-red-50/30' : ''}`}>
                       {activeFS && (
-                        <div className="bg-red-50 text-red-600 p-2.5 px-4 border-b border-red-100 flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-1.5 font-medium">
-                            <Timer className="h-4 w-4" />
-                            Rebutan Kartcis Berakhir: <span className="font-mono">{getCountdown(activeFS.end_time)}</span>
+                        <div className="bg-red-50 text-red-600 p-2.5 px-3 border-b border-red-100 flex items-center justify-between text-[11px] sm:text-xs">
+                          <div className="flex items-center gap-1.5 font-bold uppercase tracking-tight">
+                            <Timer className="h-3.5 w-3.5 animate-pulse" />
+                            <span>Rebutan Kartcis</span>
+                          </div>
+                          <div className="font-mono font-bold bg-red-100/50 px-2 py-0.5 rounded border border-red-200">
+                            {getCountdown(activeFS.end_time)}
                           </div>
                         </div>
                       )}

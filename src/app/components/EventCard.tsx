@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -107,7 +107,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
         </h3>
         <p className="text-sm text-gray-600 mb-3">{event.organizer}</p>
 
-        <div className="space-y-2 mb-4 min-h-[72px]">
+        <div className="space-y-2 mb-4 min-h-[60px]">
           <div className="flex items-center text-sm text-gray-700">
             <Calendar className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
             <span className="line-clamp-1">{formatDate(event.date || event.event_date)}</span>
@@ -116,12 +116,6 @@ export function EventCard({ event, onClick }: EventCardProps) {
             <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
             <span className="line-clamp-1">{event.venue}, {event.city}</span>
           </div>
-          {!isSoldOut && !isCancelled && (
-            <div className="flex items-center text-sm text-gray-700">
-              <Users className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
-              <span className="line-clamp-1">Sisa {totalAvailable.toLocaleString('id-ID')} tiket</span>
-            </div>
-          )}
         </div>
 
         {soldOutPercentage > 80 && !isSoldOut && !isCancelled && (
