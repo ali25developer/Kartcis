@@ -131,7 +131,6 @@ export function AdminDashboard() {
   const fetchData = useCallback(async () => {
     if (!isAuthenticated || !user || (user.role !== 'admin' && user.role !== 'organizer')) return;
 
-
     setIsLoading(true);
     try {
       const response = await adminApi.getTransactions({
@@ -139,9 +138,10 @@ export function AdminDashboard() {
         limit: 10,
         status: statusFilter,
         search: debouncedSearch,
+        ...(selectedEventId && selectedEventId !== 'all' ? { event_id: selectedEventId } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
       });
-
-
 
       setTransactions(() => response.data?.transactions || []);
       setTotalPages(response.data?.pagination?.total_pages || 1);
@@ -151,7 +151,7 @@ export function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, statusFilter, debouncedSearch, isAuthenticated, user]);
+  }, [currentPage, statusFilter, debouncedSearch, isAuthenticated, user, selectedEventId, startDate, endDate]);
 
   // Fetch admin stats
   const fetchStats = useCallback(async () => {
@@ -460,7 +460,10 @@ export function AdminDashboard() {
                   </div>
                   <Select
                     value={selectedEventId}
-                    onValueChange={(value) => setSelectedEventId(value)}
+                    onValueChange={(value) => {
+                      setSelectedEventId(value);
+                      setCurrentPage(1);
+                    }}
                   >
                     <SelectTrigger className="w-full md:w-[250px]">
                       <SelectValue placeholder="Semua Event" />
@@ -477,7 +480,10 @@ export function AdminDashboard() {
                     <Input 
                       type="date" 
                       value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
                       placeholder="Tgl Mulai"
                       className="w-full min-w-[150px] md:w-auto"
                     />
@@ -485,7 +491,10 @@ export function AdminDashboard() {
                     <Input 
                       type="date" 
                       value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
                       placeholder="Tgl Akhir"
                       className="w-full min-w-[150px] md:w-auto"
                     />
@@ -499,7 +508,7 @@ export function AdminDashboard() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
                   <Input
                     type="text"
-                    placeholder="Cari order number, nama, email, atau event..."
+                    placeholder="Cari order number, nama, email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"

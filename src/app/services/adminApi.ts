@@ -105,6 +105,9 @@ export const adminApi = {
     limit?: number;
     status?: string;
     search?: string;
+    event_id?: string | number;
+    start_date?: string;
+    end_date?: string;
   }): Promise<TransactionListResponse> => {
     try {
       const queryParams = new URLSearchParams();
@@ -112,6 +115,9 @@ export const adminApi = {
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.status && params.status !== 'all') queryParams.append('status', params.status);
       if (params?.search) queryParams.append('search', params.search);
+      if (params?.event_id && params.event_id !== 'all') queryParams.append('event_id', params.event_id.toString());
+      if (params?.start_date) queryParams.append('start_date', params.start_date);
+      if (params?.end_date) queryParams.append('end_date', params.end_date);
 
       const response = await fetch(`${API_BASE_URL}/admin/transactions?${queryParams.toString()}`, {
         headers: getHeaders(),
