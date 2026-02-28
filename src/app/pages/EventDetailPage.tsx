@@ -67,7 +67,7 @@ export function EventDetailPage() {
           setFlashSales(response.data);
         }
       } catch (e) {
-        console.error('Error fetching rebutan tiket:', e);
+        console.error('Error fetching rebutan kartcis:', e);
       }
     };
 
@@ -404,7 +404,7 @@ export function EventDetailPage() {
                         <div className="bg-red-50 text-red-600 p-2.5 px-4 border-b border-red-100 flex items-center justify-between text-sm">
                           <div className="flex items-center gap-1.5 font-medium">
                             <Timer className="h-4 w-4" />
-                            Rebutan Tiket Berakhir: <span className="font-mono">{getCountdown(activeFS.end_time)}</span>
+                            Rebutan Kartcis Berakhir: <span className="font-mono">{getCountdown(activeFS.end_time)}</span>
                           </div>
                         </div>
                       )}

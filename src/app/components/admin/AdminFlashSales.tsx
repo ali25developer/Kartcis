@@ -178,11 +178,11 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       }
 
       if (response.success) {
-        toast.success(`Rebutan Tiket berhasil ${editingId ? 'diperbarui' : 'dibuat'}`);
+        toast.success(`Rebutan Kartcis berhasil ${editingId ? 'diperbarui' : 'dibuat'}`);
         setIsModalOpen(false);
         fetchFlashSales();
       } else {
-        toast.error(response.message || "Gagal menyimpan rebutan tiket");
+        toast.error(response.message || "Gagal menyimpan rebutan kartcis");
       }
     } catch (error) {
       toast.error("Terjadi kesalahan sistem");
@@ -197,10 +197,10 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
     try {
       const response = await adminApi.flashSales.delete(deletingId);
       if (response.success) {
-        toast.success("Rebutan Tiket berhasil dihapus");
+        toast.success("Rebutan Kartcis berhasil dihapus");
         fetchFlashSales();
       } else {
-        toast.error(response.message || "Gagal menghapus rebutan tiket");
+        toast.error(response.message || "Gagal menghapus rebutan kartcis");
       }
     } catch (error) {
       toast.error("Terjadi kesalahan sistem");
@@ -216,10 +216,10 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       // Create a partial update. 
       const response = await adminApi.flashSales.update(id, { is_active: !currentStatus });
       if (response.success) {
-        toast.success("Status rebutan tiket berhasil diubah");
+        toast.success("Status rebutan kartcis berhasil diubah");
         setFlashSales(prev => prev.map(fs => fs.id === id ? { ...fs, is_active: !currentStatus } : fs));
       } else {
-        toast.error(response.message || "Gagal mengubah status rebutan tiket");
+        toast.error(response.message || "Gagal mengubah status rebutan kartcis");
       }
     } catch (error) {
       toast.error("Terjadi kesalahan sistem");
@@ -239,7 +239,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Manajemen Rebutan Tiket</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Manajemen Rebutan Kartcis</h2>
           <p className="text-gray-500">Kelola diskon batas waktu untuk tiket tertentu</p>
         </div>
         <Button 
@@ -247,7 +247,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
           onClick={openCreateModal}
         >
           <Plus className="h-4 w-4" />
-          Tambah Rebutan Tiket
+          Tambah Rebutan Kartcis
         </Button>
       </div>
 
@@ -269,7 +269,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event & Tiket</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Harga Rebutan Tiket</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Harga Rebutan Kartcis</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal Promo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jam Promo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kuota / Terjual</th>
@@ -287,7 +287,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
               ) : filteredData.length === 0 ? (
                 <tr>
                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
-                      Tidak ada data rebutan tiket aktif
+                      Tidak ada data rebutan kartcis aktif
                    </td>
                 </tr>
               ) : (
@@ -356,7 +356,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit Rebutan Tiket" : "Buat Rebutan Tiket Baru"}</DialogTitle>
+            <DialogTitle>{editingId ? "Edit Rebutan Kartcis" : "Buat Rebutan Kartcis Baru"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
             
@@ -461,7 +461,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
-                 <Label>Harga Rebutan Tiket (Rp) <span className="text-red-500">*</span></Label>
+                 <Label>Harga Rebutan Kartcis (Rp) <span className="text-red-500">*</span></Label>
                  <Input 
                    type="number"
                    placeholder="Cth: 140000" 
@@ -504,7 +504,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Tanggal Rebutan Tiket <span className="text-red-500">*</span></Label>
+              <Label>Tanggal Rebutan Kartcis <span className="text-red-500">*</span></Label>
               <Input 
                 type="date"
                 value={formData.flash_date}
@@ -519,7 +519,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
                  checked={formData.is_active} 
                  onCheckedChange={checked => setFormData({...formData, is_active: checked})}
                />
-               <Label htmlFor="is_active_flash" className="cursor-pointer">Aktifkan Rebutan Tiket</Label>
+               <Label htmlFor="is_active_flash" className="cursor-pointer">Aktifkan Rebutan Kartcis</Label>
             </div>
 
             <DialogFooter>
@@ -537,9 +537,9 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Rebutan Tiket</AlertDialogTitle>
+            <AlertDialogTitle>Hapus Rebutan Kartcis</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus rebutan tiket ini? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus rebutan kartcis ini? Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -191,7 +191,7 @@ export function CheckoutPage() {
           setFlashSales(response.data);
         }
       } catch (e) {
-        console.error('Error fetching rebutan tiket:', e);
+        console.error('Error fetching rebutan kartcis:', e);
       }
     };
     fetchFlashSalesData();
@@ -933,7 +933,7 @@ export function CheckoutPage() {
                          {activeFS && (
                            <div className="flex items-center gap-1 mt-1 text-red-600 text-[10px] font-medium leading-none">
                              <Timer className="h-2.5 w-2.5" /> 
-                             Rebutan Tiket ({getCountdown(activeFS.end_time)})
+                             Rebutan Kartcis ({getCountdown(activeFS.end_time)})
                            </div>
                          )}
                       </div>

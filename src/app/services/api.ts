@@ -235,7 +235,7 @@ const api = {
         });
         return await response.json();
       } catch (error) {
-        console.error('Error fetching rebutan tiket:', error);
+        console.error('Error fetching rebutan kartcis:', error);
         throw error;
       }
     },
