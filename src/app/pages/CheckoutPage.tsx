@@ -885,7 +885,7 @@ export function CheckoutPage() {
 
               <div className="mb-4">
                 <img 
-                  src={formatAssetUrl(event.image || '')} 
+                  src={event.image || ''} 
                   alt={event.title}
                   className="w-full h-32 object-cover rounded-lg mb-3"
                 />

@@ -269,32 +269,24 @@ export const eventService = {
 export const formatAssetUrl = (url?: string): string => {
   if (!url) return '';
   
-  let path = url;
-  
-  // If it's a full URL that contains our API base, extract the relative part
-  // This handles cases where backend returns http://.../api/v1/uploads/...
-  if (path.includes('/api/v1/')) {
-    path = path.split('/api/v1/')[1];
-  } else if (path.startsWith('http')) {
-    // It's a full URL but not from our API v1 (e.g. external or already normalized)
-    // We should still check if it's from our RAW_BASE_URL and fix /api/v1 if present
-    if (path.includes(RAW_BASE_URL) && path.includes('/api/v1/')) {
-       path = path.replace(`${RAW_BASE_URL}/api/v1`, '');
-    } else {
-       return path;
-    }
+  // If it's already a full valid HTTP URL, return it directly.
+  // The backend now returns the correct absolute URL for uploads.
+  if (url.startsWith('http')) {
+      return url;
   }
   
-  // Ensure starts with /
+  let path = url;
   if (!path.startsWith('/')) {
     path = '/' + path;
   }
   
-  // Final check: don't double the prefix
-  const finalUrl = `${RAW_BASE_URL}${path}`;
+  // If it already has /api/v1 prefix, just prepend the base domain
+  if (path.startsWith('/api/v1/')) {
+      return `${RAW_BASE_URL}${path}`;
+  }
   
-  // Extreme fallback for /api/v1/uploads specifically which often causes 404
-  return finalUrl.replace('/api/v1/uploads/', '/uploads/');
+  // Otherwise append /api/v1 as all API routes and uploads are behind it
+  return `${RAW_BASE_URL}/api/v1${path}`;
 };
 
 export const uploadCustomFieldFile = async (file: File): Promise<string> => {

@@ -357,7 +357,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
           <form onSubmit={handleSave} className="space-y-4">
             
             <div className="space-y-2 flex flex-col">
-              <Label>Pilih Event *</Label>
+              <Label>Pilih Event <span className="text-red-500">*</span></Label>
               <Popover open={openEventCombobox} onOpenChange={setOpenEventCombobox}>
                 <PopoverTrigger asChild>
                   <Button
@@ -404,7 +404,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             </div>
 
             <div className="space-y-2 flex flex-col">
-              <Label>Pilih Kategori Tiket *</Label>
+              <Label>Pilih Kategori Tiket <span className="text-red-500">*</span></Label>
               <Popover open={openTicketCombobox} onOpenChange={setOpenTicketCombobox}>
                 <PopoverTrigger asChild disabled={!formData.event_id}>
                   <Button
@@ -457,7 +457,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
-                 <Label>Harga Flash Sale (Rp) *</Label>
+                 <Label>Harga Flash Sale (Rp) <span className="text-red-500">*</span></Label>
                  <Input 
                    type="number"
                    placeholder="Cth: 140000" 
@@ -467,7 +467,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
                  />
                </div>
                <div className="space-y-2">
-                 <Label>Batas Kuota Promo *</Label>
+                 <Label>Batas Kuota Promo <span className="text-red-500">*</span></Label>
                  <Input 
                    type="number"
                    placeholder="Cth: 100"
@@ -480,7 +480,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
 
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
-                 <Label>Jam Mulai (HH:mm) *</Label>
+                 <Label>Jam Mulai (HH:mm) <span className="text-red-500">*</span></Label>
                  <Input 
                    type="time"
                    value={formData.start_time}
@@ -489,7 +489,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
                  />
                </div>
                <div className="space-y-2">
-                 <Label>Jam Berakhir (HH:mm) *</Label>
+                 <Label>Jam Berakhir (HH:mm) <span className="text-red-500">*</span></Label>
                  <Input 
                    type="time"
                    value={formData.end_time}
@@ -500,7 +500,7 @@ export function AdminFlashSales({ activeTab }: AdminFlashSalesProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Tanggal Flash Sale *</Label>
+              <Label>Tanggal Flash Sale <span className="text-red-500">*</span></Label>
               <Input 
                 type="date"
                 value={formData.flash_date}
