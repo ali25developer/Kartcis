@@ -14,6 +14,8 @@ interface AuthContextType {
   logout: () => void;
   checkAuth: () => void;
   resendVerification: (email?: string) => Promise<void>;
+  verificationCooldown: number;
+  isResendingVerification: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +27,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState<number>(Date.now());
+  const [verificationCooldown, setVerificationCooldown] = useState(0);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+
+  // Initialize and synchronize countdown timer for verification email resend
+  useEffect(() => {
+    // Check local storage on mount
+    const checkPersistedCooldown = () => {
+      const storedExpiry = localStorage.getItem('verification_cooldown_expiry');
+      if (storedExpiry) {
+        const expiryTime = parseInt(storedExpiry, 10);
+        const now = Date.now();
+        if (expiryTime > now) {
+          setVerificationCooldown(Math.ceil((expiryTime - now) / 1000));
+        } else {
+          localStorage.removeItem('verification_cooldown_expiry');
+        }
+      }
+    };
+    
+    checkPersistedCooldown();
+
+    let timer: NodeJS.Timeout;
+    if (verificationCooldown > 0) {
+      timer = setInterval(() => {
+        setVerificationCooldown((prev) => {
+          if (prev <= 1) {
+            localStorage.removeItem('verification_cooldown_expiry');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [verificationCooldown]);
+
+  const startVerificationCooldown = () => {
+    const cooldownSeconds = 60;
+    setVerificationCooldown(cooldownSeconds);
+    localStorage.setItem('verification_cooldown_expiry', (Date.now() + cooldownSeconds * 1000).toString());
+  };
 
   // Check authentication on mount
   useEffect(() => {
@@ -177,6 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resendVerification = async (emailToVerify?: string) => {
+    if (verificationCooldown > 0 || isResendingVerification) return;
+
     // Determine which email to use (passed in parameter or logged in user's email)
     const targetEmail = emailToVerify || user?.email;
     
@@ -185,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Email tidak ditemukan');
     }
 
-    setIsLoading(true);
+    setIsResendingVerification(true);
     try {
       const response = await authApi.resendVerification(targetEmail);
       if (!response.success) {
@@ -194,12 +241,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.success(response.message || 'Email verifikasi telah dikirim ulang. Silakan cek kotak masuk Anda.', {
         action: { label: 'Tutup', onClick: () => {} }
       });
+      startVerificationCooldown();
     } catch (error: any) {
       console.error('Resend verification error:', error);
       toast.error(error.message || 'Gagal mengirim ulang email');
+      if (error?.message?.includes('wait') || error?.message?.includes('tunggu')) {
+        startVerificationCooldown();
+      }
       throw error;
     } finally {
-      setIsLoading(false);
+      setIsResendingVerification(false);
     }
   };
 
@@ -216,6 +267,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         checkAuth,
         resendVerification,
+        verificationCooldown,
+        isResendingVerification,
       }}
     >
       {children}

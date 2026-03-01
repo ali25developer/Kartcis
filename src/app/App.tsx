@@ -31,8 +31,23 @@ import type { HelpModalType } from "./types/index";
 // Protected Route Component - defined outside to prevent re-creation
 // Protected Route Component - defined outside to prevent re-creation
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user, resendVerification } = useAuth();
+  const { 
+    isAuthenticated, 
+    isLoading, 
+    user, 
+    resendVerification, 
+    verificationCooldown, 
+    isResendingVerification 
+  } = useAuth();
   const navigate = useNavigate();
+
+  const handleResendClick = async () => {
+    try {
+      await resendVerification();
+    } catch (error) {
+      // Error is handled in the context
+    }
+  };
   
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -65,10 +80,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
           </p>
           <div className="flex flex-col gap-3">
             <button 
-              onClick={() => resendVerification()} 
-              className="w-full bg-[#ffd54c] hover:bg-[#e6bf44] text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors shadow-sm"
+              onClick={handleResendClick} 
+              disabled={verificationCooldown > 0 || isResendingVerification}
+              className={`w-full font-bold py-3 px-4 rounded-lg transition-colors shadow-sm ${
+                verificationCooldown > 0 || isResendingVerification
+                ? 'bg-amber-200 text-amber-700 cursor-not-allowed'
+                : 'bg-[#ffd54c] hover:bg-[#e6bf44] text-gray-900'
+              }`}
             >
-              Kirim Ulang Email Verifikasi
+              {isResendingVerification 
+                ? 'Mengirim...' 
+                : verificationCooldown > 0 
+                  ? `Kirim Ulang Email (${verificationCooldown}s)`
+                  : 'Kirim Ulang Email Verifikasi'
+              }
             </button>
             <button 
               onClick={() => navigate('/')} 
