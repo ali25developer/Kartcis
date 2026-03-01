@@ -33,6 +33,8 @@ export function VerifyEmailPage() {
         if (response.success) {
           setStatus('success');
           setMessage(response.message || 'Email berhasil diverifikasi.');
+          // Beri tahu tab lain yang terbuka bahwa email sudah diverifikasi
+          localStorage.setItem('email_verified_t', Date.now().toString());
         } else {
           setStatus('error');
           setMessage(response.message || 'Link verifikasi tidak valid atau sudah kadaluarsa.');

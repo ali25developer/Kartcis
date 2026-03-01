@@ -107,6 +107,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user, lastActivity]);
 
+  // Handle cross-tab communication and tab focus to auto-refresh user data (e.g. email verified)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'email_verified_t') {
+        // Another tab has verified the email, re-fetch user data
+        checkAuth();
+      }
+    };
+
+    const handleFocus = () => {
+      // If the tab gains focus and we have an unverified user, refresh to check if they verified it on their phone/another app
+      if (user && user.email_verified_at === null) {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user]);
+
   const checkAuth = async () => {
     setIsLoading(true);
     try {
