@@ -429,6 +429,13 @@ export function CheckoutPage() {
       return;
     }
 
+    if (user && user.email_verified_at === null) {
+      toast.error("Email Anda belum diverifikasi. Silakan verifikasi email Anda terlebih dahulu sebelum memesan tiket.", {
+        duration: 5000,
+      });
+      return;
+    }
+
     // For multiple tickets, validate participant data
     if (!isSingleTicket) {
       // First, validate basic required fields

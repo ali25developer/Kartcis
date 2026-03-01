@@ -1,9 +1,10 @@
-import { User, Menu, X, LogIn, Clock, LogOut, Shield, ChevronRight, Settings } from 'lucide-react';
+import { User, Menu, X, LogIn, Clock, LogOut, Shield, ChevronRight, Settings, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from '@/app/utils/toast';
+import { ResendVerificationBanner } from './ResendVerificationBanner';
 
 interface HeaderProps {
   onLoginClick: () => void;
@@ -179,6 +180,17 @@ export function Header({ onLoginClick, pendingPayment }: HeaderProps) {
           </div>
         )}
       </div>
+
+      {/* Email Verification Banner */}
+      {isAuthenticated && user && user.email_verified_at === null && (
+        <div className="bg-amber-100 border-b border-amber-200 text-amber-800 px-4 py-2">
+          <div className="container mx-auto flex items-center justify-center gap-2 text-sm font-medium flex-wrap">
+            <AlertCircle className="h-4 w-4" />
+            <span>Email Anda belum diverifikasi.</span>
+            <ResendVerificationBanner />
+          </div>
+        </div>
+      )}
 
       {/* Pending Payment Banner */}
       {pendingPayment && (

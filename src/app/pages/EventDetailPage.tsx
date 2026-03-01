@@ -25,7 +25,7 @@ import {
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,6 +166,13 @@ export function EventDetailPage() {
     
     if (totalQuantity === 0) {
       toast.error("Pilih tiket terlebih dahulu");
+      return;
+    }
+
+    if (isAuthenticated && user && user.email_verified_at === null) {
+      toast.error("Email Anda belum diverifikasi. Silakan verifikasi email Anda terlebih dahulu sebelum memesan tiket.", {
+        duration: 5000,
+      });
       return;
     }
 

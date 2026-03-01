@@ -117,5 +117,31 @@ export const authApi = {
       console.error('Get user error:', error);
       return { success: false, message: 'Failed to fetch user' };
     }
+  },
+
+  verifyEmail: async (email: string, token: string): Promise<ApiResponse<null>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-email?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`, {
+        method: 'GET',
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Verify email error:', error);
+      return { success: false, message: 'Gagal verifikasi email' };
+    }
+  },
+
+  resendVerification: async (email: string): Promise<ApiResponse<null>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ email })
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      return { success: false, message: 'Gagal mengirim ulang verifikasi' };
+    }
   }
 };

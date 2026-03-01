@@ -7,12 +7,13 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   register: (name: string, phone: string, email: string, password: string) => Promise<void>;
   updateProfile: (data: { name?: string; email?: string; phone?: string; password?: string; password_confirmation?: string }) => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
+  resendVerification: (email?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       const response = await authApi.login(email, password);
@@ -175,6 +176,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/';
   };
 
+  const resendVerification = async (emailToVerify?: string) => {
+    // Determine which email to use (passed in parameter or logged in user's email)
+    const targetEmail = emailToVerify || user?.email;
+    
+    if (!targetEmail) {
+      toast.error('Email tidak ditemukan. Silakan login kembali.');
+      throw new Error('Email tidak ditemukan');
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await authApi.resendVerification(targetEmail);
+      if (!response.success) {
+        throw new Error(response.message || 'Gagal mengirim ulang email');
+      }
+      toast.success(response.message || 'Email verifikasi telah dikirim ulang. Silakan cek kotak masuk Anda.', {
+        action: { label: 'Tutup', onClick: () => {} }
+      });
+    } catch (error: any) {
+      console.error('Resend verification error:', error);
+      toast.error(error.message || 'Gagal mengirim ulang email');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -187,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateProfile,
         logout,
         checkAuth,
+        resendVerification,
       }}
     >
       {children}

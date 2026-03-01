@@ -236,6 +236,7 @@ export interface User {
   phone: string | null;
   role?: 'user' | 'admin' | 'organizer'; // Add role field
   custom_fee?: number | null; // Custom fee percentage override
+  email_verified_at?: string | null;
   created_at: string;
   updated_at: string;
 }

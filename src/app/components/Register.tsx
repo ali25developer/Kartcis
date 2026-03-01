@@ -87,7 +87,7 @@ export function Register({ isOpen, onClose, onSwitchToLogin }: RegisterProps) {
 
     try {
       await register(formData.name, formData.phone, formData.email, formData.password);
-      toast.success('Berhasil mendaftar! Anda sudah login.', {
+      toast.success('Registrasi berhasil! Silakan cek email Anda untuk memverifikasi akun.', {
         action: {
           label: 'Tutup',
           onClick: () => {},
