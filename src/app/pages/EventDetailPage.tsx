@@ -125,11 +125,16 @@ export function EventDetailPage() {
     setSelectedTickets(prev => {
       const current = prev[ticketType.id] || 0;
       const activeFS = getActiveFlashSale(ticketType.id);
-      const maxAvailable = activeFS 
+      const maxAvailableAtEvent = activeFS 
         ? Math.min(ticketType.available, (activeFS.quota - activeFS.sold))
         : ticketType.available;
+      
+      let maxAllowed = maxAvailableAtEvent;
+      if (ticketType.max_purchase_per_user > 0) {
+        maxAllowed = Math.min(maxAllowed, ticketType.max_purchase_per_user);
+      }
 
-      const newQuantity = Math.max(0, Math.min(maxAvailable, current + delta));
+      const newQuantity = Math.max(0, Math.min(maxAllowed, current + delta));
       
       if (newQuantity === 0) {
         const { [ticketType.id]: _, ...rest } = prev;
@@ -461,7 +466,11 @@ export function EventDetailPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleTicketQuantityChange(ticket, 1)}
-                                disabled={quantity >= ticket.available || (activeFS && quantity >= (activeFS.quota - activeFS.sold))}
+                                disabled={
+                                  quantity >= ticket.available || 
+                                  (activeFS && quantity >= (activeFS.quota - activeFS.sold)) ||
+                                  (ticket.max_purchase_per_user > 0 && quantity >= ticket.max_purchase_per_user)
+                                }
                                 className="h-8 w-8 p-0 rounded-full bg-white text-primary shadow-sm border-primary/20 hover:bg-primary/5 hover:border-primary"
                               >
                                 +

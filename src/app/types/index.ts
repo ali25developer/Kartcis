@@ -29,6 +29,8 @@ export interface Voucher {
   ticket_type?: Pick<TicketType, 'id' | 'name'>;
   expires_at: string;
   is_active: boolean;
+  is_global?: boolean; // New field from smart voucher
+  affected_ticket_type_ids?: number[]; // New field from smart voucher
   created_at: string;
   updated_at: string;
 }
@@ -146,6 +148,7 @@ export interface TicketType {
   available: number;
   sold: number; // Number of tickets sold
   status: 'available' | 'sold_out' | 'unavailable';
+  max_purchase_per_user: number; // Maximum tickets a user can buy. 0 = unlimited.
   created_at: string;
   updated_at: string;
 }

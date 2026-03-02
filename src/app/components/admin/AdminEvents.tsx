@@ -89,7 +89,7 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
     status: 'draft',
     is_featured: false,
     custom_fields: [] as CustomField[],
-    ticket_types: [] as { id?: number; name: string; price: string; original_price?: string; quota: string; available?: string; sold?: string; description: string }[]
+    ticket_types: [] as { id?: number; name: string; price: string; original_price?: string; quota: string; available?: string; sold?: string; description: string; max_purchase_per_user: string }[]
   };
 
   // Alert Dialog State
@@ -196,6 +196,7 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
         price: parseInt(t.price),
         original_price: t.original_price ? parseInt(t.original_price) : undefined,
         quota: parseInt(t.quota),
+        max_purchase_per_user: parseInt(t.max_purchase_per_user || '0'),
         description: t.description
       }))
     };
@@ -304,6 +305,7 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
         quota: t.quota.toString(),
         available: t.available.toString(),
         sold: t.sold?.toString() || '0',
+        max_purchase_per_user: t.max_purchase_per_user?.toString() || '0',
         description: t.description || ''
       })) : []
     });
@@ -929,7 +931,7 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                         onClick={() => {
                             setFormData(prev => ({
                                 ...prev,
-                                ticket_types: [...prev.ticket_types, { name: '', price: '0', quota: '0', available: '0', sold: '0', description: '' }]
+                                ticket_types: [...prev.ticket_types, { name: '', price: '0', quota: '0', available: '0', sold: '0', description: '', max_purchase_per_user: '0' }]
                             }));
                         }}
                     >
@@ -1049,6 +1051,36 @@ export function AdminEvents({ activeTab }: { activeTab?: string }) {
                                                 <span className="text-[10px] text-gray-400 font-medium">Laku: {ticket.sold || 0}</span>
                                                 <span className="text-[10px] text-gray-400 font-medium">Sisa: {ticket.available || 0}</span>
                                             </div>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-1.5">
+                                                <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Max Beli / User</Label>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" className="max-w-[200px] text-center">
+                                                            Batasi jumlah tiket yang boleh dibeli per email. Isi 0 untuk tidak terbatas.
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                placeholder="0"
+                                                value={ticket.max_purchase_per_user}
+                                                onChange={(e) => {
+                                                    const newTickets = [...formData.ticket_types];
+                                                    newTickets[index].max_purchase_per_user = e.target.value;
+                                                    setFormData(prev => ({ ...prev, ticket_types: newTickets }));
+                                                }}
+                                                className="h-12 border-gray-200 focus:border-primary text-lg font-bold"
+                                                required
+                                            />
+                                            <p className="text-[10px] text-gray-400 italic px-1">0 = Unlimitied</p>
                                         </div>
                                     </div>
                                 </div>
