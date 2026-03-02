@@ -82,7 +82,15 @@ export function CheckoutPage() {
   const [currentTimeTick, setCurrentTimeTick] = useState<Date>(new Date());
 
   const [voucherCode, setVoucherCode] = useState("");
-  const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount_amount: number; type: string } | null>(null);
+  const [appliedVoucher, setAppliedVoucher] = useState<{ 
+    code: string; 
+    discount_amount: number; 
+    type: string;
+    affected_ticket_type_ids?: number[];
+    is_global?: boolean;
+    discount_value?: number;
+    max_discount_amount?: number;
+  } | null>(null);
   const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
   
   // Refs for auto-scroll on validation error
@@ -361,7 +369,37 @@ export function CheckoutPage() {
   };
 
   const getDiscountAmount = () => {
-    return appliedVoucher ? appliedVoucher.discount_amount : 0;
+    if (!appliedVoucher) return 0;
+    
+    // If affected_ticket_type_ids is present, calculate discount specifically for those items
+    if (appliedVoucher.affected_ticket_type_ids && !appliedVoucher.is_global) {
+      let totalDiscount = 0;
+      const affectedIds = appliedVoucher.affected_ticket_type_ids;
+
+      Object.entries(selectedTickets).forEach(([ticketId, quantity]) => {
+        if (affectedIds.includes(Number(ticketId))) {
+          const ticket = event.ticket_types?.find(t => String(t.id) === ticketId);
+          if (ticket) {
+            const activeFS = getActiveFlashSale(ticket.id);
+            const price = activeFS ? activeFS.flash_price : ticket.price;
+            
+            if (appliedVoucher.type === 'percent') {
+              totalDiscount += (price * quantity * (appliedVoucher.discount_value || 0)) / 100;
+            } else {
+              // For fixed/nominal, we use the value as is if it's per ticket or we just return the stored amount
+            }
+          }
+        }
+      });
+
+      if (appliedVoucher.type === 'percent' && appliedVoucher.max_discount_amount && totalDiscount > appliedVoucher.max_discount_amount) {
+        return appliedVoucher.max_discount_amount;
+      }
+      
+      return appliedVoucher.type === 'percent' ? totalDiscount : appliedVoucher.discount_amount;
+    }
+
+    return appliedVoucher.discount_amount;
   };
 
   const getTotalAmount = () => {
@@ -373,38 +411,81 @@ export function CheckoutPage() {
       toast.error("Masukkan kode voucher terlebih dahulu");
       return;
     }
+
+    // Get email of the primary participant or logged in user
+    const email = participants[primaryContactIndex]?.data?.email || user?.email;
+    if (!email) {
+      toast.error("Mohon lengkapi email Peserta Utama terlebih dahulu untuk menggunakan voucher.");
+      scrollToParticipant(primaryContactIndex);
+      return;
+    }
     
     setIsApplyingVoucher(true);
     try {
-      const firstTicketId = Object.keys(selectedTickets)[0];
-      const response = await api.vouchers.validate(voucherCode, event.id, firstTicketId);
+      // Send all selected ticket IDs
+      const ticketTypeIds = Object.keys(selectedTickets);
+      const uppercaseCode = voucherCode.trim().toUpperCase();
+      const response = await api.vouchers.validate(uppercaseCode, event.id, ticketTypeIds, email, user?.id);
+      
       if (response.success && response.data) {
-        let discount = 0;
         const data = response.data;
-        if (data.discount_type === 'percent') {
-          discount = (getTotalPrice() * data.discount_value) / 100;
-          if (data.max_discount && discount > data.max_discount) {
-            discount = data.max_discount;
+        let discount = 0;
+        
+        // Calculate discount based on affected items
+        if (data.is_global) {
+          if (data.discount_type === 'percent') {
+            discount = (getTotalPrice() * data.discount_value) / 100;
+            if (data.max_discount_amount && discount > data.max_discount_amount) {
+              discount = data.max_discount_amount;
+            }
+          } else {
+            discount = data.discount_value || data.discount_amount || 0;
           }
-        } else {
-          discount = data.discount_value || data.discount_amount || 0;
+        } else if (data.affected_ticket_type_ids) {
+          let affectedTotalPrice = 0;
+          data.affected_ticket_type_ids.forEach((id: number) => {
+            const qty = selectedTickets[String(id)] || 0;
+            const ticket = event.ticket_types?.find(t => t.id === id);
+            if (ticket && qty > 0) {
+              const activeFS = getActiveFlashSale(ticket.id);
+              const price = activeFS ? activeFS.flash_price : ticket.price;
+              affectedTotalPrice += price * qty;
+            }
+          });
+
+          if (data.discount_type === 'percent') {
+            discount = (affectedTotalPrice * data.discount_value) / 100;
+            if (data.max_discount_amount && discount > data.max_discount_amount) {
+              discount = data.max_discount_amount;
+            }
+          } else {
+            discount = data.discount_value || data.discount_amount || 0;
+          }
         }
 
         const finalDiscount = data.discount_amount !== undefined ? data.discount_amount : discount;
 
         if (finalDiscount <= 0) {
-            toast.error("Voucher tidak memberikan potongan");
+            toast.error("Voucher ini tidak berlaku untuk tiket yang Anda pilih");
             return;
         }
 
         setAppliedVoucher({
           code: voucherCode.toUpperCase(),
           discount_amount: finalDiscount,
-          type: data.discount_type
+          type: data.discount_type,
+          affected_ticket_type_ids: data.affected_ticket_type_ids,
+          is_global: data.is_global,
+          discount_value: data.discount_value,
+          max_discount_amount: data.max_discount_amount
         });
         toast.success("Voucher berhasil diterapkan!");
       } else {
-        toast.error(response.message || "Kode Voucher tidak valid!");
+        if (response.message && response.message.includes("sudah pernah menggunakan voucher")) {
+          toast.error("Maaf, voucher ini hanya dapat digunakan satu kali per pengguna.");
+        } else {
+          toast.error(response.message || "Kode Voucher tidak valid!");
+        }
         setAppliedVoucher(null);
       }
     } catch (error) {
@@ -928,12 +1009,29 @@ export function CheckoutPage() {
                   const activeFS = getActiveFlashSale(ticket.id);
                   const price = activeFS ? activeFS.flash_price : ticket.price;
 
+                  const isVoucherAffected = appliedVoucher?.affected_ticket_type_ids?.includes(Number(ticketId)) || appliedVoucher?.is_global;
+                  let itemDiscountedPrice = price;
+                  
+                  if (appliedVoucher && isVoucherAffected) {
+                    if (appliedVoucher.type === 'percent') {
+                      itemDiscountedPrice = price * (1 - (appliedVoucher.discount_value || 0) / 100);
+                    }
+                  }
+
+                  const basePriceForStrike = activeFS ? ticket.price : price;
+                  const hasDiscount = activeFS || (isVoucherAffected && itemDiscountedPrice < price);
+
                   return (
                     <div key={ticketId} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
                       <div className="flex flex-col text-sm">
-                         <span className="text-gray-800 font-medium">
-                           {ticket.name}
-                         </span>
+                         <div className="flex items-center gap-2 font-medium">
+                            <span className="text-gray-800">{ticket.name}</span>
+                            {isVoucherAffected && appliedVoucher?.type === 'percent' && (
+                              <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                {appliedVoucher.discount_value}% OFF
+                              </span>
+                            )}
+                         </div>
                          <span className="text-gray-500 text-xs">
                            {quantity} tiket × {formatCurrency(price)}
                          </span>
@@ -945,13 +1043,13 @@ export function CheckoutPage() {
                          )}
                       </div>
                       <div className="flex flex-col items-end">
-                        {activeFS && (
+                        {hasDiscount && (
                           <span className="text-xs text-gray-400 line-through mb-0.5">
-                            {formatCurrency(ticket.price * quantity)}
+                            {formatCurrency(basePriceForStrike * quantity)}
                           </span>
                         )}
                         <span className="font-semibold text-primary">
-                          {formatCurrency(price * quantity)}
+                          {formatCurrency(itemDiscountedPrice * quantity)}
                         </span>
                       </div>
                     </div>
@@ -986,7 +1084,7 @@ export function CheckoutPage() {
                     <Input 
                       placeholder="Masukkan kode promo" 
                       value={voucherCode} 
-                      onChange={(e) => setVoucherCode(e.target.value)}
+                      onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
                       className="uppercase"
                     />
                     <Button 

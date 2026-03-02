@@ -208,12 +208,21 @@ const api = {
   },
 
   vouchers: {
-    validate: async (code: string, eventId: number | string, ticketTypeId?: number | string): Promise<ApiResponse<any>> => {
+    validate: async (code: string, eventId: number | string, ticketTypeId?: number | string | (number | string)[], email?: string, userId?: number | string): Promise<ApiResponse<any>> => {
       try {
         let url = `${API_BASE_URL}/vouchers/validate?code=${code}&event_id=${eventId}`;
         if (ticketTypeId) {
-          url += `&ticket_type_id=${ticketTypeId}`;
+          if (Array.isArray(ticketTypeId)) {
+            ticketTypeId.forEach(id => {
+              url += `&ticket_type_id=${id}`;
+            });
+          } else {
+            url += `&ticket_type_id=${ticketTypeId}`;
+          }
         }
+        if (email) url += `&email=${encodeURIComponent(email)}`;
+        if (userId) url += `&user_id=${userId}`;
+        
         const response = await fetch(url, {
           headers: getHeaders(),
         });
