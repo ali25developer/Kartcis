@@ -44,7 +44,7 @@ import {
 import { useAuth } from "@/app/contexts/AuthContext";
 import type { Event, CustomField, FlashSale } from "@/app/types";
 import { formatCurrency, formatDate, formatTime } from "@/app/utils/helpers";
-import { PaymentMethodSelection } from "@/app/components/PaymentMethodSelection";
+
 import api, { uploadCustomFieldFile, formatAssetUrl } from "@/app/services/api";
 import { pendingOrderStorage } from "@/app/utils/pendingOrderStorage";
 
@@ -74,7 +74,7 @@ export function CheckoutPage() {
   const [participants, setParticipants] = useState<ParticipantData[]>([]);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [primaryContactIndex, setPrimaryContactIndex] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('MANUAL_JAGO');
+
   const [showGuestConfirmation, setShowGuestConfirmation] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, boolean>>({});
   
@@ -614,7 +614,7 @@ export function CheckoutPage() {
 
       const payload = {
         items,
-        payment_method: paymentMethod,
+        payment_method: 'FLIP',
         voucher_code: appliedVoucher?.code || "",
         customer_info: {
           name: participants[primaryContactIndex].data.fullName,
@@ -627,8 +627,19 @@ export function CheckoutPage() {
 
       if (response.success && response.data) {
         toast.success("Pesanan berhasil dibuat!");
-        const orderIdentifier = response.data.order_number || response.data.id;
-        navigate(`/payment/${orderIdentifier}`);
+        
+        // Use payment_url from Flip if available
+        if (response.data.payment_url) {
+          let url = response.data.payment_url;
+          // Ensure URL is absolute to prevent relative redirect issues
+          if (!url.startsWith('http')) {
+            url = 'https://' + url;
+          }
+          window.location.href = url;
+        } else {
+          const orderIdentifier = response.data.order_number || response.data.id;
+          navigate(`/payment/${orderIdentifier}`);
+        }
       } else {
         throw new Error(response.message || "Gagal membuat pesanan");
       }
@@ -669,8 +680,8 @@ export function CheckoutPage() {
           <p className="text-gray-600 mt-2">Lengkapi data dan pilih metode pembayaran</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <Card className="p-6">
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -952,37 +963,27 @@ export function CheckoutPage() {
                     </div>
                   )}
 
-                  <Separator />
-
-                  <PaymentMethodSelection
-                    selectedMethod={paymentMethod}
-                    onSelectMethod={setPaymentMethod}
-                    disabled={loading}
-                  />
-
-                  <Separator />
-
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary hover:bg-primary-hover"
+                    className="w-full bg-primary hover:bg-primary-hover mt-4"
                     size="lg"
                     disabled={loading || Object.values(uploadProgress).some(Boolean)}
                   >
                     {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Memproses...
-                      </>
-                    ) : (
-                      'Lanjut ke Pembayaran'
-                    )}
+                       <>
+                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                         Memproses...
+                       </>
+                     ) : (
+                       'Bayar via Flip'
+                     )}
                   </Button>
                 </form>
               </div>
             </Card>
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 order-1 lg:order-2">
             <Card className="p-6 sticky top-36">
               <h2 className="text-2xl font-bold mb-4">Ringkasan Pesanan</h2>
 
@@ -1120,10 +1121,13 @@ export function CheckoutPage() {
                   <span className="font-semibold">{totalQuantity}</span>
                 </div>
                 <div className="flex justify-between text-2xl font-bold">
-                  <span>Total Bayar:</span>
-                  <span className="text-primary">{formatCurrency(totalAmount)}</span>
-                </div>
-              </div>
+                   <span>Total Bayar:</span>
+                   <span className="text-primary">{formatCurrency(totalAmount)}</span>
+                 </div>
+               </div>
+ 
+               {/* Mobile Payment Info & Button */}
+               
             </Card>
           </div>
         </div>

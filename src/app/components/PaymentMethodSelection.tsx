@@ -39,11 +39,7 @@ const paymentMethods: Record<PaymentMethodType, PaymentMethod[]> = {
   ],
 };
 
-export function PaymentMethodSelection({ 
-  selectedMethod, 
-  onSelectMethod, 
-  disabled 
-}: PaymentMethodSelectionProps) {
+export function PaymentMethodSelection(_props: PaymentMethodSelectionProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -54,24 +50,31 @@ export function PaymentMethodSelection({
       </div>
 
       <div className="pt-2">
-         <div className="bg-white border-2 border-primary rounded-xl p-6 text-center shadow-sm">
-            <h3 className="text-lg font-bold text-primary-hover mb-2">Transfer Bank (Verifikasi Instan)</h3>
-            <p className="text-sm text-gray-600 mb-4">Transfer ke rekening Bank Jago kami. Sistem akan memverifikasi pembayaran Anda secara otomatis dalam hitungan menit.</p>
-            <button
-               type="button"
-               onClick={() => onSelectMethod('MANUAL_JAGO')}
-               className={`w-full py-4 border-2 rounded-xl text-center font-bold text-lg transition-all shadow-sm ${
-                 selectedMethod === 'MANUAL_JAGO'
-                   ? 'border-primary bg-primary text-white shadow-lg scale-[1.02]'
-                   : 'border-primary bg-white text-primary hover:bg-primary-light hover:scale-[1.01]'
-               }`}
-               disabled={disabled}
-            >
-               Bank Jago (Automatic Verification)
-            </button>
-            <div className="mt-6 flex items-center justify-center gap-4 opacity-90 transition-opacity hover:opacity-100">
-               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Supported by</span>
-               <img src="/assets/bank-jago-new.png" alt="Bank Jago" className="h-6" />
+         <div className="bg-white border-2 border-primary rounded-2xl p-6 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0">
+               <div className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+                  Terpilih
+               </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+               <div className="bg-primary/10 p-3 rounded-xl">
+                  <img src="/assets/logo-flip.png" alt="Flip" className="h-6 w-auto object-contain" />
+               </div>
+               <div>
+                  <h3 className="text-lg font-bold text-gray-900 leading-tight">Pembayaran Online (Flip)</h3>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                     Mendukung QRIS, Virtual Account (BCA, Mandiri, BNI, dll), dan E-Wallet dengan verifikasi otomatis secara real-time.
+                  </p>
+               </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+               <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-[11px] font-bold text-gray-600 uppercase">Sistem Aktif & Otomatis</span>
+               </div>
+               <span className="text-[10px] text-gray-400 font-medium italic">Klik tombol di bawah untuk lanjut</span>
             </div>
          </div>
       </div>
